@@ -1,5 +1,5 @@
 
-import Text.Parsec.Text
+import Text.Parsec.String
 import Text.Parsec.Prim
 import Text.Parsec.Error
 
@@ -11,7 +11,7 @@ import qualified Data.Text.Lazy.IO as LIO
 
 import Control.Monad
 
-import Parser.Ast
+import Parser
 
 main = do
     arguments <- getArgs
@@ -23,9 +23,10 @@ main = do
                 putStrLn $ "parsing succeeded ast:"
                 putStrLn $ (show xs)
 
+{-
 parseFromFile :: Parser a -> String -> IO (Either ParseError a)
 parseFromFile p fname = do
-    input <- LIO.readFile fname
-    let strictInput = (L.toStrict input) in
-      return $ runP p () fname strictInput
+    input <- readFile fname
+    return $ runP p () fname input
 
+-}
