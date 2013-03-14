@@ -11,10 +11,13 @@ module ParserTypes
 
 type Name = String
 
-data Program = Program [Func]
+data Program = Program { programFunctions :: [Func] }
              deriving (Show)
 
-data Func = Func Name [Type] [Pattern]
+data Func = Func { funcName :: Name
+                 , funcTypes :: [Type]
+                 , funcPatterns :: [Pattern]
+                 }
           deriving (Show)
 
 data Pattern = Pattern [Binding] Expr

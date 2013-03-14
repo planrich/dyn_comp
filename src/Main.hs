@@ -8,10 +8,13 @@ import System.IO
 import qualified Data.Text as T
 import qualified Data.Text.Lazy as L
 import qualified Data.Text.Lazy.IO as LIO
+import qualified Data.Map as M
 
 import Control.Monad
 
 import Parser
+import ParserTypes
+import Interpretor
 
 main = do
     arguments <- getArgs
@@ -19,9 +22,18 @@ main = do
         result <- parseFromFile file (arguments !! 0)
         case result of
             Left err -> print err
-            Right xs -> do
+            Right prog -> do
                 putStrLn $ "parsing succeeded ast:"
-                putStrLn $ (show xs)
+                putStrLn $ (show prog)
+                putStrLn $ "evaluating main:"
+                syms <- return $ harvestSymbols (programFunctions prog) (SymbolTable M.empty)
+                mMain <- return $ mainExpr syms
+                case mMain of
+                    Just e -> do
+                        out <- return $ eval e 
+                        putStrLn $ "evaluated " ++ (show out)
+                    Nothing -> putStrLn "could not find main!"
+
 
 {-
 parseFromFile :: Parser a -> String -> IO (Either ParseError a)
