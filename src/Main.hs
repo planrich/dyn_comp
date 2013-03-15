@@ -30,6 +30,7 @@ main = do
                 mMain <- return $ mainExpr syms
                 case mMain of
                     Just e -> do
+                        putStrLn $ "doing " ++ (show e)
                         out <- return $ eval e 
                         putStrLn $ "evaluated " ++ (show out)
                     Nothing -> putStrLn "could not find main!"

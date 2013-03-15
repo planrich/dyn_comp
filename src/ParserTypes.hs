@@ -23,9 +23,10 @@ data Func = Func { funcName :: Name
 data Pattern = Pattern [Binding] Expr
              deriving (Show)
 
-data Expr = AppExpr Expr Expr
+data Expr = AppExpr [Expr]
           | LitExpr Integer
-          | VarExpr String
+          | LamExpr Name Expr
+          | VarExpr Name
           deriving (Show)
 
 data Binding = BNumber Int

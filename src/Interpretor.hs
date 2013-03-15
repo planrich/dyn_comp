@@ -9,9 +9,32 @@ module Interpretor
 import qualified Data.Map as M
 import ParserTypes
 
-data BuiltIn = NaturalFunc (Int -> Int -> Int)
-
 data SymbolTable = SymbolTable (M.Map String Func)
+
+type Builtin = (Expr -> Expr -> Expr)
+
+isAtom :: Expr -> Bool
+isAtom (VarExpr _) = True
+isAtom (LitExpr _) = True
+isAtom _ = False
+
+getId :: Expr -> Name
+getId (VarExpr n) = n
+getId _ = ""
+
+isFunc :: Expr -> Bool
+isFunc (LamExpr _ _) = True
+isFunc _ = False
+
+isApp :: Expr -> Bool
+isApp (AppExpr _) = True
+isApp _ = False
+
+getFunc :: Expr -> Expr
+getFunc l@(LamExpr _ _) = l
+getFunc v@(VarExpr n) = v
+
+
 
 -- (AppExpr 
 --      (AppExpr 
@@ -27,19 +50,40 @@ data SymbolTable = SymbolTable (M.Map String Func)
 --      )
 -- )
 eval :: Expr -> Expr
-eval (AppExpr (VarExpr name) e2) = apply name e2
-eval (AppExpr e1 e2) = eval e1 
+eval (AppExpr []) = undefined
+eval (AppExpr (f@(VarExpr _):as)) = apply f as
+eval e 
+    | isAtom e = e -- cannot reduce further
 
-apply :: String -> Expr -> Expr
-apply func args = undefined
+apply :: Expr -> [Expr] -> Expr
+apply func args
+    | isBuiltin func = applyBuiltin (M.lookup (getId func) builtins) args
+    | isApp func = apply (eval func) args
+    | otherwise = undefined
 
 
-builtins :: M.Map String BuiltIn
-builtins = M.fromList [("add", NaturalFunc (+))
-                    ,("sub", NaturalFunc (-))
-                    ,("div", NaturalFunc div)
-                    ,("mul", NaturalFunc (*))
-                    ,("mod", NaturalFunc mod)
+applyBuiltin :: Maybe Builtin -> [Expr] -> Expr
+applyBuiltin (Just f) es = foldl1 f (map eval es)
+
+numericBinary :: (Integer -> Integer -> Integer) -> Expr -> Expr -> Expr
+numericBinary op (LitExpr a1) (LitExpr a2) = LitExpr $ op a1 a2
+numericBinary op e1@(LitExpr a1) e2 = numericBinary op e1 (eval e2)
+numericBinary op e2 e1@(LitExpr a1) = numericBinary op (eval e1) e2
+numericBinary op _ _ = undefined
+
+isBuiltin :: Expr -> Bool
+isBuiltin (VarExpr n) = check (M.lookup n builtins)
+  where
+    check :: Maybe Builtin -> Bool
+    check (Just b) = True
+    check _ = False
+
+builtins :: M.Map String (Expr -> Expr -> Expr)
+builtins = M.fromList [("add", numericBinary (+))
+                    ,("sub", numericBinary (-))
+                    ,("div", numericBinary div)
+                    ,("mul", numericBinary (*))
+                    ,("mod", numericBinary mod)
                     ]
 
 harvestSymbols :: [Func] -> SymbolTable -> SymbolTable

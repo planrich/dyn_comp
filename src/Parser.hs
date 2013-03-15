@@ -63,7 +63,7 @@ expr = choice
 funExpr :: Parser Expr
 funExpr = do
     atoms <- many1 atomExpr
-    return $ foldl1 AppExpr atoms
+    return $ AppExpr atoms
 
 atomExpr :: Parser Expr
 atomExpr = choice
