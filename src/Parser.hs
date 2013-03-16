@@ -1,5 +1,5 @@
 module Parser
-    ( file
+    ( parseFile
     )
   where
 
@@ -7,14 +7,20 @@ import Text.Parsec
 import Text.Parsec.String
 import Text.Parsec.Char
 import Text.Parsec.Prim
-import Text.Parsec.Combinator
-import qualified Text.Parsec.Token as P
 import Text.Parsec.Pos
+import Text.Parsec.Combinator
+import Text.Parsec.Error
+import qualified Text.Parsec.Token as P
 
 import Control.Monad
 
 import TokenDef
 import ParserTypes
+
+
+
+parseFile :: String -> IO (Either ParseError Program)
+parseFile filePath = parseFromFile file filePath
 
 lexer :: P.TokenParser ()
 lexer = P.makeTokenParser tokenDef
@@ -63,7 +69,7 @@ expr = choice
 funExpr :: Parser Expr
 funExpr = do
     atoms <- many1 atomExpr
-    return $ AppExpr atoms
+    return $ foldl1 AppExpr atoms
 
 atomExpr :: Parser Expr
 atomExpr = choice

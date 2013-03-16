@@ -11,28 +11,44 @@ import ParserTypes
 
 data SymbolTable = SymbolTable (M.Map String Func)
 
-type Builtin = (Expr -> Expr -> Expr)
 
 isAtom :: Expr -> Bool
 isAtom (VarExpr _) = True
 isAtom (LitExpr _) = True
 isAtom _ = False
 
-getId :: Expr -> Name
-getId (VarExpr n) = n
-getId _ = ""
+getId :: Expr -> Expr
+getId e@(VarExpr n) = e
+
+getName :: Expr -> Name
+getName (VarExpr n) = n
+getName _ = ""
+
+isId :: Expr -> Bool
+isId (VarExpr _) = True
+isId _ = False
 
 isFunc :: Expr -> Bool
 isFunc (LamExpr _ _) = True
 isFunc _ = False
 
+getFunction :: Expr -> Expr
+getFunction (AppExpr e e1) = getFunction e
+getFunction l@(LamExpr _ _) = l
+
+getArgument :: Expr -> Expr
+getArgument (AppExpr _ e) = e
+
+getBody :: Expr -> Expr
+getBody (LamExpr _ b) = b
+
 isApp :: Expr -> Bool
-isApp (AppExpr _) = True
+isApp (AppExpr _ _) = True
 isApp _ = False
 
-getFunc :: Expr -> Expr
-getFunc l@(LamExpr _ _) = l
-getFunc v@(VarExpr n) = v
+--getFunc :: Expr -> Expr
+--getFunc l@(LamExpr _ _) = l
+--getFunc v@(VarExpr n) = v
 
 
 
@@ -50,16 +66,33 @@ getFunc v@(VarExpr n) = v
 --      )
 -- )
 eval :: Expr -> Expr
-eval (AppExpr []) = undefined
-eval (AppExpr (f@(VarExpr _):as)) = apply f as
+--eval (AppExpr []) = undefined
+eval (AppExpr f s) = apply f s
 eval e 
     | isAtom e = e -- cannot reduce further
 
-apply :: Expr -> [Expr] -> Expr
-apply func args
-    | isBuiltin func = applyBuiltin (M.lookup (getId func) builtins) args
-    | isApp func = apply (eval func) args
-    | otherwise = undefined
+apply :: Expr -> Expr -> Expr
+apply a@(AppExpr _ _) args = apply (eval a) args
+apply (VarExpr n) args =
+    case buin of
+        Just b -> CurryExpr b (eval args)
+        Nothing -> undefined
+  where
+    buin = M.lookup n builtins
+apply c@(CurryExpr f e1) e2 = f e1 (eval e2)
+apply func args = undefined
+
+applyCurry :: Builtin -> Expr -> Expr -> Expr
+applyCurry f e1 e2 = f e1 e2
+
+subs :: Expr -> Expr -> Expr -> Expr
+subs a x e
+    | isId e = if e == x then a else e
+    | isApp e = AppExpr (subs a x (getFunction e)) (subs a x (getArgument e))
+    | otherwise = let y = getId e in let c = getBody e in
+        if y == x 
+          then e 
+          else let z = (VarExpr "u'") in LamExpr z (subs a x (subs z y c))
 
 
 applyBuiltin :: Maybe Builtin -> [Expr] -> Expr

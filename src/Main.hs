@@ -1,7 +1,4 @@
 
-import Text.Parsec.String
-import Text.Parsec.Prim
-import Text.Parsec.Error
 
 import System.Environment
 import System.IO
@@ -19,7 +16,7 @@ import Interpretor
 main = do
     arguments <- getArgs
     when (length arguments > 0) $ do
-        result <- parseFromFile file (arguments !! 0)
+        result <- parseFile (arguments !! 0)
         case result of
             Left err -> print err
             Right prog -> do

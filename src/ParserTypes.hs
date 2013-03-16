@@ -6,6 +6,7 @@ module ParserTypes
     , Pattern (..)
     , Expr (..)
     , Binding (..)
+    , Builtin (..)
     )
   where
 
@@ -23,11 +24,25 @@ data Func = Func { funcName :: Name
 data Pattern = Pattern [Binding] Expr
              deriving (Show)
 
-data Expr = AppExpr [Expr]
+type Builtin = (Expr -> Expr -> Expr)
+
+data Expr = AppExpr Expr Expr
           | LitExpr Integer
-          | LamExpr Name Expr
+          | LamExpr Expr Expr
           | VarExpr Name
-          deriving (Show)
+          | CurryExpr Builtin Expr
+
+instance Show Expr where
+    show (AppExpr e1 e2) = " #(" ++ (show e1) ++ " " ++ (show e2) ++ ")"
+    show (LitExpr i) = "$d"++(show i)
+    show (VarExpr n) = "\"" ++ n ++ "\""
+    show (CurryExpr b e) = "@(" ++ (show e) ++ ")"
+
+instance Eq Expr where
+    (==) (AppExpr e1 e2) (AppExpr e3 e4) = e1 == e3 && e2 == e4
+    (==) (LitExpr i) (LitExpr i2) = i == i2
+    (==) (VarExpr n) (VarExpr n2) = n == n2
+    (==) _ _ = False
 
 data Binding = BNumber Int
              | BString String
