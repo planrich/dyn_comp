@@ -47,6 +47,7 @@ executable am
     hs-source-dirs: src
 
     build-depends: base == 4.5.*
+                 , mtl == 2.1.*
                  , parsec == 3.1.*
                  , text == 0.11.2.*
                  , bytestring == 0.10.2.*
@@ -57,6 +58,7 @@ executable test
     hs-source-dirs: src
 
     build-depends: base == 4.5.*
+                 , mtl == 2.1.*
                  , parsec == 3.1.*
                  , text == 0.11.2.*
                  , bytestring == 0.10.2.*

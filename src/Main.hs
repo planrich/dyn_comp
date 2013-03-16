@@ -20,23 +20,20 @@ main = do
         case result of
             Left err -> print err
             Right prog -> do
-                putStrLn $ "parsing succeeded ast:"
-                putStrLn $ (show prog)
-                putStrLn $ "evaluating main:"
-                syms <- return $ harvestSymbols (programFunctions prog) (SymbolTable M.empty)
-                mMain <- return $ mainExpr syms
-                case mMain of
-                    Just e -> do
-                        putStrLn $ "doing " ++ (show e)
-                        out <- return $ eval e 
-                        putStrLn $ "evaluated " ++ (show out)
-                    Nothing -> putStrLn "could not find main!"
+                interpret prog
 
 
-{-
-parseFromFile :: Parser a -> String -> IO (Either ParseError a)
-parseFromFile p fname = do
-    input <- readFile fname
-    return $ runP p () fname input
-
--}
+interpret :: Program -> IO ()
+interpret prog = do
+    syms <- return $ harvestSymbols (programFunctions prog) (SymbolTable M.empty)
+    mMain <- return $ mainExpr syms
+    case mMain of
+        Just e -> do
+            putStrLn $ "interpret " ++ (show e)
+            out <- return $ eval e 
+            case out of
+                Right out -> do 
+                    putStrLn $ "evaluated " ++ (show out)
+                Left msg -> do
+                    putStrLn $ show msg
+        Nothing -> putStrLn "could not find main!"

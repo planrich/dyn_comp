@@ -9,15 +9,22 @@ import Interpretor
 
 import qualified Data.Map as M
 
-data Test = Arithmetic Int Expr
+type Test = (Int,TestType)
 
-data TestResult = TestResult Bool Test String String
+data TestType = EvalTo Expr
+              | ThrowTypeMissmatch
+
+data TestResult = TestResult Bool TestType String String
 
 main :: IO ()
 main = do
-    putStr "arithmetic suit"
-    suits <- return $ [ Arithmetic 1 (LitExpr 6) 
-                      , Arithmetic 2 (LitExpr 7)
+    putStr "running test suite"
+    suits <- return $ [ (1, EvalTo (LitExpr 6))
+                      , (2, EvalTo (LitExpr 7))
+                      , (3, EvalTo (LitExpr 20))
+                      , (4, EvalTo (BoolExpr True))
+                      , (5, EvalTo (BoolExpr False))
+                      , (6, ThrowTypeMissmatch)
                       ] 
     results <- mapM runTest suits
     putStrLn ""
@@ -29,7 +36,7 @@ main = do
     putStrLn $ "ran " ++ (show ran) ++ " tests. failed: " ++ (show failed')
 
 runTest :: Test -> IO TestResult
-runTest test@(Arithmetic i expect) = do
+runTest (i, test) = do
     filePath <- return $ "test/arithmetic/" ++ (show i) ++ ".test"
     result <- parseFile filePath
     case result of
@@ -42,10 +49,31 @@ runTest test@(Arithmetic i expect) = do
             case mMain of
                 Just e -> do
                     out <- return $ eval e
-                    if out == expect
-                      then return $ TestResult True test filePath ""
-                      else return $ TestResult False test filePath ("expected: " ++ (show expect) ++ "\ngot: " ++ (show out))
-                Nothing -> return $ TestResult False test filePath "could not find main"
+                    checkExpr out test filePath
+                _ -> return $ TestResult False test filePath "could not find main"
+
+checkExpr :: ThrowError Expr -> TestType -> String -> IO TestResult
+checkExpr out test@(EvalTo expected) filePath =
+    case out of
+        Right expr -> do
+            case expr == expected of
+                True -> do
+                    putStr "."
+                    return $ TestResult True test filePath ""
+                _ -> do
+                    putStr "E"
+                    return $ TestResult False test filePath ("expected: " ++ (show expected) ++ "\ngot: " ++ (show expr))
+        Left msg -> do
+            putStr "F"
+            return $ TestResult False test filePath ("evaluation failed: " ++ (show msg))
+checkExpr out test@(ThrowTypeMissmatch) filePath =
+    case out of
+        Left (TypeMissmatch _ _) -> do
+            putStr "."
+            return $ TestResult True test filePath ""
+        _ -> do
+            putStr "F"
+            return $ TestResult False test filePath "no type missmatch, but was expected"
 
 
 inspect :: TestResult -> IO ()

@@ -7,13 +7,18 @@ module Interpretor
   where
 
 import qualified Data.Map as M
+import Control.Monad
+import Control.Monad.Error
+
 import ParserTypes
 
 data SymbolTable = SymbolTable (M.Map String Func)
 
 
+
 isAtom :: Expr -> Bool
 isAtom (VarExpr _) = True
+isAtom (BoolExpr _) = True
 isAtom (LitExpr _) = True
 isAtom _ = False
 
@@ -46,44 +51,21 @@ isApp :: Expr -> Bool
 isApp (AppExpr _ _) = True
 isApp _ = False
 
---getFunc :: Expr -> Expr
---getFunc l@(LamExpr _ _) = l
---getFunc v@(VarExpr n) = v
-
-
-
--- (AppExpr 
---      (AppExpr 
---          (VarExpr "add") 
---          (LitExpr 0)
---      ) 
---      (AppExpr 
---          (AppExpr 
---              (VarExpr "add") 
---              (LitExpr 1)
---          ) 
---      (LitExpr 2)
---      )
--- )
-eval :: Expr -> Expr
---eval (AppExpr []) = undefined
+eval :: Expr -> ThrowError Expr
 eval (AppExpr f s) = apply f s
 eval e 
-    | isAtom e = e -- cannot reduce further
+    | isAtom e = return $ e -- cannot reduce further
 
-apply :: Expr -> Expr -> Expr
-apply a@(AppExpr _ _) args = apply (eval a) args
+apply :: Expr -> Expr -> ThrowError Expr
+apply a@(AppExpr _ _) args = (eval a) >>= (\a -> apply a args)
 apply (VarExpr n) args =
     case buin of
-        Just b -> CurryExpr b (eval args)
+        Just b -> (eval args) >>= (\args -> return $ CurryExpr b args)
         Nothing -> undefined
   where
     buin = M.lookup n builtins
-apply c@(CurryExpr f e1) e2 = f e1 (eval e2)
+apply c@(CurryExpr f e1) e2 = (eval e2) >>= f e1
 apply func args = undefined
-
-applyCurry :: Builtin -> Expr -> Expr -> Expr
-applyCurry f e1 e2 = f e1 e2
 
 subs :: Expr -> Expr -> Expr -> Expr
 subs a x e
@@ -94,16 +76,6 @@ subs a x e
           then e 
           else let z = (VarExpr "u'") in LamExpr z (subs a x (subs z y c))
 
-
-applyBuiltin :: Maybe Builtin -> [Expr] -> Expr
-applyBuiltin (Just f) es = foldl1 f (map eval es)
-
-numericBinary :: (Integer -> Integer -> Integer) -> Expr -> Expr -> Expr
-numericBinary op (LitExpr a1) (LitExpr a2) = LitExpr $ op a1 a2
-numericBinary op e1@(LitExpr a1) e2 = numericBinary op e1 (eval e2)
-numericBinary op e2 e1@(LitExpr a1) = numericBinary op (eval e1) e2
-numericBinary op _ _ = undefined
-
 isBuiltin :: Expr -> Bool
 isBuiltin (VarExpr n) = check (M.lookup n builtins)
   where
@@ -111,13 +83,27 @@ isBuiltin (VarExpr n) = check (M.lookup n builtins)
     check (Just b) = True
     check _ = False
 
-builtins :: M.Map String (Expr -> Expr -> Expr)
+builtins :: M.Map String Builtin
 builtins = M.fromList [("add", numericBinary (+))
-                    ,("sub", numericBinary (-))
-                    ,("div", numericBinary div)
-                    ,("mul", numericBinary (*))
-                    ,("mod", numericBinary mod)
-                    ]
+                      ,("sub", numericBinary (-))
+                      ,("div", numericBinary div)
+                      ,("mul", numericBinary (*))
+                      ,("mod", numericBinary mod)
+                      ,("and", boolBinary (&&))
+                      ,("or", boolBinary (||))
+                      ]
+
+boolBinary :: (Bool -> Bool -> Bool) -> Expr -> Expr -> ThrowError Expr
+boolBinary op (BoolExpr a1) (BoolExpr a2) = return $ BoolExpr $ op a1 a2
+boolBinary op e1@(BoolExpr a1) e2 = (eval e2) >>= boolBinary op e1 
+boolBinary op e2 e1@(BoolExpr a1) = (eval e1) >>= (\e1 -> boolBinary op e1 e2)
+boolBinary op e1 _ = throwError $ TypeMissmatch "expected bool" e1 
+
+numericBinary :: (Integer -> Integer -> Integer) -> Expr -> Expr -> ThrowError Expr
+numericBinary op (LitExpr a1) (LitExpr a2) = return $ LitExpr $ op a1 a2
+numericBinary op e1@(LitExpr a1) e2 = (eval e2) >>= numericBinary op e1
+numericBinary op e2 e1@(LitExpr a1) = (eval e1) >>= (\e1 -> numericBinary op e1 e2)
+numericBinary op e1 _ = throwError $ TypeMissmatch "expected number" e1 
 
 harvestSymbols :: [Func] -> SymbolTable -> SymbolTable
 harvestSymbols [] s = s

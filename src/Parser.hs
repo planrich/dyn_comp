@@ -74,9 +74,14 @@ funExpr = do
 atomExpr :: Parser Expr
 atomExpr = choice
     [ litExpr
+    , boolExpr
     , varExpr
     , (parens $ expr)
     ]
+
+boolExpr :: Parser Expr
+boolExpr = do{ symbol "true"; return $ BoolExpr True}
+    <|> do { symbol "false"; return $ BoolExpr False}
 
 litExpr :: Parser Expr
 litExpr = do
