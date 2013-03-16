@@ -84,13 +84,13 @@ isBuiltin (VarExpr n) = check (M.lookup n builtins)
     check _ = False
 
 builtins :: M.Map String Builtin
-builtins = M.fromList [("add", numericBinary (+))
-                      ,("sub", numericBinary (-))
-                      ,("div", numericBinary div)
-                      ,("mul", numericBinary (*))
-                      ,("mod", numericBinary mod)
-                      ,("and", boolBinary (&&))
-                      ,("or", boolBinary (||))
+builtins = M.fromList [ ("add", numericBinary (+))
+                      , ("sub", numericBinary (-))
+                      , ("div", numericBinary div)
+                      , ("mul", numericBinary (*))
+                      , ("mod", numericBinary mod)
+                      , ("and", boolBinary (&&))
+                      , ("or", boolBinary (||))
                       ]
 
 boolBinary :: (Bool -> Bool -> Bool) -> Expr -> Expr -> ThrowError Expr

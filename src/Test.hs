@@ -9,7 +9,7 @@ import Interpretor
 
 import qualified Data.Map as M
 
-type Test = (Int,TestType)
+type Test = (String,TestType)
 
 data TestType = EvalTo Expr
               | ThrowTypeMissmatch
@@ -19,14 +19,14 @@ data TestResult = TestResult Bool TestType String String
 main :: IO ()
 main = do
     putStr "running test suite"
-    suits <- return $ [ (1, EvalTo (LitExpr 6))
-                      , (2, EvalTo (LitExpr 7))
-                      , (3, EvalTo (LitExpr 20))
-                      , (4, EvalTo (BoolExpr True))
-                      , (5, EvalTo (BoolExpr False))
-                      , (6, ThrowTypeMissmatch)
+    suits <- return $ [ ("1", EvalTo (LitExpr 6))
+                      , ("2", EvalTo (LitExpr 7))
+                      , ("3", EvalTo (LitExpr 20))
+                      , ("4", EvalTo (BoolExpr True))
+                      , ("5", EvalTo (BoolExpr False))
+                      , ("6", ThrowTypeMissmatch)
                       ] 
-    results <- mapM runTest suits
+    results <- mapM (runTest "arithmetic") suits
     putStrLn ""
 
     mapM_ inspect results
@@ -35,9 +35,9 @@ main = do
     putStrLn ""
     putStrLn $ "ran " ++ (show ran) ++ " tests. failed: " ++ (show failed')
 
-runTest :: Test -> IO TestResult
-runTest (i, test) = do
-    filePath <- return $ "test/arithmetic/" ++ (show i) ++ ".test"
+runTest :: String -> Test -> IO TestResult
+runTest prefix (name, test) = do
+    filePath <- return $ "test/" ++ prefix ++ "/" ++ name ++ ".test"
     result <- parseFile filePath
     case result of
         Left err -> do
@@ -78,14 +78,13 @@ checkExpr out test@(ThrowTypeMissmatch) filePath =
 
 inspect :: TestResult -> IO ()
 inspect (TestResult False test filePath msg) = do
+    putStrLn ""
     putStrLn $ "failed: " ++ filePath
     putStrLn $ "> " ++ msg
-    putStrLn ""
 inspect _ = return () -- this is a valid test...
 
 failed ::  [TestResult] -> Int -> Int
 failed [] c = c
 failed (t@(TestResult False _ _ _):ts) c = failed ts (c+1)
 failed (t:ts) c = failed ts c
-
 
