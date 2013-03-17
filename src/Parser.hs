@@ -10,6 +10,7 @@ import Text.Parsec.Prim
 import Text.Parsec.Pos
 import Text.Parsec.Combinator
 import Text.Parsec.Error
+import Text.Parsec.Expr
 import qualified Text.Parsec.Token as P
 
 import Control.Monad
@@ -67,17 +68,48 @@ expr = choice
     <?> "expression"
 
 funExpr :: Parser Expr
-funExpr = do
-    atoms <- many1 atomExpr
+funExpr = do 
+    atoms <- many atomExpr
     return $ foldl1 AppExpr atoms
+--try (buildExpressionParser table atomExpr)
+  where
+    table = [ [Infix (do{ reservedOp "*"; return $ (AppExpr . AppExpr (VarExpr "*")) }) AssocLeft]
+            , [Infix (do{ reservedOp "/"; return $ (AppExpr . AppExpr (VarExpr "/")) }) AssocLeft]
+            , [Infix (do{ reservedOp "+"; return $ (AppExpr . AppExpr (VarExpr "+")) }) AssocLeft]
+            , [Infix (do{ reservedOp "-"; return $ (AppExpr . AppExpr (VarExpr "-")) }) AssocLeft]
+            ]
+    --atoms <- many1 atomExpr
+    --return $ foldl1 AppExpr atoms
 
 atomExpr :: Parser Expr
-atomExpr = choice
-    [ litExpr
+atomExpr = try $ choice
+    [ builtinExpr
+    , litExpr
     , boolExpr
     , varExpr
+    , listExpr
     , (parens $ expr)
     ]
+
+nilExpr :: Parser Expr
+nilExpr = do
+    symbol "["
+    symbol "]"
+    return $ ListExpr []
+    
+listExpr :: Parser Expr
+listExpr = 
+    (try nilExpr)
+    <|> do
+        elems <- between (reservedOp "[") (reservedOp "]") (sepBy atomExpr (reservedOp ","))
+        return $ ListExpr elems
+
+builtinExpr :: Parser Expr
+builtinExpr = 
+    do  (symbol "+" >>= return . VarExpr)
+    <|> (symbol "-" >>= return . VarExpr)
+    <|> (symbol "*" >>= return . VarExpr)
+    <|> (symbol "/" >>= return . VarExpr)
 
 boolExpr :: Parser Expr
 boolExpr = do{ symbol "true"; return $ BoolExpr True}
@@ -127,3 +159,4 @@ typ = do
       <|> do
           typ' <- squares typ
           return $ TList typ'
+

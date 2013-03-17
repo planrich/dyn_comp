@@ -19,8 +19,7 @@ am = emptyDef
       , identLetter = alphaNum <|> oneOf "_'"
       , opStart = opLetter am
       , opLetter = oneOf ":=\\->/|~.*[]"
-      , reservedOpNames = ["::","=","\\","->","=>","/\\","\\/"
-                          ,"|~|",".",":","*","[]"]  
+      , reservedOpNames = ["::","=","\\","->","=>","/\\","\\/","|~|",".",":","*","[]",","]  
       , reservedNames = [ "fn" ]
       , caseSensitive  = True
       }

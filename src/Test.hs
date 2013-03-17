@@ -25,6 +25,8 @@ main = do
                       , ("4", EvalTo (BoolExpr True))
                       , ("5", EvalTo (BoolExpr False))
                       , ("6", ThrowTypeMissmatch)
+                      , ("7", EvalTo (BoolExpr True))
+                      , ("8", EvalTo (LitExpr 10))
                       ] 
     results <- mapM (runTest "arithmetic") suits
     putStrLn ""
@@ -48,7 +50,7 @@ runTest prefix (name, test) = do
             mMain <- return $ mainExpr syms
             case mMain of
                 Just e -> do
-                    out <- return $ eval e
+                    out <- return $ eval syms e
                     checkExpr out test filePath
                 _ -> return $ TestResult False test filePath "could not find main"
 
