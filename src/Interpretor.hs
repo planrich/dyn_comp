@@ -9,6 +9,7 @@ module Interpretor
 import qualified Data.Map as M
 import Control.Monad
 import Control.Monad.Error
+import Data.Maybe
 
 import ParserTypes
 
@@ -17,6 +18,11 @@ type Env = SymbolTable
 eval :: Env -> Expr -> ThrowError Expr
 eval env (AppExpr f s) = apply env f s
 eval env (ListExpr es) = liftM ListExpr $ mapM (eval env) es
+eval env (VarExpr n) = do
+    mEntry <- return $ findEntry env n
+    case mEntry of
+        (Just (SymBinding expr)) -> eval env expr
+        Nothing -> throwError $ SymbolNotFound (n ++ (show env))
 eval env e
     | isAtom e = return $ e -- cannot reduce further
     | otherwise =  throwError $ Fallback (show e)
@@ -26,7 +32,11 @@ apply env a@(AppExpr _ _) args = (eval env a) >>= (\a -> apply env a args)
 apply env c@(CurryExpr f e1) (VarExpr n) =
     case M.lookup n builtins of
         Just b -> return $ CurryExpr b c
-        Nothing -> undefined -- must be bound variable
+        Nothing -> do
+            mEntry <- return $ findEntry env n
+            case mEntry of
+                (Just (SymBinding expr)) -> (eval env expr) >>= (\a -> apply env c a)
+                Nothing -> throwError $ SymbolNotFound (n ++ (show env))
 apply env c1@(CurryExpr f1 e1) c2@(CurryExpr f2 e2) = undefined
 apply env c@(CurryExpr f e) e2
     | isCurry e = (applyCurry e e2)
@@ -39,15 +49,26 @@ apply env (VarExpr n) args =
         Just (Builtin 1 f) -> (eval env args) >>= (\args -> f [args])
         Just b -> (eval env args) >>= (\args -> return $ CurryExpr b args)
         Nothing -> applyFromEnv env (VarExpr n) args
-apply env func args = undefined
+apply env func args = throwError $ SymbolNotFound $ (show env) ++ (show func) ++ (show args)
 
 applyFromEnv :: Env -> Expr -> Expr -> ThrowError Expr
-applyFromEnv 
-            apply
-            sym <- findEntry env
-            if isJust sym
-              then match [args] (funcPatterns . fromJust sym)
-              else throwError
+applyFromEnv env (VarExpr n) arg = do
+    sym <- return $ findFunc env n
+    pat <- return $ sym >>= ((match [arg]) . funcPatterns)
+    case pat of
+        Just (Pattern binding expr) -> eval (defineBindings env binding [arg]) expr
+        _ -> case sym of
+                Nothing -> throwError $ SymbolNotFound n
+                _ -> throwError $ PatternFallthrough n [arg]
+
+defineBindings :: Env -> [Binding] -> [Expr] -> Env
+defineBindings env (b:bs) (e:es) =
+    let bN = bindingName b in
+      if isJust bN 
+        then defineBindings (defineSym env (fromJust bN) (SymBinding e))  bs es
+        else defineBindings env bs es
+defineBindings env _ _ = env
+
 
 applyCurry :: Expr -> Expr -> ThrowError Expr
 applyCurry (CurryExpr f e) param
@@ -106,17 +127,21 @@ numericBinary op (e1:_) = throwError $ TypeMissmatch "expected number" e1
 
 harvestSymbols :: [Func] -> SymbolTable -> SymbolTable
 harvestSymbols [] s = s
-harvestSymbols (f:fs) (SymbolTable m) = SymbolTable (M.insert (funcName f) f m)
+harvestSymbols (f:fs) s@(SymbolTable m) = harvestSymbols fs (defineSym s (funcName f) (SymFunc f))
 
 mainExpr :: SymbolTable -> Maybe Expr
-mainExpr (SymbolTable m) = do
-    M.lookup "main" m >>= firstPat . funcPatterns
+mainExpr t@(SymbolTable m) = do
+    findFunc t "main" >>= firstPat . funcPatterns
   where
     firstPat ((Pattern [] e):ps) = Just e
     firstPat _ = Nothing
 
-type SymEntry = Func
+data SymEntry = SymFunc Func
+              | SymBinding Expr
+              deriving (Show)
+
 data SymbolTable = SymbolTable (M.Map String SymEntry)
+                 deriving (Show)
 
 newSymT :: SymbolTable 
 newSymT = SymbolTable M.empty
@@ -126,6 +151,12 @@ defineSym (SymbolTable t) k s = SymbolTable $ M.insert k s t
 
 findEntry :: SymbolTable -> Name -> Maybe SymEntry
 findEntry sym@(SymbolTable t) k = M.lookup k t
+
+findFunc :: SymbolTable -> Name -> Maybe Func
+findFunc sym@(SymbolTable t) k = 
+    case M.lookup k t of
+        Just (SymFunc f) -> Just f
+        _ -> Nothing
 
 isAtom :: Expr -> Bool
 isAtom (VarExpr _) = True

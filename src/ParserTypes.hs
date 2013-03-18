@@ -7,6 +7,7 @@ module ParserTypes
     , Pattern (..)
     , Expr (..)
     , Binding (..)
+    , bindingName
     , Builtin (..)
     , ThrowError
     , EvalError (..)
@@ -27,12 +28,12 @@ data Func = Func { funcName :: Name
                  }
           deriving (Show)
 
-match :: [Expr] -> [Pattern] -> Maybe Expr
+match :: [Expr] -> [Pattern] -> Maybe Pattern
 match es [] = Nothing
-match es (p:ps) = maybe (match es ps) ((flip matchPattern) es) $ Just p
+match es (p:ps) = mplus (if isJust $ matchPattern p es then Just p else Nothing) (match es ps) 
 
-matchPattern :: Pattern -> [Expr] -> Maybe Expr
-matchPattern (Pattern [] expr) [] = Just expr
+matchPattern :: Pattern -> [Expr] -> Maybe Pattern
+matchPattern p [] = Just p
 matchPattern (Pattern (b:bs) expr) (e:es)
     | matchBinding b e = matchPattern (Pattern bs expr) es
     | otherwise = Nothing
@@ -81,6 +82,9 @@ data Binding = BNumber Int
              | BList (Binding,Binding)
              deriving (Show)
 
+bindingName :: Binding -> Maybe String
+bindingName (BVar s) = Just s
+bindingName _ = Nothing
 
 data Type = TInt
           | TString
@@ -89,11 +93,15 @@ data Type = TInt
 
 data EvalError = TypeMissmatch String Expr
                | InvalidArgument String
+               | SymbolNotFound String
+               | PatternFallthrough String [Expr]
                | Fallback String
 
 instance Show EvalError where
     show (TypeMissmatch msg e) = "type missmatch: " ++ msg ++ " got: " ++ (show e) 
     show (InvalidArgument msg) = "invalid argument: " ++ msg
+    show (SymbolNotFound msg) = "symbol '" ++ msg ++ "' not found"
+    show (PatternFallthrough funcname exprs) = "could not match '" ++ (show exprs) ++ "' with any of the patterns from " ++ funcname
     show (Fallback msg) = "error: " ++ msg
 
 instance Error EvalError where
