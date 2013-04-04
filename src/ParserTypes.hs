@@ -48,7 +48,9 @@ matchBinding (BNumber b) (LitExpr l) = b == fromIntegral l
 data Pattern = Pattern [Binding] Expr
              deriving (Show)
 
-data Builtin = Builtin Int ([Expr] -> ThrowError Expr)
+data Builtin = Builtin { builtinParamCount :: Int
+                       , builtinFunction :: ([Expr] -> ThrowError Expr)
+                       }
 
 data Expr = AppExpr Expr Expr
           | LamExpr Expr Expr
@@ -57,6 +59,12 @@ data Expr = AppExpr Expr Expr
           | ListExpr [Expr]
           | BoolExpr Bool
           | StrExpr String
+          -- |The function context might be the most different expression from the others.
+          -- It should be created when a application is found that found a builtin (+,-,*,/,...)
+          -- with the parameter. When going back the recursion the parameters are saved and
+          -- when the param count the builtin needs is reached the function is executed.
+          | FuncCtx Builtin [Expr]
+          -- |deprecated
           | CurryExpr Builtin Expr
 
 instance Show Expr where

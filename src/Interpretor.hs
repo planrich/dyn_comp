@@ -28,7 +28,9 @@ eval env e
     | otherwise =  throwError $ Fallback (show e)
 
 apply :: Env -> Expr -> Expr -> ThrowError Expr
+-- ^ Nested application recurse
 apply env a@(AppExpr _ _) args = (eval env a) >>= (\a -> apply env a args)
+-- TODO
 apply env c@(CurryExpr f e1) (VarExpr n) =
     case M.lookup n builtins of
         Just b -> return $ CurryExpr b c
@@ -37,18 +39,26 @@ apply env c@(CurryExpr f e1) (VarExpr n) =
             case mEntry of
                 (Just (SymBinding expr)) -> (eval env expr) >>= (\a -> apply env c a)
                 Nothing -> throwError $ SymbolNotFound (n ++ (show env))
-apply env c1@(CurryExpr f1 e1) c2@(CurryExpr f2 e2) = undefined
-apply env c@(CurryExpr f e) e2
-    | isCurry e = (applyCurry e e2)
-    | otherwise = 
-        case f of
-            Builtin 2 f -> f [e,e2]
-            Builtin n f -> undefined
+--apply env c1@(CurryExpr f1 e1) c2@(CurryExpr f2 e2) = undefined
+
+-- ^Apply a function context to another arg. Basically there are two options:
+-- The arguments suffice the function -> function is executed
+-- There are too little arguemts -> context swallows argument and proceeds
+apply env c@(FuncCtx f args) arg
+    | (length args) + 1 == builtinParamCount f = f (args ++ [arg])
+    | otherwise = return $ FuncCtx f (args ++ [arg])
+
+-- ^At the bottom of a recursion an AppExpr might contain a Builtin or call any other
+-- function that is defined in the loaded files
 apply env (VarExpr n) args =
     case M.lookup n builtins of
+        -- if it is a unary function handle it right away
         Just (Builtin 1 f) -> (eval env args) >>= (\args -> f [args])
-        Just b -> (eval env args) >>= (\args -> return $ CurryExpr b args)
+        -- n-ary function must harvest additional n-1 parameters
+        Just b -> (eval env args) >>= (\args -> return $ FuncCtx b [args])
+        -- TODO 
         Nothing -> applyFromEnv env (VarExpr n) args
+-- TODO -> better error
 apply env func args = throwError $ SymbolNotFound $ (show env) ++ (show func) ++ (show args)
 
 applyFromEnv :: Env -> Expr -> Expr -> ThrowError Expr
