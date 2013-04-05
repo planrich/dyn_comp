@@ -3,6 +3,8 @@ module Interpretor
     , SymbolTable (..)
     , harvestSymbols
     , mainExpr
+    , findSymsNameStartsWith
+    , Env
     )
   where
 
@@ -12,9 +14,10 @@ import Control.Monad.Error
 import Data.Maybe
 
 import ParserTypes
+import Environment
+import Builtins
 
-type Env = SymbolTable
-
+-- |Evaluate an expression in a certain environment.
 eval :: Env -> Expr -> ThrowError Expr
 eval env (AppExpr f s) = apply env f s
 eval env (ListExpr es) = liftM ListExpr $ mapM (eval env) es
@@ -22,189 +25,95 @@ eval env (VarExpr n) = do
     mEntry <- return $ findEntry env n
     case mEntry of
         (Just (SymBinding expr)) -> eval env expr
-        Nothing -> throwError $ SymbolNotFound (n ++ (show env))
+        Nothing -> throwError $ SymbolNotFound (n)
+-- ^ A conditional expression
+eval env (CondExpr fact alt1 alt2) = do
+    case holds env fact of
+        Left error -> throwError error
+        Right True -> eval env alt1
+        Right False -> eval env alt2
 eval env e
     | isAtom e = return $ e -- cannot reduce further
-    | otherwise =  throwError $ Fallback (show e)
+    | otherwise =  return $ e
 
 apply :: Env -> Expr -> Expr -> ThrowError Expr
--- ^ Nested application recurse
+-- ^ Nested application recursion
 apply env a@(AppExpr _ _) args = (eval env a) >>= (\a -> apply env a args)
--- TODO
-apply env c@(CurryExpr f e1) (VarExpr n) =
-    case M.lookup n builtins of
-        Just b -> return $ CurryExpr b c
-        Nothing -> do
-            mEntry <- return $ findEntry env n
-            case mEntry of
-                (Just (SymBinding expr)) -> (eval env expr) >>= (\a -> apply env c a)
-                Nothing -> throwError $ SymbolNotFound (n ++ (show env))
---apply env c1@(CurryExpr f1 e1) c2@(CurryExpr f2 e2) = undefined
-
 -- ^Apply a function context to another arg. Basically there are two options:
 -- The arguments suffice the function -> function is executed
 -- There are too little arguemts -> context swallows argument and proceeds
 apply env c@(FuncCtx f args) arg
-    | (length args) + 1 == builtinParamCount f = f (args ++ [arg])
-    | otherwise = return $ FuncCtx f (args ++ [arg])
-
+    | (length args) + 1 == builtinParamCount f = (eval env arg) >>= (\arg -> (builtinFunction f) (args ++ [arg]))
+    | otherwise = (eval env arg) >>= (\arg -> return $ FuncCtx f (args ++ [arg]))
 -- ^At the bottom of a recursion an AppExpr might contain a Builtin or call any other
--- function that is defined in the loaded files
+-- function that is defined within the environment.
 apply env (VarExpr n) args =
     case M.lookup n builtins of
         -- if it is a unary function handle it right away
         Just (Builtin 1 f) -> (eval env args) >>= (\args -> f [args])
         -- n-ary function must harvest additional n-1 parameters
         Just b -> (eval env args) >>= (\args -> return $ FuncCtx b [args])
-        -- TODO 
-        Nothing -> applyFromEnv env (VarExpr n) args
--- TODO -> better error
-apply env func args = throwError $ SymbolNotFound $ (show env) ++ (show func) ++ (show args)
+        Nothing -> applyFromEnv env n args
+apply env (LamExpr n e) arg = (subs e n arg) >>= eval env
+-- ^This is most likely an error.
+apply env func args = throwError $ CannotApply func args
 
-applyFromEnv :: Env -> Expr -> Expr -> ThrowError Expr
-applyFromEnv env (VarExpr n) arg = do
-    sym <- return $ findFunc env n
-    pat <- return $ sym >>= ((match [arg]) . funcPatterns)
-    case pat of
-        Just (Pattern binding expr) -> eval (defineBindings env binding [arg]) expr
-        _ -> case sym of
-                Nothing -> throwError $ SymbolNotFound n
-                _ -> throwError $ PatternFallthrough n [arg]
+applyFromEnv :: Env -> Name -> Expr -> ThrowError Expr
+applyFromEnv env name arg = do
+    mFunc <- return $ findFunc env name
+    case mFunc of
+        Nothing -> throwError $ SymbolNotFound name
+        Just func -> do
+            case funcArgCount func of
+                0 -> evalPattern env [] (funcPatterns func) >>= (\expr -> apply env expr arg)
+                1 -> evalPattern env [arg] (funcPatterns func)
+                --n -> FuncCtx 
+              {-
+    case argCount of
+      0 -> do
+        pat <- return ((match [] (funcPatterns func))
+        eval env expr
+    if argCount == 1
+      then do
+        case pat of
+            Just ps@(Pattern binding expr) -> eval env (wrapLambdas binding expr)
+            _ -> case sym of
+                    Nothing -> throwError $ SymbolNotFound n
+                    _ -> throwError $ PatternFallthrough n [arg]
+      else
+      -}
 
-defineBindings :: Env -> [Binding] -> [Expr] -> Env
-defineBindings env (b:bs) (e:es) =
-    let bN = bindingName b in
-      if isJust bN 
-        then defineBindings (defineSym env (fromJust bN) (SymBinding e))  bs es
-        else defineBindings env bs es
-defineBindings env _ _ = env
+evalPattern :: Env -> [Expr] -> [Pattern] -> ThrowError Expr
+evalPattern env args (p:ps) = undefined
 
+wrapLambdas :: [Binding] -> [Expr] -> Expr -> Expr
+wrapLambdas (b:bs) (e:es) ex = undefined
 
-applyCurry :: Expr -> Expr -> ThrowError Expr
-applyCurry (CurryExpr f e) param
-    | isCurry e = (applyCurry e param)
-    | otherwise = -- f [e, param]
-        case f of
-            Builtin 2 f -> f [e,param]
-            Builtin n f -> undefined
+-- |Subsitute a variable in an expression with another expression
+subs :: Expr -> Name -> Expr -> ThrowError Expr
+subs (AppExpr e1 e2) old new = (subs e1 old new) >>= (\e1 -> (subs e2 old new) >>= (\e2 -> return $ AppExpr e1 e2))
+subs (ListExpr es) old new = liftM ListExpr (mapM (\e -> subs e old new) es)
+subs (LamExpr n e) old new = liftM (LamExpr n) (subs e old new)
+subs v@(VarExpr x) old new
+    | old == x = return new -- replace because they really match
+    | otherwise = return v
+subs old _ _ = return old
 
-subs :: Expr -> Expr -> Expr -> Expr
-subs a x e
-    | isId e = if e == x then a else e
-    | isApp e = AppExpr (subs a x (getFunction e)) (subs a x (getArgument e))
-    | otherwise = let y = getId e in let c = getBody e in
-        if y == x 
-          then e 
-          else let z = (VarExpr "u'") in LamExpr z (subs a x (subs z y c))
-
-existsBuiltin :: Int -> String -> Maybe Builtin
-existsBuiltin argcount name =
-    case M.lookup name builtins of
-        Just bi@(Builtin argcount' b) -> if argcount' == argcount then Just bi else Nothing
-        _ -> Nothing
-
-builtins :: M.Map String Builtin
-builtins = M.fromList [ ("add", Builtin 2 $ numericBinary (+))
-                      , ("+",   Builtin 2 $ numericBinary (+))
-                      , ("sub", Builtin 2 $ numericBinary (-))
-                      , ("-",   Builtin 2 $ numericBinary (-))
-                      , ("div", Builtin 2 $ numericBinary div)
-                      , ("/",   Builtin 2 $ numericBinary div)
-                      , ("mul", Builtin 2 $ numericBinary (*))
-                      , ("*",   Builtin 2 $ numericBinary (*))
-                      , ("mod", Builtin 2 $ numericBinary mod)
-                      , ("and", Builtin 2 $ boolBinary (&&))
-                      , ("or",  Builtin 2 $ boolBinary (||))
-                      , ("head", Builtin 1 $ extractListOp 1 (head))
-                      --, ("tail", Builtin 1 extractListOp (tail))
-                      ]
-
-extractListOp :: Int -> ([Expr] -> Expr) -> [Expr] -> ThrowError Expr
-extractListOp c f [(ListExpr ex)] = if length ex >= c then return $ f ex else throwError $ InvalidArgument "provide more arguments for that operation"
-extractListOp _ _ (ex:_) = throwError $ TypeMissmatch "expected list" ex
-
-boolBinary :: (Bool -> Bool -> Bool) -> [Expr] -> ThrowError Expr
-boolBinary op [(BoolExpr a1), (BoolExpr a2)] = return $ BoolExpr $ op a1 a2
---boolBinary op [e1@(BoolExpr a1), e2] = (eval e2) >>= (\e2 -> boolBinary op [e1,e2])
---boolBinary op [e2,e1@(BoolExpr a1)] = (eval e1) >>= (\e1 -> boolBinary op [e1,e2])
-boolBinary op (e1:_) = throwError $ TypeMissmatch "expected bool" e1 
-
-numericBinary :: (Integer -> Integer -> Integer) -> [Expr] -> ThrowError Expr
-numericBinary op [(LitExpr a1), (LitExpr a2)] = return $ LitExpr $ op a1 a2
---numericBinary op [e1@(LitExpr a1), e2@(AppExpr _ _)] = (eval e2) >>= (\e2 -> numericBinary op [e1, e2])
---numericBinary op [e1@(AppExpr _ _), e2@(LitExpr a1)] = (eval e1) >>= (\e1 -> numericBinary op [e1, e2])
-numericBinary op (e1:_) = throwError $ TypeMissmatch "expected number" e1 
-
-harvestSymbols :: [Func] -> SymbolTable -> SymbolTable
-harvestSymbols [] s = s
-harvestSymbols (f:fs) s@(SymbolTable m) = harvestSymbols fs (defineSym s (funcName f) (SymFunc f))
-
-mainExpr :: SymbolTable -> Maybe Expr
-mainExpr t@(SymbolTable m) = do
-    findFunc t "main" >>= firstPat . funcPatterns
-  where
-    firstPat ((Pattern [] e):ps) = Just e
-    firstPat _ = Nothing
-
-data SymEntry = SymFunc Func
-              | SymBinding Expr
-              deriving (Show)
-
-data SymbolTable = SymbolTable (M.Map String SymEntry)
-                 deriving (Show)
-
-newSymT :: SymbolTable 
-newSymT = SymbolTable M.empty
-
-defineSym :: SymbolTable -> Name -> SymEntry -> SymbolTable
-defineSym (SymbolTable t) k s = SymbolTable $ M.insert k s t
-
-findEntry :: SymbolTable -> Name -> Maybe SymEntry
-findEntry sym@(SymbolTable t) k = M.lookup k t
-
-findFunc :: SymbolTable -> Name -> Maybe Func
-findFunc sym@(SymbolTable t) k = 
-    case M.lookup k t of
-        Just (SymFunc f) -> Just f
-        _ -> Nothing
-
+-- |Find out whether an expr is a variable bool literal string or list
 isAtom :: Expr -> Bool
 isAtom (VarExpr _) = True
 isAtom (BoolExpr _) = True
 isAtom (LitExpr _) = True
 isAtom (ListExpr _) = True
+isAtom (StrExpr _) = True
 isAtom _ = False
 
-getId :: Expr -> Expr
-getId e@(VarExpr n) = e
-
-getName :: Expr -> Name
-getName (VarExpr n) = n
-getName _ = ""
-
-isId :: Expr -> Bool
-isId (VarExpr _) = True
-isId _ = False
-
-isCurry :: Expr -> Bool
-isCurry (CurryExpr _ _) = True
-isCurry _ = False
-
-isFunc :: Expr -> Bool
-isFunc (LamExpr _ _) = True
-isFunc _ = False
-
-getFunction :: Expr -> Expr
-getFunction (AppExpr e e1) = getFunction e
-getFunction l@(LamExpr _ _) = l
-
-getArgument :: Expr -> Expr
-getArgument (AppExpr _ e) = e
-
-getBody :: Expr -> Expr
-getBody (LamExpr _ b) = b
-
-isApp :: Expr -> Bool
-isApp (AppExpr _ _) = True
-isApp _ = False
+-- |Does an evaluated expression equal ture?
+holds :: Env -> Expr -> ThrowError Bool
+holds env e = do
+    case eval env e of
+        Right (BoolExpr True) -> return $ True
+        Right (BoolExpr False) -> return $ False
+        Right e -> throwError $ ConditionalNotABool e
+        Left error -> throwError $ error
 

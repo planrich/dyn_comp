@@ -1,3 +1,0 @@
-
-fn main:
-=; add 17 (div 3 (div 1 (mod 100 3)))

@@ -18,8 +18,6 @@ import Control.Monad
 import TokenDef
 import ParserTypes
 
-
-
 parseFile :: String -> IO (Either ParseError Program)
 parseFile filePath = parseFromFile file filePath
 
@@ -63,28 +61,38 @@ pattern = do
 
 expr :: Parser Expr
 expr = choice
-    [ funExpr
+    [ lamExpr
+    , condExpr
+    , funExpr
     ]
     <?> "expression"
+
+lamExpr :: Parser Expr
+lamExpr = do
+    reservedOp "\\"
+    id <- identifier
+    reservedOp "->"
+    body' <- expr
+    return $ LamExpr id body' 
+
+condExpr :: Parser Expr
+condExpr = do
+    reserved "if"
+    cond <- expr
+    reserved "then"
+    alt1 <- expr
+    reserved "else"
+    alt2 <- expr
+    return $ CondExpr cond alt1 alt2
 
 funExpr :: Parser Expr
 funExpr = do 
     atoms <- many atomExpr
     return $ foldl1 AppExpr atoms
---try (buildExpressionParser table atomExpr)
-  where
-    table = [ [Infix (do{ reservedOp "*"; return $ (AppExpr . AppExpr (VarExpr "*")) }) AssocLeft]
-            , [Infix (do{ reservedOp "/"; return $ (AppExpr . AppExpr (VarExpr "/")) }) AssocLeft]
-            , [Infix (do{ reservedOp "+"; return $ (AppExpr . AppExpr (VarExpr "+")) }) AssocLeft]
-            , [Infix (do{ reservedOp "-"; return $ (AppExpr . AppExpr (VarExpr "-")) }) AssocLeft]
-            ]
-    --atoms <- many1 atomExpr
-    --return $ foldl1 AppExpr atoms
 
 atomExpr :: Parser Expr
 atomExpr = try $ choice
-    [ builtinExpr
-    , litExpr
+    [ litExpr
     , boolExpr
     , varExpr
     , listExpr
@@ -101,19 +109,12 @@ listExpr :: Parser Expr
 listExpr = 
     (try nilExpr)
     <|> do
-        elems <- between (reservedOp "[") (reservedOp "]") (sepBy atomExpr (reservedOp ","))
+        elems <- between (reservedOp "[") (reservedOp "]") (sepBy expr (reservedOp ","))
         return $ ListExpr elems
 
-builtinExpr :: Parser Expr
-builtinExpr = 
-    do  (symbol "+" >>= return . VarExpr)
-    <|> (symbol "-" >>= return . VarExpr)
-    <|> (symbol "*" >>= return . VarExpr)
-    <|> (symbol "/" >>= return . VarExpr)
-
 boolExpr :: Parser Expr
-boolExpr = do{ symbol "true"; return $ BoolExpr True}
-    <|> do { symbol "false"; return $ BoolExpr False}
+boolExpr = do{ reserved "true"; return $ BoolExpr True}
+    <|> do { reserved "false"; return $ BoolExpr False}
 
 litExpr :: Parser Expr
 litExpr = do
@@ -127,7 +128,16 @@ varExpr = do
     return $ VarExpr id
 
 binding :: Parser Binding
-binding = banonym <|> bvar <|> bnumber
+binding = banonym <|> bvar <|> bnumber <|> bbool
+
+bbool :: Parser Binding
+bbool = 
+    do
+      reserved "true"
+      return $ BBool True
+    <|> do
+      reserved "false"
+      return $ BBool False
 
 bvar :: Parser Binding
 bvar = do

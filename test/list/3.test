@@ -1,7 +1,0 @@
-
-fn main:
-=; square 3
-
-fn square: int
-= x ; mul x x
-

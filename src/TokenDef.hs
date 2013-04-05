@@ -20,7 +20,7 @@ am = emptyDef
       , opStart = opLetter am
       , opLetter = oneOf ":=\\->/|~.*[]"
       , reservedOpNames = ["::","=","\\","->","=>","/\\","\\/","|~|",".",":","*","[]",","]  
-      , reservedNames = [ "fn" ]
+      , reservedNames = [ "fn", "if", "then", "else", "true", "false" ]
       , caseSensitive  = True
       }
 

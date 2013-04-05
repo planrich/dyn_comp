@@ -40,3 +40,4 @@ interpret prog = do
                 Left msg -> do
                     putStrLn $ show msg
         Nothing -> putStrLn "could not find main!"
+
