@@ -42,9 +42,13 @@ apply env a@(AppExpr _ _) args = (eval env a) >>= (\a -> apply env a args)
 -- ^Apply a function context to another arg. Basically there are two options:
 -- The arguments suffice the function -> function is executed
 -- There are too little arguemts -> context swallows argument and proceeds
-apply env c@(FuncCtx f args) arg
-    | (length args) + 1 == builtinParamCount f = (eval env arg) >>= (\arg -> (builtinFunction f) (args ++ [arg]))
-    | otherwise = (eval env arg) >>= (\arg -> return $ FuncCtx f (args ++ [arg]))
+apply env c@(FuncCtx bi@(Builtin params f)  args) arg
+    | (length args) + 1 == params = (eval env arg) >>= (\arg -> f (args ++ [arg]))
+    | otherwise = (eval env arg) >>= (\arg -> return $ FuncCtx bi (args ++ [arg]))
+-- ^Of course there is a defined function
+apply env c@(FuncCtx de@(Defined params f)  args) arg
+    | (length args) + 1 == params = (eval env arg) >>= (\arg -> evalPattern (funcName f) env (args ++ [arg]) (funcPatterns f))
+    | otherwise = (eval env arg) >>= (\arg -> return $ FuncCtx de (args ++ [arg]))
 -- ^At the bottom of a recursion an AppExpr might contain a Builtin or call any other
 -- function that is defined within the environment.
 apply env (VarExpr n) args =
@@ -58,6 +62,8 @@ apply env (LamExpr n e) arg = (subs e n arg) >>= eval env
 -- ^This is most likely an error.
 apply env func args = throwError $ CannotApply func args
 
+--execFunction :: Env -> Func -> Expr -> ThrowError Expr
+--execFunction env func expr' =
 applyFromEnv :: Env -> Name -> Expr -> ThrowError Expr
 applyFromEnv env name arg = do
     mFunc <- return $ findFunc env name
@@ -65,29 +71,24 @@ applyFromEnv env name arg = do
         Nothing -> throwError $ SymbolNotFound name
         Just func -> do
             case funcArgCount func of
-                0 -> evalPattern env [] (funcPatterns func) >>= (\expr -> apply env expr arg)
-                1 -> evalPattern env [arg] (funcPatterns func)
-                --n -> FuncCtx 
-              {-
-    case argCount of
-      0 -> do
-        pat <- return ((match [] (funcPatterns func))
-        eval env expr
-    if argCount == 1
-      then do
-        case pat of
-            Just ps@(Pattern binding expr) -> eval env (wrapLambdas binding expr)
-            _ -> case sym of
-                    Nothing -> throwError $ SymbolNotFound n
-                    _ -> throwError $ PatternFallthrough n [arg]
-      else
-      -}
+                0 -> evalPattern name env [] (funcPatterns func) >>= (\expr -> apply env expr arg)
+                1 -> evalPattern name env [arg] (funcPatterns func)
+                n -> return $ FuncCtx (Defined n func) [arg]
 
-evalPattern :: Env -> [Expr] -> [Pattern] -> ThrowError Expr
-evalPattern env args (p:ps) = undefined
+evalPattern :: Name -> Env -> [Expr] -> [Pattern] -> ThrowError Expr
+evalPattern fname _ es [] = throwError $ PatternFallthrough fname es
+evalPattern fname env es (p:ps) = do
+    case matchPattern p es of
+        Just _ -> eval env (wrapLambdas fname (patternBindings p) es (patternExpr p))
+        --Just _ -> throwError $ Fallback $ show (wrapLambdas fname (patternBindings p) es (patternExpr p)) ++ (show fname) ++(show es) ++ (show (patternBindings p)) ++ (show (patternExpr p))
+        Nothing -> trynext
+  where
+    trynext = evalPattern fname env es ps
 
-wrapLambdas :: [Binding] -> [Expr] -> Expr -> Expr
-wrapLambdas (b:bs) (e:es) ex = undefined
+wrapLambdas :: Name -> [Binding] -> [Expr] -> Expr -> Expr
+wrapLambdas fname [] [] ex = ex
+wrapLambdas fname (b@(BVar name):bs) (e:es) ex = (AppExpr (wrapLambdas fname bs es (LamExpr name ex)) e)
+wrapLambdas fname (_:bs) (e:es) ex = wrapLambdas fname bs es ex
 
 -- |Subsitute a variable in an expression with another expression
 subs :: Expr -> Name -> Expr -> ThrowError Expr

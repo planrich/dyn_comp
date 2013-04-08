@@ -42,14 +42,6 @@ fn test_list:
 fn test_list_head:
 =; assert_eq (head [(head [1])]) 1
 
--- FUNC CALL
-
-fn test_func_call:
-=; assert_eq (square 3) 9
-
-fn square: int
-= x ; mul x x
-
 -- CONDITIONAL
 
 fn test_cond_true:
@@ -68,6 +60,14 @@ fn test_lambda_nested:
 
 fn test_lambda_deeply_nested:
 =; assert_eq ( (\d -> (\c -> (\b -> (\a -> mul d (add a (add b c))) 1) 1) 1) 10) 30
+
+-- FUNC CALL
+
+fn test_func_call:
+=; assert_eq (square 3) 9
+
+fn square: int
+= x ; mul x x
 
 -- PATTERN MATCHING
 

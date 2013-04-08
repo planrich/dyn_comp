@@ -7,6 +7,7 @@ module ParserTypes
     , Pattern (..)
     , Expr (..)
     , Binding (..)
+    , matchPattern
     , bindingName
     , funcArgCount
     , ThrowError
@@ -30,7 +31,9 @@ data Func = Func { funcName :: Name
                  }
           deriving (Show)
 
-data Pattern = Pattern [Binding] Expr
+data Pattern = Pattern { patternBindings :: [Binding]
+                       , patternExpr :: Expr
+                       }
              deriving (Show)
 
 data Expr = AppExpr Expr Expr
@@ -46,8 +49,6 @@ data Expr = AppExpr Expr Expr
           -- with the parameter. When going back the recursion the parameters are saved and
           -- when the param count the builtin needs is reached the function is executed.
           | FuncCtx Builtin [Expr]
-          -- |deprecated
-          | CurryExpr Builtin Expr
 
 data Binding = BNumber Int
              | BString String
@@ -59,6 +60,9 @@ data Binding = BNumber Int
 
 data Builtin = Builtin { builtinParamCount :: Int
                        , builtinFunction :: ([Expr] -> ThrowError Expr)
+                       }
+             | Defined { definedParamCount :: Int
+                       , definedFunction :: Func
                        }
 
 data Type = TInt
@@ -93,10 +97,11 @@ instance Show Expr where
     show (VarExpr n) = "\"" ++ n ++ "\""
     show (BoolExpr True) = "*(t)"
     show (BoolExpr False) = "*(f)"
-    show (CurryExpr b e) = "@(" ++ (show e) ++ ")"
     show (ListExpr (ls)) = "[" ++ (foldr (++) "" (map ((++ ",") . show) ls)) ++ "]"
     show (CondExpr e a1 a2) = "{?" ++ (show e) ++ " either " ++ (show a1) ++ " or " ++ (show a2) ++ "}"
     show (LamExpr name expr) = "\\" ++ name ++ " -> " ++ (show expr)
+    show (FuncCtx (Defined n f) expr) = "@(defined: " ++ funcName f ++ " " ++ (show expr) ++ ")"
+    show (FuncCtx (Builtin n f) expr) = "@(builtin: " ++ (show expr) ++ ")"
 
 instance Eq Expr where
     (==) (AppExpr e1 e2) (AppExpr e3 e4) = e1 == e3 && e2 == e4
