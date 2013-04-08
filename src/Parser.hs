@@ -32,8 +32,10 @@ parens = P.parens lexer
 semi = P.semi lexer
 identifier = P.identifier lexer
 reserved = P.reserved lexer
+operator = P.operator lexer
 reservedOp = P.reservedOp lexer
 squares = P.squares lexer
+stringLiteral = P.stringLiteral lexer
 
 file :: Parser Program
 file = do
@@ -96,6 +98,7 @@ atomExpr = try $ choice
     , boolExpr
     , varExpr
     , listExpr
+    , strExpr
     , (parens $ expr)
     ]
 
@@ -109,8 +112,13 @@ listExpr :: Parser Expr
 listExpr = 
     (try nilExpr)
     <|> do
-        elems <- between (reservedOp "[") (reservedOp "]") (sepBy expr (reservedOp ","))
+        elems <- squares (sepBy expr (reservedOp ","))
         return $ ListExpr elems
+
+strExpr :: Parser Expr
+strExpr = do
+    str <- stringLiteral
+    return $ StrExpr str
 
 boolExpr :: Parser Expr
 boolExpr = do{ reserved "true"; return $ BoolExpr True}
@@ -128,7 +136,20 @@ varExpr = do
     return $ VarExpr id
 
 binding :: Parser Binding
-binding = banonym <|> bvar <|> bnumber <|> bbool
+binding = banonym <|> bnumber <|> bbool <|> bvar <|> bheadtail <|> bstring
+
+bstring :: Parser Binding
+bstring = do
+    str <- stringLiteral 
+    return $ BString str
+        
+bheadtail :: Parser Binding
+bheadtail = do
+    parens $ do
+        head <- binding
+        reservedOp ":"
+        tail <- binding
+        return $ BList (head,tail)
 
 bbool :: Parser Binding
 bbool = 
@@ -169,4 +190,3 @@ typ = do
       <|> do
           typ' <- squares typ
           return $ TList typ'
-

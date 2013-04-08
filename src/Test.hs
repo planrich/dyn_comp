@@ -6,6 +6,8 @@ module Main
 import Parser
 import ParserTypes
 import Interpretor
+import Environment
+import Builtins
 import System.IO
 import System.Environment
 

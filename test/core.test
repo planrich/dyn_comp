@@ -34,14 +34,6 @@ fn test_bool_type_missmatch:
 fn test_arith:
 = ; assert_eq (add (add 1 (mul 2 3)) 3) 10
 
--- LIST
-
-fn test_list:
-=; assert_eq [1,2,3,4] [1,2,3,4]
-
-fn test_list_head:
-=; assert_eq (head [(head [1])]) 1
-
 -- CONDITIONAL
 
 fn test_cond_true:
@@ -93,4 +85,30 @@ fn naiv_add:
 = 1 1 ; 2
 = 3 3 ; 6
 = 4 2 ; 6
+
+-- LIST & STRING
+
+fn test_list:
+=; assert_eq [1,2,3,4] [1,2,3,4]
+
+fn test_head_simple:
+=; assert_eq (head [33]) 33
+
+fn test_head:
+=; assert_eq (head (head [[[33]]])) [33]
+
+fn test_tail_simple:
+=; assert_eq (tail [1,2,3]) [2,3]
+
+fn test_tail:
+=; assert_eq (tail (tail [1,2,3])) [3]
+
+fn test_list_head:
+=; assert_eq (head [(head [1])]) 1
+
+fn head:
+= (l:ls) ; l
+
+fn tail:
+= (l:ls) ; ls
 

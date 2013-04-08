@@ -11,7 +11,10 @@ import Control.Monad
 
 import Parser
 import ParserTypes
+
 import Interpretor
+import Environment
+import Builtins
 
 main = do
     arguments <- getArgs
