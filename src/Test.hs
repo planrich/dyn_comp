@@ -33,7 +33,7 @@ runSuits :: String -> [String] -> IO ()
 runSuits _ [] = return ()
 runSuits folder (t:ts) = do
     putStr $ "running test suite '" ++ t ++ "': "
-    filePath <- return $ folder ++ "/" ++ t ++ ".test"
+    filePath <- return $ t --folder ++ "/" ++ t ++ ".test"
     result <- parseFile filePath
     case result of
         Left err -> do
@@ -63,13 +63,13 @@ runTests ((n,e):es) env
            putStr "E"
            runTests es env >>= return . (:) (TestResult False n ("unexpected error: " ++ (show err)))
          Right computed -> do
-           case computed == (goal e) of
+           case computed == (goal env e) of
              True -> do
                putStr "."
                runTests es env >>= return . (:) (TestResult True n "")
              False -> do
                putStr "E"
-               runTests es env >>= return . (:) (TestResult False n ("expected: " ++ (show (goal e)) ++ "\ngot: " ++ (show computed)))
+               runTests es env >>= return . (:) (TestResult False n ("expected: " ++ (show (goal env e)) ++ "\ngot: " ++ (show computed)))
     | isAssertTypeMissmatch e = do
        result <- return $ eval env (sndAppExpr e)
        case result of
@@ -99,9 +99,12 @@ toEval :: Expr -> Expr
 toEval (AppExpr (AppExpr (VarExpr _) e) _) = e
 toEval _ = undefined
 
-goal :: Expr -> Expr
-goal (AppExpr (AppExpr (VarExpr _) _) e) = e
-goal _ = undefined
+goal :: Env -> Expr -> Expr
+goal env (AppExpr (AppExpr (VarExpr _) _) e) = 
+    case eval env e of
+        Right computed -> computed
+        _ -> error $ "error evaluating " ++ (show e)
+goal env _ = undefined
 
 inspect :: Name -> TestResult -> IO ()
 inspect suit (TestResult False name msg) = do

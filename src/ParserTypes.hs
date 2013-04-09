@@ -7,12 +7,15 @@ module ParserTypes
     , Pattern (..)
     , Expr (..)
     , Binding (..)
-    , matchPattern
-    , bindingName
-    , funcArgCount
     , ThrowError
     , EvalError (..)
     , Builtin (..)
+    , matchPattern
+    , bindingName
+    , funcArgCount
+    , isListExpr
+    , listHead
+    , listTail
     )
   where
 
@@ -42,6 +45,7 @@ data Expr = AppExpr Expr Expr
           | LitExpr Integer
           | ListExpr [Expr]
           | BoolExpr Bool
+          | CharExpr Char
           | StrExpr String
           | CondExpr Expr Expr Expr
           -- |The function context might be the most different expression from the others.
@@ -95,6 +99,7 @@ instance Show Expr where
     show (AppExpr e1 e2) = " #(" ++ (show e1) ++ " " ++ (show e2) ++ ")"
     show (LitExpr i) = "$(" ++ (show i) ++ ")"
     show (VarExpr n) = "\"" ++ n ++ "\""
+    show (CharExpr c) = ('\'':(c:"'"))
     show (BoolExpr True) = "*(t)"
     show (BoolExpr False) = "*(f)"
     show (ListExpr (ls)) = "[" ++ (foldr (++) "" (map ((++ ",") . show) ls)) ++ "]"
@@ -109,7 +114,13 @@ instance Eq Expr where
     (==) (VarExpr n) (VarExpr n2) = n == n2
     (==) (BoolExpr b) (BoolExpr b2) = b == b2
     (==) (ListExpr ll) (ListExpr lr) = ll == lr
+    (==) (FuncCtx (Defined ac1 f1) p1) (FuncCtx (Defined ac2 f2) p2) =
+        ac1 == ac2 && (funcArgCount f1) == (funcArgCount f2) && (funcName f1) == (funcName f2) && p1 == p2
     (==) _ _ = False
+
+isBindingVar :: Binding -> Bool
+isBindingVar (BVar _) = True
+isBindingVar _ = False
 
 bindingName :: Binding -> Maybe String
 bindingName (BVar s) = Just s
@@ -126,16 +137,23 @@ matchPattern (Pattern (b:bs) expr) (e:es)
     | otherwise = Nothing
 matchPattern _ _ = Nothing
 
---firstPat ((Pattern [] e):ps) = Just e
---firstPat _ = Nothing
-
 matchBinding :: Binding -> Expr -> Bool
 matchBinding BAnon _ = True
 matchBinding (BVar _) _ = True
 matchBinding (BNumber b) (LitExpr l) = b == fromIntegral l
 matchBinding (BBool b1) (BoolExpr b2) = b1 == b2
+matchBinding (BList (bh,bt)) ex
+    | isListExpr ex && listNotEmpty ex = 
+        if matchBinding bh (listHead ex) && matchBinding bt (listTail ex)
+        then True
+        else False
+    | otherwise = False
 matchBinding _ _ = False
 
+listNotEmpty :: Expr -> Bool
+listNotEmpty (ListExpr []) = False
+listNotEmpty (ListExpr _) = True
+listNotEmpty _ = False
 -- |How many arguments must a specific function get to be executed?
 --  It is assumed that every pattern of a function has the
 --  same amount of bindings.
@@ -145,4 +163,18 @@ funcArgCount (Func name types (p:ps)) = patternArgCount p
 patternArgCount :: Pattern -> Int
 patternArgCount (Pattern bindings _) = length bindings
 
+isListExpr :: Expr -> Bool
+isListExpr (ListExpr _) = True
+isListExpr (StrExpr _) = True
+isListExpr _ = False
+
+listHead :: Expr -> Expr
+listHead (ListExpr (e:_)) = e
+listHead (StrExpr (e:_)) = CharExpr e
+listHead e = error $ "called listHead on " ++ (show e)
+
+listTail :: Expr -> Expr
+listTail (ListExpr (_:es)) = ListExpr es
+listTail (StrExpr (_:es)) = StrExpr es
+listTail e = error $ "called listTail on " ++ (show e)
 

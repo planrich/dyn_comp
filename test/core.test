@@ -107,8 +107,24 @@ fn test_list_head:
 =; assert_eq (head [(head [1])]) 1
 
 fn head:
-= (l:ls) ; l
+= (l:_) ; l
 
 fn tail:
-= (l:ls) ; ls
+= (_:ls) ; ls
 
+-- FUNC
+
+fn test_curry:
+=; assert_eq head head
+
+fn test_curry_multiarg:
+=; assert_eq some_multi_arg some_multi_arg
+
+fn test_curry_mutliarg_somebound:
+=; assert_eq (some_multi_arg 1 2 3) (some_multi_arg 1 2 3)
+
+fn test_curry_mutliarg_allbound:
+=; assert_eq (some_multi_arg 1 2 3 4 5) (some_multi_arg 1 2 3 4 5)
+
+fn some_multi_arg:
+= a b c d e ; mul d e

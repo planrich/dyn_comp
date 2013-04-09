@@ -20,6 +20,7 @@ eval env (VarExpr n) = do
     mEntry <- return $ findEntry env n
     case mEntry of
         (Just (SymBinding expr)) -> eval env expr
+        (Just (SymFunc func)) -> return $ FuncCtx (Defined (funcArgCount func) func) []
         Nothing -> throwError $ SymbolNotFound (n)
 -- ^ A conditional expression
 eval env (CondExpr fact alt1 alt2) = do
@@ -52,7 +53,7 @@ apply env (VarExpr n) args =
         Just (Builtin 1 f) -> (eval env args) >>= (\args -> f [args])
         -- n-ary function must harvest additional n-1 parameters
         Just b -> (eval env args) >>= (\args -> return $ FuncCtx b [args])
-        Nothing -> applyFromEnv env n args
+        Nothing -> (eval env args) >>= (\args -> applyFromEnv env n args)
 apply env (LamExpr n e) arg = (subs e n arg) >>= eval env
 -- ^This is most likely an error.
 apply env func args = throwError $ CannotApply func args
@@ -87,6 +88,33 @@ matchAndEvalPatternExpr fname env es (p:ps) = do
 wrapLambdas :: Name -> [Binding] -> [Expr] -> Expr -> Expr
 wrapLambdas fname [] [] ex = ex
 wrapLambdas fname (b@(BVar name):bs) (e:es) ex = (AppExpr (wrapLambdas fname bs es (LamExpr name ex)) e)
+-- ^Pattern match a lists head and tail.
+-- = (a:as) ; mul a a
+-- is wrapped as following:
+-- #((\as -> #((\a -> mul a a) (head p1))) (tail p1))
+-- the given pattern expression is wrapped around a lambda
+-- with the heads var name and applied to to the head of
+-- the given list or string as p1.
+-- then this expression is wrapped around a lambda with the
+-- tails name of p1 and applied to the tail of p1.
+-- the next patterns in wrapLambdas handle the variations of the list matching
+wrapLambdas fname ((BList ((BVar head'),(BVar tail'))):bs) es'@(e:es) ex
+    | isListExpr e =
+        (AppExpr 
+            (LamExpr tail'
+                (AppExpr (wrapLambdas fname bs es (LamExpr head' ex)) (listHead e))
+            )
+            (listTail e)
+        )
+    | otherwise = ex-- throwError $ Fallback "could not match " ++ (show e) ++ " agains a list or string"
+wrapLambdas fname ((BList ((BVar head'),_)):bs) es'@(e:es) ex
+    | isListExpr e =
+            (AppExpr (wrapLambdas fname bs es (LamExpr head' ex)) (listHead e))
+    | otherwise = ex --throwError $ Fallback "could not match " ++ (show e) ++ " agains a list or string"
+wrapLambdas fname ((BList (_,(BVar tail'))):bs) es'@(e:es) ex
+    | isListExpr e =
+        (AppExpr (wrapLambdas fname bs es (LamExpr tail' ex)) (listTail e))
+    | otherwise = ex --throwError $ Fallback "could not match " ++ (show e) ++ " agains a list or string"
 wrapLambdas fname (_:bs) (e:es) ex = wrapLambdas fname bs es ex
 
 -- |Subsitute a variable in an expression with another expression
