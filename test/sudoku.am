@@ -1,0 +1,77 @@
+
+
+fn main:
+=; solve [ [1,2,0,4,0,6,0,8,9] 
+         , [1,2,3,4,5,6,7,8,9]
+         , [1,2,3,4,0,6,7,8,9]
+         , [1,2,3,4,5,6,7,8,9]
+         , [1,2,3,4,5,6,7,8,9]
+         , [1,2,3,4,5,6,7,8,9]
+         , [1,2,3,4,5,6,7,8,9]
+         , [1,2,3,4,5,6,7,8,9]
+         , [1,2,3,4,5,6,7,8,9]
+         ]
+
+fn solve:
+= s ; line_valid (line s 0)
+
+fn substitue:
+= sudoku number x y ; 1
+
+fn line:
+= s i ; at s i
+
+--| get a column of a nested list
+fn col:
+= sudoku i ; scol sudoku [] i
+-- private method
+fn scol:
+= [] c _ ; c
+= (s:ss) c i ; scol ss (appe c (at s i)) i
+
+--| replace an element in a list at the specified parameter
+fn rep:
+= s i e ; prep s [] i e
+-- private method
+fn prep:
+= [] r _ _ ; r
+= (s:ss) r 0 e ; prep ss (appe r e) (sub 0 1) e
+= (s:ss) r i e ; prep ss (appe r s) (sub i 1) e
+
+
+-- if a malformed index is given this function most likley throws an error.
+-- this is fair enough for a prototype.
+--| get an element at the specified postion in a list
+fn at:
+= [] _ ; fatal "function 'at' could not extract with given index. that means that the index was out of bounds"
+= (l:ls) 0 ; l
+= (l:ls) i ; at ls (sub i 1)
+
+fn valid:
+= sudoku ; true
+
+-- a sudoku line is valid iff every number from 1 to 9 only occurs max once
+fn line_valid:
+= line ; pline_valid line 1
+-- private method
+fn pline_valid:
+= list 10 ; true
+= list i ; if less_equal (list_count_expr list i) 1 
+           then pline_valid list (add i 1) 
+           else false
+
+fn list_count_expr:
+= list e ; plist_count_expr list e 0
+-- private method
+fn plist_count_expr:
+= [] _ i ; i
+= (l:ls) e i ; if equal l e
+                 then plist_count_expr ls e (add i 1)
+                 else plist_count_expr ls e i
+
+fn list_len:
+= l ; plist_len l 0
+fn plist_len:
+= [] n ; n
+= (l:ls) n ; plist_len ls (add n 1)
+

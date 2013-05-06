@@ -1,0 +1,22 @@
+
+Ich möchte in diesem Semeter einen Interpretor implementieren der eine funktionale Sourcesprache hat.
+Als Ziel meiner Arbeit moechte ich gerne eine kleine Applikation in der Sourcesprache implementieren.
+Beispielsweise einen Sudokusolver.
+
+Implementierungssprache des Interpretors: Haskell
+Parsing utility: Parsec
+
+Aufwandsabschätzung:
+
+Lexing/Parsing: 15 h
+Arithmetische Ausdruecke: 8 h
+Funktionsaufrufe: 12 h
+Pattern Matching: 14 h
+Listen & String Operationen: 12 h
+Implementierung der App. in der Sourcesprache: 10 h
+Vorbereitung Abgabe und Präsentation: 4 h
+----------------------------------------
+Summe: 75 h
+
+Ich habe schon vor den Osterferien begonnen und kann schon arithmetische Ausdruecke berechnen 
+und arbeite gerade am Funktionsaufruf & Pattern Matching.

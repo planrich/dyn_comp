@@ -60,6 +60,7 @@ data Binding = BNumber Int
              | BAnon
              | BVar String
              | BList (Binding,Binding)
+             | BNil
              deriving (Show)
 
 data Builtin = Builtin { builtinParamCount :: Int
@@ -92,7 +93,7 @@ instance Show EvalError where
     show (CannotApply e1 e2) = "cannot apply these two expressions. 1: " ++ (show e1) ++ ". 2: " ++ (show e2)
 
 instance Error EvalError where
-    noMsg = Fallback "error"
+    noMsg = Fallback "no message provided"
     strMsg = Fallback
 
 instance Show Expr where
@@ -100,6 +101,7 @@ instance Show Expr where
     show (LitExpr i) = "$(" ++ (show i) ++ ")"
     show (VarExpr n) = "\"" ++ n ++ "\""
     show (CharExpr c) = ('\'':(c:"'"))
+    show (StrExpr s) = ('"':s) ++ "\""
     show (BoolExpr True) = "*(t)"
     show (BoolExpr False) = "*(f)"
     show (ListExpr (ls)) = "[" ++ (foldr (++) "" (map ((++ ",") . show) ls)) ++ "]"
@@ -107,6 +109,10 @@ instance Show Expr where
     show (LamExpr name expr) = "\\" ++ name ++ " -> " ++ (show expr)
     show (FuncCtx (Defined n f) expr) = "@(defined: " ++ funcName f ++ " " ++ (show expr) ++ ")"
     show (FuncCtx (Builtin n f) expr) = "@(builtin: " ++ (show expr) ++ ")"
+
+instance Ord Expr where
+    compare (LitExpr i) (LitExpr j) = compare i j
+    compare e1 e2 = error ("tried to compare " ++ (show e1) ++ " with " ++ (show e2))
 
 instance Eq Expr where
     (==) (AppExpr e1 e2) (AppExpr e3 e4) = e1 == e3 && e2 == e4
@@ -148,6 +154,7 @@ matchBinding (BList (bh,bt)) ex
         then True
         else False
     | otherwise = False
+matchBinding BNil (ListExpr []) = True
 matchBinding _ _ = False
 
 listNotEmpty :: Expr -> Bool

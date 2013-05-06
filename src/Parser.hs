@@ -136,7 +136,13 @@ varExpr = do
     return $ VarExpr id
 
 binding :: Parser Binding
-binding = banonym <|> bnumber <|> bbool <|> bvar <|> bheadtail <|> bstring
+binding = banonym <|> bnumber <|> bbool <|> bvar <|> bheadtail <|> bnil <|> bstring
+
+bnil :: Parser Binding
+bnil = do
+    symbol "["
+    symbol "]"
+    return $ BNil
 
 bstring :: Parser Binding
 bstring = do

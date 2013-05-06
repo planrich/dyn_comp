@@ -22,6 +22,7 @@ eval env (VarExpr n) = do
         (Just (SymBinding expr)) -> eval env expr
         (Just (SymFunc func)) -> return $ FuncCtx (Defined (funcArgCount func) func) []
         Nothing -> throwError $ SymbolNotFound (n)
+
 -- ^ A conditional expression
 eval env (CondExpr fact alt1 alt2) = do
     case holds env fact of
@@ -125,6 +126,12 @@ subs (LamExpr n e) old new = liftM (LamExpr n) (subs e old new)
 subs v@(VarExpr x) old new
     | old == x = return new -- replace because they really match
     | otherwise = return v
+subs (CondExpr old_if old_then old_else) old new =  (subs old_if old new) >>= 
+                                             (\new_if -> (subs old_then old new) >>= 
+                                              (\new_then -> (subs old_else old new) >>=
+                                               (\new_else -> return $ CondExpr new_if new_then new_else)
+                                              )
+                                             )
 subs old _ _ = return old
 
 -- |Find out whether an expr is a variable bool literal string or list
