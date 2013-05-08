@@ -35,7 +35,7 @@ interpret prog = do
     mMain <- return $ mainExpr syms
     case mMain of
         Just e -> do
-            putStrLn $ "interpret " ++ (show e)
+            --putStrLn $ "interpret " ++ (show e)
             out <- return $ eval syms e 
             case out of
                 Right out -> do 

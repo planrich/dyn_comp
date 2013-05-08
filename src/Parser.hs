@@ -96,11 +96,22 @@ atomExpr :: Parser Expr
 atomExpr = try $ choice
     [ litExpr
     , boolExpr
+    , letExpr
     , varExpr
     , listExpr
     , strExpr
     , (parens $ expr)
     ]
+
+letExpr :: Parser Expr
+letExpr = do
+    reserved "let"
+    id <- identifier
+    reservedOp ":"
+    def <- expr
+    reserved "in"
+    e <- expr
+    return $ LetExpr id def e
 
 nilExpr :: Parser Expr
 nilExpr = do

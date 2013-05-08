@@ -1,25 +1,56 @@
 
-
 fn sudoku_correct:
-= sudoku ; true
+= s ; reduce holds 
+        (map 
+            (\x -> psudoku_check s (sudoku_line_correct) (x)) 
+            [(at), (sudoku_col), (sudoku_block)]
+        ) true
 
-fn sudoku_check:
-= s check extract; reduce holds (map (\x -> (check (extract s x))) (for 0 8)) true
+--| a sudoku is considered valid if every column, row and block contains every number from 1-9 only once.
+--  To allow solving of the sudoku 0 can be contained instead of the actual numbers which means that
+--  the position can be exchanged by the solver
+fn sudoku_valid:
+= s ; reduce holds 
+        (map 
+            (\x -> psudoku_check s (sudoku_line_valid) (x)) 
+            [(at), (sudoku_col), (sudoku_block)]
+        ) true
+
+fn psudoku_check:
+= s check extract ; reduce holds (map (\x -> (check (extract s x))) (for 0 8)) true
 
 fn holds:
 = a b ; and a b
 
 fn sudoku_solve:
-= s ; reduce holds 
-        (map 
-            (\x -> sudoku_check s (sudoku_line_valid) (x)) 
-            [(at), (sudoku_col), (sudoku_block)]
-        ) true
+= s ; if sudoku_valid s
+      then psudoku_solve s 0 0
+      else fatal "sudoku provided is not valid, cannot solve it" --sudoku_solve (sudoku_step s)
+-- private method
+fn psudoku_solve:
+= s 9 9; s
+= s r 9; psudoku_solve s (add r 1) 0
+= s r c; if equal (sudoku_at s r c) 0
+         then sudoku_branch s r c 1
+         else psudoku_solve s r (add c 1)
 
+fn sudoku_branch:
+= s r c 10 ; fatal [s,r,c] -- cannot solve. headed into a local deadlock
+= s r c n ; let subs: sudoku_substitue s r c n in
+            if sudoku_valid subs
+            then let solv_s: (psudoku_solve subs r (add c 1)) in
+                 if sudoku_correct solv_s
+                 then solv_s --fatal "solved" --(psudoku_solve (sudoku_substitue s r c n) r c) -- double calc because there is no 'let' or 'where' yet
+                 else if sudoku_valid solv_s
+                      then psudoku_solve solv_s r (add c 1)
+                      else sudoku_branch subs r c (add n 1)
+            else sudoku_branch s r c (add n 1)
 
---sudoku_check s sudoku_line_valid --reduce holds (map (\x -> and (greater_equal x 0) (less_equal x 9)) [0,5,9,9,9]) true
+fn sudoku_at:
+= s r c ; (at (at s r) c)
 
---sudoku_check s sudoku_line_valid --line_valid (sudoku_line s 0)
+fn sudoku_step:
+= s ; s
 
 fn sudoku_block:
 = s 0 ; pblock s 0 0 3 3 []
@@ -37,9 +68,8 @@ fn pblock:
 = s _ _ _ 0 list ; list
 = s x y c l list ; pblock s x (add y 1) c (sub l 1) (concat list (take c (drop x (at s y))))
 
-
-fn substitue:
-= sudoku number x y ; 1
+fn sudoku_substitue:
+= s r c n ; rep s r (rep (at s r) c n)
 
 fn sudoku_line:
 = s i ; at s i
@@ -53,7 +83,7 @@ fn pcol:
 = (s:ss) c i ; pcol ss (append c (at s i)) i
 
 --| replace an element in a list at the specified parameter
-fn sudoku_rep:
+fn rep:
 = s i e ; prep s [] i e
 -- private method
 fn prep:
@@ -61,16 +91,18 @@ fn prep:
 = (s:ss) r 0 e ; prep ss (append r e) (sub 0 1) e
 = (s:ss) r i e ; prep ss (append r s) (sub i 1) e
 
-
 -- if a malformed index is given this function most likley throws an error.
 -- this is fair enough for a prototype.
 --| get an element at the specified postion in a list
 fn at:
-= [] _ ; fatal "function 'at' could not extract with given index. that means that the index was out of bounds"
+= [] i ; fatal ["function 'at' could not extract with given index. that means that the index was out of bounds",i]
 = (l:ls) 0 ; l
 = (l:ls) i ; at ls (sub i 1)
 
--- a sudoku line is valid iff every number from 1 to 9 only occurs max once
+fn sudoku_line_correct:
+= line ; reduce holds (map (\x -> equal (list_count_expr line x) 1) (for 1 9)) true
+
+-- a sudoku line is valid iff every number from 1 to 9 only occurs max once or that position is 0
 fn sudoku_line_valid:
 = line ; and (reduce holds (map (\x -> and (greater_equal x 0) (less_equal x 9)) line) true) (pline_valid line 1)
 -- private method
@@ -136,15 +168,32 @@ fn pmap:
 = _ [] list ; list
 = f (l:ls) list ; pmap f ls (append list (f l))
 
-fn main:
-=; sudoku_solve [ [1,0,0,0,0,0,0,0,0]
-                , [0,2,0,0,0,0,0,0,0]
-                , [0,0,9,0,0,0,0,0,0]
-                , [0,0,0,0,0,0,0,0,0]
-                , [0,0,0,0,0,0,0,0,0]
-                , [0,0,0,0,0,0,0,0,0]
-                , [0,0,0,0,0,0,0,2,0]
-                , [0,3,0,0,0,0,0,0,0]
-                , [9,0,0,0,0,0,0,0,0]
-                ]
 
+fn main:
+=; (sudoku_solve
+
+    [ [0,0,0,  0,0,0,  0,0,0]
+    , [2,9,7,  4,5,1,  6,8,0]
+    , [6,4,8,  9,3,2,  5,7,1]
+ 
+    , [8,5,9,  7,1,4,  3,2,6]
+    , [7,2,1,  3,9,6,  8,4,5]
+    , [4,6,3,  8,2,5,  9,1,7]
+ 
+    , [1,3,6,  2,4,8,  7,5,9]
+    , [5,7,2,  1,6,9,  4,3,8]
+    , [0,0,0,  0,0,0,  0,0,0]
+    ])
+
+--   [ [3,0,5,0,8,7,0,9,0]
+--   , [0,9,7,0,0,1,6,0,3]
+--   , [6,0,8,9,3,2,5,7,1]
+--
+--   , [8,5,0,0,1,4,0,2,0]
+--   , [7,2,1,0,9,6,8,0,5]
+--   , [4,0,0,8,0,5,9,1,7]
+--
+--   , [0,3,0,2,4,8,7,0,0]
+--   , [5,7,2,1,0,9,4,3,8]
+--   , [9,8,0,0,7,3,0,6,2]
+--   ]

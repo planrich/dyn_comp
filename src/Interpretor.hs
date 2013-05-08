@@ -29,6 +29,8 @@ eval env (CondExpr fact alt1 alt2) = do
         Left error -> throwError error
         Right True -> eval env alt1
         Right False -> eval env alt2
+eval env (LetExpr name definition expr) = eval env definition >>= (\def -> (subs expr name def) >>= eval env)
+    
 eval env e
     | isAtom e = return $ e -- cannot reduce further
     | otherwise =  return $ e
@@ -126,7 +128,11 @@ subs (LamExpr n e) old new = liftM (LamExpr n) (subs e old new)
 subs v@(VarExpr x) old new
     | old == x = return new -- replace because they really match
     | otherwise = return v
-subs (CondExpr old_if old_then old_else) old new =  (subs old_if old new) >>= 
+subs (LetExpr name old_def old_expr) old new = (subs old_def old new) >>= 
+    (\new_def -> (subs old_expr old new) >>= 
+        (\new_expr -> return $ LetExpr name new_def new_expr)
+    )
+subs (CondExpr old_if old_then old_else) old new = (subs old_if old new) >>= 
                                              (\new_if -> (subs old_then old new) >>= 
                                               (\new_then -> (subs old_else old new) >>=
                                                (\new_else -> return $ CondExpr new_if new_then new_else)

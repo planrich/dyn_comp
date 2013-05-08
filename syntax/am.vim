@@ -11,7 +11,7 @@ syntax match Keyword /^=/
 
 syntax keyword Keyword fn 
 
-syntax keyword Conditional if then else
+syntax keyword Conditional if then else let in
 syntax keyword Operator "=", ";", ":"
 
 syntax match Comment /\-\-.*/
