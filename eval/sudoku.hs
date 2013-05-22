@@ -41,7 +41,6 @@ sudokuBlockValid sudo ((a,b):cs) collected
 	| elem number  [1..9] = if (not $ elem number collected) then sudokuBlockValid sudo cs (number:collected) else False
 	| otherwise = sudokuBlockValid sudo cs collected
 	where number = numberAt sudo a b
-	
 
 -- get number at sudoku with x and y
 numberAt :: Sudoku -> X -> Y -> Integer

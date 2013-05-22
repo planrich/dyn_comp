@@ -40,9 +40,16 @@ builtins = M.fromList [ ("add", Builtin 2 $ numericBinary (+))
 
                       , ("undefined", Builtin 0 undef)
                       , ("fatal", Builtin 1 fatal)
+
+                      , ("at", Builtin 2 at)
                       --, ("head", Builtin 1 $ extractListOp 1 (head))
                       --, ("tail", Builtin 1 extractListOp (tail))
                       ]
+
+at :: [Expr] -> ThrowError Expr
+at [(ListExpr list), (LitExpr i)] = return $ list !! (fromIntegral i)
+at _ = throwError $ Fallback "at could not be used on the params"
+
 
 fatal :: [Expr] -> ThrowError Expr
 fatal [e] = throwError $ Fallback ("fatal occured: " ++ (show e))

@@ -1,23 +1,37 @@
 
 fn sudoku_correct:
-= s ; reduce holds 
-        (map 
-            (\x -> psudoku_check s (sudoku_line_correct) (x)) 
-            [(at), (sudoku_col), (sudoku_block)]
-        ) true
+= s ; let atv: psudoku_check s (sudoku_line_correct) (atw) in
+      let colv: psudoku_check s (sudoku_line_correct) (sudoku_col) in
+      let block: psudoku_check s (sudoku_line_correct) (sudoku_block) in
+      (and (and atv colv) block)
+--= s ; reduce holds 
+--        (map 
+--            (\x -> psudoku_check s (sudoku_line_correct) (x))
+--            [(at), (sudoku_col), (sudoku_block)]
+--        ) true
+--
+
+fn atw:
+= l i ; at l i
 
 --| a sudoku is considered valid if every column, row and block contains every number from 1-9 only once.
 --  To allow solving of the sudoku 0 can be contained instead of the actual numbers which means that
 --  the position can be exchanged by the solver
 fn sudoku_valid:
-= s ; reduce holds 
-        (map 
-            (\x -> psudoku_check s (sudoku_line_valid) (x)) 
-            [(at), (sudoku_col), (sudoku_block)]
-        ) true
+= s ; let atv: psudoku_check s (sudoku_line_valid) (atw) in
+      let colv: psudoku_check s (sudoku_line_valid) (sudoku_col) in
+      let block: psudoku_check s (sudoku_line_valid) (sudoku_block) in
+      (and (and atv colv) block)
+
+
+--reduce holds 
+--        (map 
+--            (\x -> psudoku_check s (sudoku_line_valid) (x)) 
+--            [(at), (sudoku_col), (sudoku_block)]
+--        ) true
 
 fn psudoku_check:
-= s check extract ; reduce holds (map (\x -> (check (extract s x))) (for 0 8)) true
+= s check extract ; reduce holds (map (\x -> (check (extract s x))) [0,1,2,3,4,5,6,7,8]) true
 
 fn holds:
 = a b ; and a b
@@ -41,7 +55,7 @@ fn sudoku_branch:
             if sudoku_valid subs
             then let solv_s: (psudoku_solve subs r (add c 1)) in
                  if sudoku_correct solv_s
-                 then solv_s --fatal "solved" --(psudoku_solve (sudoku_substitue s r c n) r c) -- double calc because there is no 'let' or 'where' yet
+                 then solv_s --(psudoku_solve (sudoku_substitue s r c n) r c) -- double calc because there is no 'let' or 'where' yet
                  else if sudoku_valid solv_s
                       then psudoku_solve solv_s r (add c 1)
                       else sudoku_branch subs r c (add n 1)
@@ -49,9 +63,6 @@ fn sudoku_branch:
 
 fn sudoku_at:
 = s r c ; (at (at s r) c)
-
-fn sudoku_step:
-= s ; s
 
 fn sudoku_block:
 = s 0 ; pblock s 0 0 3 3 []
@@ -80,8 +91,16 @@ fn sudoku_col:
 = sudoku i ; pcol sudoku [] i
 -- private method
 fn pcol:
-= [] c _ ; c
-= (s:ss) c i ; pcol ss (append c (at s i)) i
+= [] c _ ; reverse c
+= (s:ss) c i ; pcol ss (cons (at s i) c) i
+
+fn reverse:
+= list ; preverse list []
+-- private method
+fn preverse:
+= [] list ; list
+= (l:ls) list ; preverse ls (cons l list)
+
 
 --| replace an element in a list at the specified parameter
 fn rep:
@@ -95,13 +114,13 @@ fn prep:
 -- if a malformed index is given this function most likley throws an error.
 -- this is fair enough for a prototype.
 --| get an element at the specified postion in a list
-fn at:
-= [] i ; fatal ["function 'at' could not extract with given index. that means that the index was out of bounds",i]
-= (l:ls) 0 ; l
-= (l:ls) i ; at ls (sub i 1)
+--fn at:
+--= [] i ; fatal ["function 'at' could not extract with given index. that means that the index was out of bounds",i]
+--= (l:ls) 0 ; l
+--= (l:ls) i ; at ls (sub i 1)
 
 fn sudoku_line_correct:
-= line ; reduce holds (map (\x -> equal (list_count_expr line x) 1) (for 1 9)) true
+= line ; reduce holds (map (\x -> equal (list_count_expr line x) 1) [1,2,3,4,5,6,7,8,9]) true
 
 -- a sudoku line is valid iff every number from 1 to 9 only occurs max once or that position is 0
 fn sudoku_line_valid:
@@ -109,7 +128,7 @@ fn sudoku_line_valid:
 -- private method
 fn pline_valid:
 = list 10 ; true
-= list i ; if less_equal (list_count_expr list i) 1 
+= list i ; if less_equal (list_count_expr list i) 1
            then pline_valid list (add i 1) 
            else false
 
@@ -171,7 +190,7 @@ fn pmap:
 
 
 fn main:
-=; sudoku_solve (sudoku 3)
+=; sudoku_solve (sudoku 5)
 
 fn sudoku:
 = 0 ; [[9,1,6,0,0,4,0,7,2],

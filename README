@@ -20,3 +20,32 @@ Summe: 75 h
 
 Ich habe schon vor den Osterferien begonnen und kann schon arithmetische Ausdruecke berechnen 
 und arbeite gerade am Funktionsaufruf & Pattern Matching.
+
+
+LOG:
+
+➜  am git:(master) ✗ ./cabal-dev/bin/am test/sudoku.am +RTS -sstderr
+evaluated [[$(1),$(2),$(3),$(4),$(5),$(6),$(7),$(8),$(9),],[$(4),$(5),$(6),$(7),$(8),$(9),$(1),$(2),$(3),],[$(7),$(8),$(9),$(1),$(2),$(3),$(4),$(5),$(6),],[$(2),$(1),$(4),$(3),$(6),$(5),$(8),$(9),$(7),],[$(3),$(6),$(5),$(8),$(9),$(7),$(2),$(1),$(4),],[$(8),$(9),$(7),$(2),$(1),$(4),$(3),$(6),$(5),],[$(5),$(3),$(1),$(6),$(4),$(2),$(9),$(7),$(8),],[$(6),$(4),$(2),$(9),$(7),$(8),$(5),$(3),$(1),],[$(9),$(7),$(8),$(5),$(3),$(1),$(6),$(4),$(2),],]
+  97,261,814,736 bytes allocated in the heap
+     608,466,632 bytes copied during GC
+         426,144 bytes maximum residency (194 sample(s))
+          38,968 bytes maximum slop
+               2 MB total memory in use (0 MB lost due to fragmentation)
+
+                                    Tot time (elapsed)  Avg pause  Max pause
+  Gen  0     186103 colls,     0 par    1.24s    1.24s     0.0000s    0.0001s
+  Gen  1       194 colls,     0 par    0.05s    0.05s     0.0003s    0.0005s
+
+  INIT    time    0.00s  (  0.00s elapsed)
+  MUT     time   38.91s  ( 39.04s elapsed)
+  GC      time    1.29s  (  1.29s elapsed)
+  EXIT    time    0.00s  (  0.00s elapsed)
+  Total   time   40.20s  ( 40.33s elapsed)
+
+  %GC     time       3.2%  (3.2% elapsed)
+
+  Alloc rate    2,499,802,198 bytes per MUT second
+
+  Productivity  96.8% of total user, 96.5% of total elapsed
+
+
