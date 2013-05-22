@@ -1,10 +1,12 @@
 module Parser
     ( parseFile
+    , parseExprFromStr
+    , parseFuncFromStr
     )
   where
 
 import Text.Parsec
-import Text.Parsec.String
+import Text.Parsec.String as PS
 import Text.Parsec.Char
 import Text.Parsec.Prim
 import Text.Parsec.Pos
@@ -19,7 +21,13 @@ import TokenDef
 import ParserTypes
 
 parseFile :: String -> IO (Either ParseError Program)
-parseFile filePath = parseFromFile file filePath
+parseFile filePath = PS.parseFromFile file filePath
+
+parseExprFromStr :: String -> IO (Either ParseError Expr)
+parseExprFromStr input = return (runP expr () "repl" input)
+
+parseFuncFromStr :: String -> IO (Either ParseError Func)
+parseFuncFromStr input = return (runP function () "repl" input)
 
 lexer :: P.TokenParser ()
 lexer = P.makeTokenParser tokenDef
@@ -138,7 +146,7 @@ boolExpr = do{ reserved "true"; return $ BoolExpr True}
 litExpr :: Parser Expr
 litExpr = do
     i <- natural
-    return $ LitExpr i
+    return $ LitExpr (fromIntegral i)
 
 varExpr :: Parser Expr
 varExpr = do

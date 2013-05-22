@@ -48,4 +48,17 @@ evaluated [[$(1),$(2),$(3),$(4),$(5),$(6),$(7),$(8),$(9),],[$(4),$(5),$(6),$(7),
 
   Productivity  96.8% of total user, 96.5% of total elapsed
 
+COST CENTRE             MODULE      %time %alloc
+
+-- data Expr = AppExpr Expr Expr
+subs                    Interpretor  46.4   67.9
+apply                   Interpretor  17.9   11.4
+eval                    Interpretor  10.7   12.2
+
+-- data Expr = AppExpr !Expr !Expr
+subs                    Interpretor  53.0   72.7
+apply                   Interpretor  16.6    9.7
+eval                    Interpretor   8.6   10.4
+
+
 

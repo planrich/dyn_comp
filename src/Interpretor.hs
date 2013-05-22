@@ -15,14 +15,19 @@ import Builtins
 
 -- |Evaluate an expression in a certain environment.
 eval :: Env -> Expr -> ThrowError Expr
-eval env (AppExpr f s) = apply env f s
-eval env (ListExpr es) = liftM ListExpr $ mapM (eval env) es
+eval env (AppExpr f s) = --apply env f s
+    do s' <- eval env s
+       apply env f s'
+--eval env le@(ListExpr es) = return le --liftM ListExpr $ mapM (eval env) es
 eval env (VarExpr n) = do
     mEntry <- return $ findEntry env n
     case mEntry of
         (Just (SymBinding expr)) -> eval env expr
         (Just (SymFunc func)) -> return $ FuncCtx (Defined (funcArgCount func) func) []
-        Nothing -> throwError $ SymbolNotFound (n)
+        Nothing -> do
+            case M.lookup n builtins of
+                Just b -> return $ FuncCtx b []
+                Nothing -> throwError $ SymbolNotFound (n)
 
 -- ^ A conditional expression
 eval env (CondExpr fact alt1 alt2) = do
@@ -48,33 +53,33 @@ apply env a@(AppExpr _ _) args = do
 -- There are too little arguemts -> context swallows argument and proceeds
 apply env c@(FuncCtx bi@(Builtin params f)  args) arg
     | (length args) + 1 == params = do
-        arg' <- (eval env arg)
-        f (args ++ [arg'])
+        --arg' <- (eval env arg)
+        f (args ++ [arg])
     | otherwise = do
-        arg' <- (eval env arg)
-        return $ FuncCtx bi (args ++ [arg'])
+        --arg' <- (eval env arg)
+        return $ FuncCtx bi (args ++ [arg])
 -- ^Of course there is a defined function
 apply env c@(FuncCtx de@(Defined params f)  args) arg
     | (length args) + 1 == params = do
-        arg' <- (eval env arg)
-        matchAndEvalPatternExpr (funcName f) env (args ++ [arg']) (funcPatterns f)
+        --arg' <- (eval env arg)
+        matchAndEvalPatternExpr (funcName f) env (args ++ [arg]) (funcPatterns f)
     | otherwise = do
-        arg' <- (eval env arg)
-        return $ FuncCtx de (args ++ [arg'])
+        -- arg' <- (eval env arg)
+        return $ FuncCtx de (args ++ [arg])
 -- ^At the bottom of a recursion an AppExpr might contain a Builtin or call any other
 -- function that is defined within the environment.
 apply env (VarExpr n) args =
     case M.lookup n builtins of
         -- if it is a unary function handle it right away
         Just (Builtin 1 f) -> do
-            args <- (eval env args)
+            --args <- (eval env args)
             f [args]
         -- n-ary function must harvest additional n-1 parameters
         Just b -> do
-            args <- (eval env args)
+            --args <- (eval env args)
             return $ FuncCtx b [args]
         Nothing -> do
-            args <- (eval env args) 
+            --args <- (eval env args) 
             applyFromEnv env n args
 apply env (LamExpr n e) arg = do
     arg' <- subs e n arg
@@ -107,8 +112,6 @@ subsBinding fname [] [] ex = return $ ex
 subsBinding fname (b@(BVar name):bs) (e:es) ex = do
     subs' <- (subs ex name e)
     subsBinding fname bs es subs'
-
-
 subsBinding fname ((BList ((BVar head'),(BVar tail'))):bs) es'@(e:es) ex
     | isListExpr e = do
         sub1 <- (subs ex head' (listHead e))
@@ -127,58 +130,22 @@ subsBinding fname ((BList (_,(BVar tail'))):bs) es'@(e:es) ex
     | otherwise = throwError $ Fallback $ "could not match " ++ (show e) ++ " agains a list or string"
 subsBinding fname (_:bs) (e:es) ex = subsBinding fname bs es ex
 
-
--- |Wrap lambdas around expressions if necessary
--- if a parameter of a function is bound to a Variable binding the
--- given expression is wrapped around an application of the new lambda and
--- the parameter. This also can happen in a nested context (list). TODO
--- in every other case the expr is not wrapped
-wrapLambdas :: Name -> [Binding] -> [Expr] -> Expr -> Expr
-wrapLambdas fname [] [] ex = ex
-wrapLambdas fname (b@(BVar name):bs) (e:es) ex = (AppExpr (wrapLambdas fname bs es (LamExpr name ex)) e)
--- ^Pattern match a lists head and tail.
--- = (a:as) ; mul a a
--- is wrapped as following:
--- #((\as -> #((\a -> mul a a) (head p1))) (tail p1))
--- the given pattern expression is wrapped around a lambda
--- with the heads var name and applied to to the head of
--- the given list or string as p1.
--- then this expression is wrapped around a lambda with the
--- tails name of p1 and applied to the tail of p1.
--- the next patterns in wrapLambdas handle the variations of the list matching
-wrapLambdas fname ((BList ((BVar head'),(BVar tail'))):bs) es'@(e:es) ex
-    | isListExpr e =
-        (AppExpr 
-            (LamExpr tail'
-                (AppExpr (wrapLambdas fname bs es (LamExpr head' ex)) (listHead e))
-            )
-            (listTail e)
-        )
-    | otherwise = ex-- throwError $ Fallback "could not match " ++ (show e) ++ " agains a list or string"
-wrapLambdas fname ((BList ((BVar head'),_)):bs) es'@(e:es) ex
-    | isListExpr e =
-            (AppExpr (wrapLambdas fname bs es (LamExpr head' ex)) (listHead e))
-    | otherwise = ex --throwError $ Fallback "could not match " ++ (show e) ++ " agains a list or string"
-wrapLambdas fname ((BList (_,(BVar tail'))):bs) es'@(e:es) ex
-    | isListExpr e =
-        (AppExpr (wrapLambdas fname bs es (LamExpr tail' ex)) (listTail e))
-    | otherwise = ex --throwError $ Fallback "could not match " ++ (show e) ++ " agains a list or string"
-wrapLambdas fname (_:bs) (e:es) ex = wrapLambdas fname bs es ex
-
 -- |Subsitute a variable in an expression with another expression
 subs :: Expr -> Name -> Expr -> ThrowError Expr
 subs (AppExpr e1 e2) old new = do
     s1 <- (subs e1 old new)
     s2 <- (subs e2 old new)
     return $ AppExpr s1 s2
-    -- OPT (subs e1 old new) >>= (\e1 -> (subs e2 old new) >>= (\e2 -> return $ AppExpr e1 e2))
-subs (ListExpr es) old new = liftM ListExpr (mapM (\e -> subs e old new) es)
-subs (LamExpr n e) old new 
-    | n == old = return $ (LamExpr n e)
-    | otherwise = liftM (LamExpr n) (subs e old new)
 subs v@(VarExpr x) old new
     | old == x = return new -- replace because they really match
     | otherwise = return v
+    -- OPT (subs e1 old new) >>= (\e1 -> (subs e2 old new) >>= (\e2 -> return $ AppExpr e1 e2))
+subs le@(ListExpr es) old new = liftM ListExpr (mapM (\e -> subs e old new) es)
+subs (LamExpr n e) old new 
+    | n == old = return $ (LamExpr n e)
+    | otherwise = do
+        subs' <- (subs e old new)
+        return $ LamExpr n subs'
 subs (LetExpr name old_def old_expr) old new = do
     new_def <- subs old_def old new
     new_expr <- subs old_expr old new

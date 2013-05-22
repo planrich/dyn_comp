@@ -1,10 +1,10 @@
 
 fn sudoku_correct:
-= s ; let atv: psudoku_check s (sudoku_line_correct) (atw) in
+= s ; let atv: psudoku_check s (sudoku_line_correct) (at) in
       let colv: psudoku_check s (sudoku_line_correct) (sudoku_col) in
       let block: psudoku_check s (sudoku_line_correct) (sudoku_block) in
       (and (and atv colv) block)
---= s ; reduce holds 
+--= s ; reduce and 
 --        (map 
 --            (\x -> psudoku_check s (sudoku_line_correct) (x))
 --            [(at), (sudoku_col), (sudoku_block)]
@@ -18,23 +18,20 @@ fn atw:
 --  To allow solving of the sudoku 0 can be contained instead of the actual numbers which means that
 --  the position can be exchanged by the solver
 fn sudoku_valid:
-= s ; let atv: psudoku_check s (sudoku_line_valid) (atw) in
+= s ; let atv: psudoku_check s (sudoku_line_valid) (at) in
       let colv: psudoku_check s (sudoku_line_valid) (sudoku_col) in
       let block: psudoku_check s (sudoku_line_valid) (sudoku_block) in
       (and (and atv colv) block)
 
 
---reduce holds 
+--reduce and 
 --        (map 
 --            (\x -> psudoku_check s (sudoku_line_valid) (x)) 
 --            [(at), (sudoku_col), (sudoku_block)]
 --        ) true
 
 fn psudoku_check:
-= s check extract ; reduce holds (map (\x -> (check (extract s x))) [0,1,2,3,4,5,6,7,8]) true
-
-fn holds:
-= a b ; and a b
+= s check extract ; reduce and (map (\x -> (check (extract s x))) [0,1,2,3,4,5,6,7,8]) true
 
 fn sudoku_solve:
 = s ; if sudoku_valid s
@@ -120,11 +117,11 @@ fn prep:
 --= (l:ls) i ; at ls (sub i 1)
 
 fn sudoku_line_correct:
-= line ; reduce holds (map (\x -> equal (list_count_expr line x) 1) [1,2,3,4,5,6,7,8,9]) true
+= line ; reduce and (map (\x -> equal (list_count_expr line x) 1) [1,2,3,4,5,6,7,8,9]) true
 
 -- a sudoku line is valid iff every number from 1 to 9 only occurs max once or that position is 0
 fn sudoku_line_valid:
-= line ; and (reduce holds (map (\x -> and (greater_equal x 0) (less_equal x 9)) line) true) (pline_valid line 1)
+= line ; and (reduce and (map (\x -> and (greater_equal x 0) (less_equal x 9)) line) true) (pline_valid line 1)
 -- private method
 fn pline_valid:
 = list 10 ; true

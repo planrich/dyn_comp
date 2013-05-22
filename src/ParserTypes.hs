@@ -42,8 +42,8 @@ data Pattern = Pattern { patternBindings :: [Binding]
 data Expr = AppExpr Expr Expr
           | LamExpr Name Expr
           | VarExpr Name
-          | LitExpr Integer
-          | ListExpr [Expr]
+          | LitExpr Int
+          | ListExpr ![Expr]
           | BoolExpr Bool
           | CharExpr Char
           | StrExpr String
@@ -56,12 +56,12 @@ data Expr = AppExpr Expr Expr
           -- when the param count the builtin needs is reached the function is executed.
           | FuncCtx Builtin [Expr]
 
-data Binding = BNumber Int
-             | BString String
-             | BBool Bool
+data Binding = BNumber !Int
+             | BString !String
+             | BBool !Bool
              | BAnon
-             | BVar String
-             | BList (Binding,Binding)
+             | BVar !String
+             | BList !(Binding,Binding)
              | BNil
              deriving (Show)
 
@@ -100,7 +100,7 @@ instance Error EvalError where
 
 instance Show Expr where
     show (AppExpr e1 e2) = " #(" ++ (show e1) ++ " " ++ (show e2) ++ ")"
-    show (LitExpr i) = "$(" ++ (show i) ++ ")"
+    show (LitExpr i) = (show i)
     show (VarExpr n) = "\"" ++ n ++ "\""
     show (CharExpr c) = ('\'':(c:"'"))
     show (StrExpr s) = ('"':s) ++ "\""

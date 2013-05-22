@@ -88,7 +88,7 @@ boolBinary op [(BoolExpr a1), (BoolExpr a2)] = return $ BoolExpr $ op a1 a2
 --boolBinary op [e2,e1@(BoolExpr a1)] = (eval e1) >>= (\e1 -> boolBinary op [e1,e2])
 boolBinary op (e1:_) = throwError $ TypeMissmatch "expected bool" e1 
 
-numericBinary :: (Integer -> Integer -> Integer) -> [Expr] -> ThrowError Expr
+numericBinary :: (Int -> Int -> Int) -> [Expr] -> ThrowError Expr
 numericBinary op [(LitExpr a1), (LitExpr a2)] = return $ LitExpr $ op a1 a2
 --numericBinary op [e1@(LitExpr a1), e2@(AppExpr _ _)] = (eval e2) >>= (\e2 -> numericBinary op [e1, e2])
 --numericBinary op [e1@(AppExpr _ _), e2@(LitExpr a1)] = (eval e1) >>= (\e1 -> numericBinary op [e1, e2])

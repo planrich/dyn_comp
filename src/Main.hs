@@ -6,6 +6,7 @@ import qualified Data.Text as T
 import qualified Data.Text.Lazy as L
 import qualified Data.Text.Lazy.IO as LIO
 import qualified Data.Map as M
+import qualified Data.List as DL
 
 import Control.Monad
 
@@ -18,8 +19,11 @@ import Builtins
 
 main = do
     arguments <- getArgs
-    when (length arguments > 0) $ do
-        parse (arguments !! 0)
+    handle arguments
+
+handle :: [String] -> IO ()
+handle ("-i":_) = repl newSymT
+handle (f:_) = parse f
 
 parse :: String -> IO ()
 parse filePath = do
@@ -44,3 +48,47 @@ interpret prog = do
                     putStrLn $ show msg
         Nothing -> putStrLn "could not find main!"
 
+repl :: Env -> IO ()
+repl env = do
+    putStr ") "
+    hFlush stdout
+    line <- getLine
+    if DL.isInfixOf "fn " line
+      then replAddFunc env [line]
+      else apply env line
+
+apply :: Env -> String -> IO ()
+apply env line = do
+    result <- parseExprFromStr line
+    case result of
+        Left err -> do
+            print err
+            repl env
+        Right expr -> do
+            out <- return $ eval env expr
+            case out of
+                Right out -> do 
+                    putStrLn $ "=> " ++ (show out)
+                    repl env
+                Left msg -> do
+                    putStrLn $ show msg
+                    repl env
+
+replAddFunc :: Env -> [String] -> IO ()
+replAddFunc env lines = do
+    putStr "+ "
+    hFlush stdout
+    line <- getLine
+    if length line == 0
+      then do
+        result <- parseFuncFromStr (unwords lines)
+        case result of
+            Left err2 -> do
+                putStrLn "neither an expression nor a function given!"
+                repl env
+            Right func -> repl (defineSym env (funcName func) (SymFunc func))
+      else
+        replAddFunc env (lines ++ [line])
+
+
+    
