@@ -12,8 +12,10 @@ module Builtins
 import qualified Data.Map as M
 import Control.Monad.Error
 import Data.Maybe
+import qualified Data.List as L
 
 import ParserTypes
+
 
 builtins :: M.Map String Builtin
 builtins = M.fromList [ ("add", Builtin 2 $ numericBinary (+))
@@ -42,9 +44,15 @@ builtins = M.fromList [ ("add", Builtin 2 $ numericBinary (+))
                       , ("fatal", Builtin 1 fatal)
 
                       , ("at", Builtin 2 at)
+
+                      , ("sort", Builtin 1 sortList)
                       --, ("head", Builtin 1 $ extractListOp 1 (head))
                       --, ("tail", Builtin 1 extractListOp (tail))
                       ]
+
+sortList :: [Expr] -> ThrowError Expr
+sortList [(ListExpr list)] = return $ ListExpr (L.sort list)
+sortList e = throwError $ Fallback ("cannot sort: " ++ (show e))
 
 at :: [Expr] -> ThrowError Expr
 at [(ListExpr list), (LitExpr i)] = return $ list !! (fromIntegral i)

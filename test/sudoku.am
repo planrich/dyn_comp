@@ -4,15 +4,6 @@ fn sudoku_correct:
       let colv: psudoku_check s (sudoku_line_correct) (sudoku_col) in
       let block: psudoku_check s (sudoku_line_correct) (sudoku_block) in
       (and (and atv colv) block)
---= s ; reduce and 
---        (map 
---            (\x -> psudoku_check s (sudoku_line_correct) (x))
---            [(at), (sudoku_col), (sudoku_block)]
---        ) true
---
-
-fn atw:
-= l i ; at l i
 
 --| a sudoku is considered valid if every column, row and block contains every number from 1-9 only once.
 --  To allow solving of the sudoku 0 can be contained instead of the actual numbers which means that
@@ -117,17 +108,30 @@ fn prep:
 --= (l:ls) i ; at ls (sub i 1)
 
 fn sudoku_line_correct:
-= line ; reduce and (map (\x -> equal (list_count_expr line x) 1) [1,2,3,4,5,6,7,8,9]) true
+= line ; equal (sort line) [1,2,3,4,5,6,7,8,9]
+-- foldr and true (map (\x -> equal (list_count_expr line x) 1)
+
+fn sudoku_line_valid:
+= line ; isvalid (sort line) 0
+--let sorted: (sort line) in
+         --isvalid sorted 0
+fn isvalid:
+= [] i ; true
+= (0:ls) i ; isvalid ls 0
+= (l:ls) i ; if and (greater l i) (less l 10)
+             then isvalid ls l
+             else false
 
 -- a sudoku line is valid iff every number from 1 to 9 only occurs max once or that position is 0
-fn sudoku_line_valid:
-= line ; and (reduce and (map (\x -> and (greater_equal x 0) (less_equal x 9)) line) true) (pline_valid line 1)
+fn sudoku_line_valid_old:
+= line ; (pline_valid line 1)
 -- private method
 fn pline_valid:
 = list 10 ; true
 = list i ; if less_equal (list_count_expr list i) 1
            then pline_valid list (add i 1) 
            else false
+
 
 fn list_count_expr:
 = list e ; plist_count_expr list e 0
@@ -139,10 +143,8 @@ fn plist_count_expr:
                  else plist_count_expr ls e i
 
 fn list_len:
-= l ; plist_len l 0
-fn plist_len:
-= [] n ; n
-= (l:ls) n ; plist_len ls (add n 1)
+= [] ; 0
+= (l:ls) ; add 1 (list_len ls)
 
 fn take:
 = list a ; ptake list a []
@@ -167,9 +169,17 @@ fn concat:
 = list [] ; list
 = list (r:rs) ; concat (append list r) rs
 
+fn foldl:
+= f z [] ; z
+= f z (l:ls) ; foldl f (f z l) ls
+
+fn foldr:
+= f z [] ; z
+= f z (l:ls) ; f l (foldr f z ls)
+
 fn reduce:
-= f [] s ; s
 = f (l:ls) s ; reduce f ls (f l s)
+= f [] s ; s
 
 fn for:
 = from to ; pfor from to []
@@ -179,15 +189,12 @@ fn pfor:
               else pfor from (sub to 1) (cons to l)
 
 fn map:
-= f list ; pmap f list []
--- private method
-fn pmap:
-= _ [] list ; list
-= f (l:ls) list ; pmap f ls (append list (f l))
+= f []     ; []
+= f (l:ls) ; cons (f l) (map f ls)
 
 
 fn main:
-=; sudoku_solve (sudoku 5)
+=; sudoku_solve (sudoku 2)
 
 fn sudoku:
 = 0 ; [[9,1,6,0,0,4,0,7,2],

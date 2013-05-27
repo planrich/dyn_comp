@@ -40,12 +40,88 @@
         small {
             font-size: 18px;
         }
+        svg {
+            font-size: 12px;
+        }
     </style>
+    <script src="d3.min.js" ></script>
+    <script src="nv.d3.min.js" ></script>
+    <script type="text/javascript">
+        var amv1 = { key: 'AM v1', values: 
+            [ { x: 1, y: 33.912 }
+            , { x: 2, y: 38.120 }
+            , { x: 3, y: 125.23 }
+            , { x: 4, y: 40.054 }
+            , { x: 5, y: 15.327 }
+            , { x: 6, y: 2.501 }
+            , { x: 7, y: 37.570 }
+            ]
+        };
+        var am = amv1;
+        var amv2 = { key: 'AM v2', values: 
+            [ { x: 1, y: 30.81 }
+            , { x: 2, y: 27.53 }
+            , { x: 3, y: 101.67 }
+            , { x: 4, y: 32.42 }
+            , { x: 5, y: 12.38 }
+            , { x: 6, y: 2.02 }
+            , { x: 7, y: 30.30 }
+            ]
+        };
+        var amv3 = { key: 'AM v3', values: 
+            [ { x: 1, y: 7.16 }
+            , { x: 2, y: 6.36 }
+            , { x: 3, y: 23.17 }
+            , { x: 4, y: 7.01 }
+            , { x: 5, y: 2.9 }
+            , { x: 6, y: 0.48 }
+            , { x: 7, y: 6.97 }
+            ]
+        };
+        var hugs= { key: 'Hugs (Sep. 2008)', values: 
+            [ { x: 1, y: 21.236 }
+            , { x: 2, y: 20.436 }
+            , { x: 3, y: 70.72 }
+            , { x: 4, y: 21.172 }
+            , { x: 5, y: 9.581 }
+            , { x: 6, y: 1.468 }
+            , { x: 7, y: 19.511 }
+            ]
+        };
+        var ghc = { key: 'GHC 7.6.2', values: 
+            [ { x: 1, y: 0.219 }
+            , { x: 2, y: 0.207 }
+            , { x: 3, y: 0.709 }
+            , { x: 4, y: 0.205 }
+            , { x: 5, y: 0.105 }
+            , { x: 6, y: 0.028 }
+            , { x: 7, y: 0.193 }
+            ]
+        };
+        function _plot(id, data) {
+                nv.addGraph(function() {
+                    var chart = nv.models.multiBarChart();
+
+                    chart.xAxis.tickFormat(function(d) { return "Sudoku " + d; });
+
+                    chart.yAxis
+                        .tickFormat(d3.format(',.1f'));
+
+                    d3.select('#' + id + ' svg')
+                        .datum(data)
+                      .transition().duration(200).call(chart);
+
+                    nv.utils.windowResize(chart.update);
+
+                    return chart;
+                });
+        }
+    </script>
 </head>
 <body class="list">
     <header class="caption">
-        <h1>Shower Presentation Engine</h1>
-        <p>Yours Truly, Famous Inc.</p>
+        <h1></h1>
+        <p></p>
     </header>
     <section class="slide cover" id="Cover">
         <div>
@@ -74,6 +150,7 @@
             <h2>Key features</h2>
             <ul>
                 <li>Higher order functions</li>
+                <li>Currying</li>
                 <li>Pattern matching</li>
                 <li>Strict evaluation</li>
                 <li>Dynamic typing (strong)</li>
@@ -82,7 +159,96 @@
     </section>
     <section class="slide">
         <div>
-            <h2></h2>
+            <h2>The syntax explained</h2>
+            <img style="float: left; margin-left: -70px; margin-right: -70px;" src="map_example.png" />
+            <img style="float: right; margin-left: 40px;" src="repl_curry.png" />
+        </div>
+    </section>
+    <section class="slide">
+        <div>
+            <h2>The goal of this project</h2>
+            <div>
+                <ul>
+                    <li>Implement an interpretor</li>
+                    <li>Utilizing the new 'language' to implement a sudoku solver</li>
+                    <li>Compare the implementation to a haskell Impl.</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+    <section class="slide">
+        <div>
+            <h2>The first implementation</h2>
+            <div id="chart1">
+                <svg style="width: 750px; height: 400px;"></svg>
+            </div>
+        <script type="text/javascript">
+            _plot("chart1", [am, hugs])
+        </script>
+        </div>
+    </section>
+    <section class="slide">
+        <div>
+            <h2>Improvements in the Interpretor evaluation</h2>
+            <ul>
+                <li>List elements are not evaluated any more</li>
+                <li>Turning off lazyness did not always improve performance</li>
+                <li>Minor tweaks</li>
+            </ul>
+            <img src="lazy_vs_strict.png" />
+        </div>
+    </section>
+    <section class="slide">
+        <div>
+            <h2>Where is the time spent? GHC Profiling</h2>
+            <img src="profile.png" />
+        </div>
+    </section>
+    <section class="slide">
+        <div>
+            <h2>Improvements in the Interpretor evaluation</h2>
+            <div id="chart2">
+                <svg style="width: 750px; height: 400px;"></svg>
+            </div>
+            <script type="text/javascript">
+                _plot("chart2", [am, amv2, hugs])
+            </script>
+        </div>
+    </section>
+    <section class="slide">
+        <div>
+            <h2>Algorithm improvements</h2>
+            <ul>
+                <li>Tweaked some functions in the sudoku solver</li>
+                <li>Especially the function <i>sudoku_line_valid</i> had a big performance inpact.</li>
+            </ul>
+        </div>
+    </section>
+    <section class="slide">
+        <div>
+            <h2>Algorithm improvements</h2>
+            <div id="chart3">
+                <svg style="width: 750px; height: 400px;"></svg>
+            </div>
+            <script type="text/javascript">
+                _plot("chart3", [am, amv2, hugs, amv3])
+            </script>
+        </div>
+    </section>
+    <section class="slide">
+        <div>
+            <h2>GHC speed</h2>
+            <div id="chart4">
+                <svg style="width: 750px; height: 400px;"></svg>
+            </div>
+            <script type="text/javascript">
+                _plot("chart4", [am, amv2, hugs, amv3, ghc])
+            </script>
+        </div>
+    </section>
+    <section class="slide">
+        <div>
+            <h2>What is missing?</h2>
             <ul>
                 <li>I/O</li>
                 <li>A module system</li>
@@ -90,95 +256,6 @@
             </ul>
         </div>
     </section>
-    <!--
-        To hide progress bar from entire presentation
-        just remove “progress” element.
-    <div class="progress"><div></div></div>
-    <header class="caption">
-        <h1>Shower Presentation Engine</h1>
-        <p>Yours Truly, Famous Inc.</p>
-    </header>
-    <section class="slide cover" id="Cover"><div>
-        <h2>Shower Presentation Engine</h2>
-        <p>Brought you by <a href="http://pepelsbey.net">Vadim Makeev</a></p>
-        <img src="pictures/cover.jpg" alt="">
-        <!-- photo by John Carey, fiftyfootshadows.net -->
-    </div></section>
-    <section class="slide"><div>
-        <h2>Shower Key Features</h2>
-        <ol>
-            <li>Built on HTML, CSS and vanilla JavaScript</li>
-            <li>All modern browsers are supported</li>
-            <li>Slide themes are separated from engine</li>
-            <li>Fully keyboard accessible</li>
-            <li>Printable to PDF</li>
-        </ol>
-        <p class="note">Shower ['ʃəuə] noun. A person or thing that shows.</p>
-    </div></section>
-    <section class="slide"><div>
-        <h2>Plain Text on Your Slides</h2>
-        <p>Lorem ipsum dolor sit amet, consectetur <a href="#4">adipisicing</a> elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, <em>quis nostrud</em> exercitation ullamco laboris <strong>nisi ut aliquip</strong> ex ea commodo consequat. Duis aute irure <i>dolor</i> in reprehenderit in voluptate velit esse cillum <b>dolore</b> eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in <code>&lt;culpa&gt;</code> qui officia deserunt mollit anim id est laborum.</p>
-    </div></section>
-    <section class="slide"><div>
-        <h2>All Kind of Lists</h2>
-        <ol>
-            <li>Simple lists are marked with bullets</li>
-            <li>Ordered lists begin with a number</li>
-            <li>You can even nest lists one inside another
-                <ul>
-                    <li>Or mix their types</li>
-                    <li>But do not go too far</li>
-                    <li>Otherwise audience will be bored</li>
-                </ul>
-            </li>
-            <li>Look, seven rows exactly!</li>
-        </ol>
-    </div></section>
-    <section class="slide"><div>
-        <h2>Serious Citations</h2>
-        <figure>
-            <blockquote>
-                <p>Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia.</p>
-            </blockquote>
-            <figcaption>Marcus Tullius Cicero</figcaption>
-        </figure>
-    </div></section>
-    <section class="slide"><div>
-        <h2>Code Samples</h2>
-        <pre>
-            <code>&lt;!DOCTYPE html&gt;</code>
-            <code>&lt;html lang="en"&gt;</code>
-            <code><mark>&lt;head&gt;</mark> <mark class="comment">&lt;!--Comment--&gt;</mark></code>
-            <code>    &lt;title&gt;Shower&lt;/title&gt;</code>
-            <code>    &lt;meta charset="<mark class="important">UTF-8</mark>"&gt;</code>
-            <code>    &lt;link rel="stylesheet" href="screen.css"&gt;</code>
-            <code><mark>&lt;/head&gt;</mark></code>
-        </pre>
-    </div></section>
-    <section class="slide cover" id="Picture"><div>
-        <h2>Pictures</h2>
-        <img src="pictures/picture.jpg" alt="">
-        <!-- photo by John Carey, fiftyfootshadows.net -->
-    </div></section>
-    <section class="slide shout"><div>
-        <h2>You can even shout this way</h2>
-    </div></section>
-    <section class="slide"><div>
-        <h2>Inner Navigation</h2>
-        <ol>
-            <li>Lets you reveal list items one by one</li>
-            <li class="next">To keep some key points</li>
-            <li class="next">In secret from audience</li>
-            <li class="next">But it will work only once</li>
-            <li class="next">Nobody wants to see the same joke twice</li>
-        </ol>
-    </div></section>
-    <section class="slide shout" id="SeeMore"><div>
-        <h2><img src="pictures/logo.svg" alt=""> <a href="https://github.com/shower/shower/">See more on GitHub</a></h2>
-    </div></section>
-    <p class="badge"><a href="https://github.com/shower/shower">Fork me on Github</a></p>
-
-        -->
     <script src="shower/shower.min.js"></script>
     <!-- Copyright © 2013 Yours Truly, Famous Inc. -->
 </body>
