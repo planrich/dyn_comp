@@ -14,13 +14,6 @@ fn sudoku_valid:
       let block: psudoku_check s (sudoku_line_valid) (sudoku_block) in
       (and (and atv colv) block)
 
-
---reduce and 
---        (map 
---            (\x -> psudoku_check s (sudoku_line_valid) (x)) 
---            [(at), (sudoku_col), (sudoku_block)]
---        ) true
-
 fn psudoku_check:
 = s check extract ; reduce and (map (\x -> (check (extract s x))) [0,1,2,3,4,5,6,7,8]) true
 
@@ -194,7 +187,7 @@ fn map:
 
 
 fn main:
-=; sudoku_solve (sudoku 2)
+=; sudoku_solve (sudoku 1)
 
 fn sudoku:
 = 0 ; [[9,1,6,0,0,4,0,7,2],

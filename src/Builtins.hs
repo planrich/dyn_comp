@@ -19,13 +19,13 @@ import ParserTypes
 
 builtins :: M.Map String Builtin
 builtins = M.fromList [ ("add", Builtin 2 $ numericBinary (+))
-                      , ("+",   Builtin 2 $ numericBinary (+))
+                      --, ("+",   Builtin 2 $ numericBinary (+))
                       , ("sub", Builtin 2 $ numericBinary (-))
-                      , ("-",   Builtin 2 $ numericBinary (-))
+                      --, ("-",   Builtin 2 $ numericBinary (-))
                       , ("div", Builtin 2 $ numericBinary div)
-                      , ("/",   Builtin 2 $ numericBinary div)
+                      --, ("/",   Builtin 2 $ numericBinary div)
                       , ("mul", Builtin 2 $ numericBinary (*))
-                      , ("*",   Builtin 2 $ numericBinary (*))
+                      --, ("*",   Builtin 2 $ numericBinary (*))
                       , ("mod", Builtin 2 $ numericBinary mod)
                       , ("and", Builtin 2 $ boolBinary (&&))
                       , ("or",  Builtin 2 $ boolBinary (||))
@@ -36,6 +36,7 @@ builtins = M.fromList [ ("add", Builtin 2 $ numericBinary (+))
                       , ("less_equal", Builtin 2 $ comparison (<=))
                       , ("greater", Builtin 2 $ comparison (>))
                       , ("greater_equal", Builtin 2 $ comparison (>=))
+                      , ("ltos", Builtin 1 ltos)
 
                       , ("cons", Builtin 2 $ cons)
                       , ("append", Builtin 2 $ append)
@@ -49,6 +50,15 @@ builtins = M.fromList [ ("add", Builtin 2 $ numericBinary (+))
                       --, ("head", Builtin 1 $ extractListOp 1 (head))
                       --, ("tail", Builtin 1 extractListOp (tail))
                       ]
+
+ltos :: [Expr] -> ThrowError Expr
+ltos [(ListExpr list)] = charListToStr list ""
+
+charListToStr :: [Expr] -> String -> ThrowError Expr
+charListToStr ((CharExpr c):cs) str = charListToStr cs (str ++ [c])
+charListToStr [] str = return $ StrExpr str
+charListToStr list str = throwError $ Fallback $ "couldn't convert list: " ++ (show list)
+
 
 sortList :: [Expr] -> ThrowError Expr
 sortList [(ListExpr list)] = return $ ListExpr (L.sort list)
@@ -67,12 +77,16 @@ undef :: [Expr] -> ThrowError Expr
 undef _ = throwError $ Fallback "hit undefined! exiting!"
 
 append :: [Expr] -> ThrowError Expr
+append [(ListExpr ls), (ListExpr ls2)] = return $ ListExpr (ls ++ ls2)
 append [(ListExpr ls), a] = return $ ListExpr (ls ++ [a])
-append [a,b] = throwError $ Fallback ("could not append" ++ (show b) ++ " to " ++ (show a))
+append [(StrExpr str), (CharExpr c)] = return $ StrExpr (str ++ [c])
+append [a,b] = throwError $ Fallback ("could not append " ++ (show b) ++ " to " ++ (show a))
 
 cons :: [Expr] -> ThrowError Expr
+cons [(CharExpr c), (ListExpr [])] = return $ StrExpr (c:[])
 cons [a, (ListExpr l)] = return $ ListExpr (a:l)
-cons [a,b] = throwError $ Fallback ("could not prepend" ++ (show a) ++ " to " ++ (show b))
+cons [(CharExpr c), (StrExpr l)] = return $ StrExpr (c:l)
+cons [a,b] = throwError $ Fallback ("could not prepend " ++ (show a) ++ " to " ++ (show b))
 
 existsBuiltin :: Int -> String -> Maybe Builtin
 existsBuiltin argcount name =

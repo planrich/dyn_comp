@@ -43,6 +43,17 @@
         svg {
             font-size: 12px;
         }
+        .stext {
+            font-size: 30px;
+            font: monospace;
+        }
+        .sudoku-example {
+            margin: 0 auto 0 auto;
+            width: 405px; 
+            height: 400px; 
+            background: url('sudoku_small.jpg');
+            background-repeat: no-repeat;
+        }
     </style>
     <script src="d3.min.js" ></script>
     <script src="nv.d3.min.js" ></script>
@@ -126,7 +137,7 @@
     <section class="slide cover" id="Cover">
         <div>
             <h2>
-                An interpretor for a tiny functional language
+                An interpretor for a functional language
             </h2>
             <p class="note">
                 Abstract machines SS13
@@ -159,6 +170,16 @@
     </section>
     <section class="slide">
         <div>
+            <h2>Some implementation details</h2>
+            <ul>
+                <li>Entirely written in Haskell</li>
+                <li>Parsec used for parsing</li>
+                <li>Evaluation strongly related to the λ-Kalkulus</li>
+            </ul>
+        </div>
+    </section>
+    <section class="slide">
+        <div>
             <h2>The syntax explained</h2>
             <img style="float: left; margin-left: -70px; margin-right: -70px;" src="map_example.png" />
             <img style="float: right; margin-left: 40px;" src="repl_curry.png" />
@@ -173,6 +194,158 @@
                     <li>Utilizing the new 'language' to implement a sudoku solver</li>
                     <li>Compare the implementation to a haskell Impl.</li>
                 </ul>
+            </div>
+        </div>
+    </section>
+    <section class="slide">
+        <div>
+            <h2>Sudoku solving algorithm</h2>
+            <div>
+                <ol>
+                    <li>Iterate all not assigned slots</li>
+                    <li>Find a number that makes the sudoku valid</li>
+                    <li>Proceed to the next slot or step back if there is no way to solve the sudoku</li>
+                </ol>
+                <div style="float: right; width: 400px; height: 400px; background: url('sudoku_small.jpg');">
+                </div>
+            </div>
+        </div>
+    </section>
+    <section class="slide">
+        <div>
+            <h2>Sudoku solving algorithm</h2>
+            <div>
+                <div class="sudoku-example">
+                    <svg>
+                        <rect x=0 y=0 width=45 height=45 style="stroke:red;fill:none;stroke-width:2;"/>
+                    </svg>
+                </div>
+            </div>
+        </div>
+    </section>
+    <section class="slide">
+        <div>
+            <h2>Sudoku solving algorithm</h2>
+            <div>
+                <div class="sudoku-example">
+                    <svg>
+                        <!--rect x=0 y=0 width=45 height=45 style="stroke:red;fill:none;stroke-width:5;"/-->
+                        <text x=15 y=35 fill="red" class="stext">1</text>
+                    </svg>
+                </div>
+            </div>
+        </div>
+    </section>
+    <section class="slide">
+        <div>
+            <h2>Sudoku solving algorithm</h2>
+            <div>
+                <div class="sudoku-example">
+                    <svg>
+                        <!--rect x=0 y=0 width=45 height=45 style="stroke:red;fill:none;stroke-width:5;"/-->
+                        <text x=15 y=35 fill="red" class="stext">2</text>
+                    </svg>
+                </div>
+            </div>
+        </div>
+    </section>
+    <section class="slide">
+        <div>
+            <h2>Sudoku solving algorithm</h2>
+            <div>
+                <div class="sudoku-example">
+                    <svg>
+                        <!--rect x=0 y=0 width=45 height=45 style="stroke:red;fill:none;stroke-width:5;"/-->
+                        <text x=15 y=35 fill="red" class="stext">3</text>
+                    </svg>
+                </div>
+            </div>
+        </div>
+    </section>
+    <section class="slide">
+        <div>
+            <h2>Sudoku solving algorithm</h2>
+            <div>
+                <div class="sudoku-example">
+                    <svg>
+                        <text x=15 y=35 fill="red" class="stext">3</text>
+                        <rect x=45 y=0 width=45 height=45 style="stroke:red;fill:none;stroke-width:2;"/>
+                    </svg>
+                </div>
+            </div>
+        </div>
+    </section>
+    <section class="slide">
+        <div>
+            <h2>Sudoku solving algorithm</h2>
+            <div>
+                <div class="sudoku-example">
+                    <svg>
+                        <text x=15 y=35 fill="red" class="stext">3</text>
+                        <text x=60 y=35 fill="red" class="stext">5</text>
+                        <!--rect x=45 y=0 width=45 height=45 style="stroke:red;fill:none;stroke-width:2;"/-->
+                    </svg>
+                </div>
+            </div>
+        </div>
+    </section>
+    <section class="slide">
+        <div>
+            <h2>Sudoku solving algorithm</h2>
+            <div>
+                <div class="sudoku-example">
+                    <svg>
+                        <text x=15 y=35 fill="red" class="stext">3</text>
+                        <text x=60 y=35 fill="red" class="stext">5</text>
+                        <rect x=310 y=0 width=45 height=45 style="stroke:red;fill:none;stroke-width:2;"/>
+                    </svg>
+                </div>
+            </div>
+        </div>
+    </section>
+    <section class="slide">
+        <div>
+            <h2>Sudoku solving algorithm</h2>
+            <div>
+                <div class="sudoku-example">
+                    <svg>
+                        <text x=15 y=35 fill="red" class="stext">3</text>
+                        <text x=60 y=35 fill="red" class="stext">5</text>
+                        <text x=325 y=35 fill="red" class="stext">1</text>
+                    </svg>
+                </div>
+            </div>
+        </div>
+    </section>
+    <section class="slide">
+        <div>
+            <h2>Sudoku solving algorithm</h2>
+            <div>
+                <div class="sudoku-example">
+                    <svg>
+                        <text x=15 y=35 fill="red" class="stext">3</text>
+                        <text x=60 y=35 fill="red" class="stext">5</text>
+                        <text x=325 y=35 fill="red" class="stext">1</text>
+                        <rect x=355 y=0 width=45 height=45 style="stroke:red;fill:none;stroke-width:2;"/>
+                    </svg>
+                </div>
+            </div>
+        </div>
+    </section>
+    <section class="slide">
+        <div>
+            <h2>Sudoku solving algorithm</h2>
+            <div>
+                <div class="sudoku-example">
+                    <svg>
+                        <text x=15 y=35 fill="red" class="stext">3</text>
+                        <text x=60 y=35 fill="red" class="stext">5</text>
+                        <text x=325 y=35 fill="red" class="stext">1</text>
+                        <text x=370 y=35 fill="red" class="stext">8</text>
+                        <text x=385 y=35 fill="red" class="stext">←</text>
+                        <text x=385 y=340 fill="red" class="stext">←</text>
+                    </svg>
+                </div>
             </div>
         </div>
     </section>

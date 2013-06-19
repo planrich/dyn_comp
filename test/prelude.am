@@ -1,0 +1,62 @@
+
+fn list_len:
+= [] ; 0
+= (l:ls) ; add 1 (list_len ls)
+
+fn take:
+= list a ; ptake list a []
+-- private method
+fn ptake:
+= n [] list ; if greater_equal n 0
+              then list
+              else fatal "tried to take to much from a list"
+= 0 (l:ls) list ; list
+= n (l:ls) list ; if greater n 0
+                  then ptake (sub n 1) ls (append list l)
+                  else list
+
+fn drop:
+= _ [] ; []
+= 0 list ; list
+= n (l:ls) ; if greater n 0
+             then drop (sub n 1) ls
+             else cons l ls
+
+fn concat:
+= list [] ; list
+= list (r:rs) ; concat (append list r) rs
+
+fn foldl:
+= f z [] ; z
+= f z (l:ls) ; foldl f (f z l) ls
+
+fn foldr:
+= f z [] ; z
+= f z (l:ls) ; f l (foldr f z ls)
+
+fn reduce:
+= f (l:ls) s ; reduce f ls (f l s)
+= f [] s ; s
+
+fn for:
+= from to ; pfor from to []
+fn pfor:
+= from to l ; if equal from to
+              then cons to l
+              else pfor from (sub to 1) (cons to l)
+
+fn map:
+= f []     ; []
+= f (l:ls) ; cons (f l) (map f ls)
+
+fn filter:
+= f [] ; []
+= f (l:ls); if f l 
+            then append (filter f ls) l
+            else filter f ls
+
+fn qsort:
+= [] ; []
+= (p:qs) ; let lesser: qsort (filter (\x -> less x p) qs) in
+           let greater: qsort (filter (\x -> greater_equal x p) qs) in
+             append (append lesser p) greater

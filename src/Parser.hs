@@ -24,10 +24,10 @@ parseFile :: String -> IO (Either ParseError Program)
 parseFile filePath = PS.parseFromFile file filePath
 
 parseExprFromStr :: String -> IO (Either ParseError Expr)
-parseExprFromStr input = return (runP expr () "repl" input)
+parseExprFromStr input = return (runP replExpr () "repl" input)
 
 parseFuncFromStr :: String -> IO (Either ParseError Func)
-parseFuncFromStr input = return (runP function () "repl" input)
+parseFuncFromStr input = return (runP replFunction () "repl" input)
 
 lexer :: P.TokenParser ()
 lexer = P.makeTokenParser tokenDef
@@ -44,6 +44,18 @@ operator = P.operator lexer
 reservedOp = P.reservedOp lexer
 squares = P.squares lexer
 stringLiteral = P.stringLiteral lexer
+
+replExpr :: Parser Expr
+replExpr = do
+    e <- expr
+    eof
+    return e
+
+replFunction :: Parser Func
+replFunction = do
+    f <- function
+    eof
+    return f
 
 file :: Parser Program
 file = do
@@ -98,7 +110,9 @@ condExpr = do
 funExpr :: Parser Expr
 funExpr = do 
     atoms <- many atomExpr
-    return $ foldl1 AppExpr atoms
+    case atoms of
+        [] -> fail "not an expression"
+        _ -> return $ foldl1 AppExpr atoms
 
 atomExpr :: Parser Expr
 atomExpr = try $ choice
@@ -107,9 +121,17 @@ atomExpr = try $ choice
     , letExpr
     , varExpr
     , listExpr
+    , charExpr
     , strExpr
     , (parens $ expr)
     ]
+
+charExpr :: Parser Expr
+charExpr = do
+    symbol "'"
+    c <- anyChar
+    symbol "'"
+    return $ CharExpr c
 
 letExpr :: Parser Expr
 letExpr = do

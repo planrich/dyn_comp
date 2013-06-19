@@ -1,6 +1,7 @@
 
 
 import System.Environment
+import System.Directory
 import System.IO
 import qualified Data.Text as T
 import qualified Data.Text.Lazy as L
@@ -55,7 +56,30 @@ repl env = do
     line <- getLine
     if DL.isInfixOf "fn " line
       then replAddFunc env [line]
-      else apply env line
+      else 
+        if DL.isInfixOf "import " line
+        then importFile env line
+        else apply env line
+
+importFile :: Env -> String -> IO ()
+importFile env importstmt =
+    let fileName = (unwords . (drop 1) . words) importstmt
+      in do
+        exists <- doesFileExist fileName
+        if exists
+          then do
+            mProgram <- parseFile fileName
+            case mProgram of
+                Left err -> do 
+                    print err
+                    repl env
+                Right program -> do
+                    syms <- return $ harvestSymbols (programFunctions program) env
+                    putStrLn $ "imported file '" ++ fileName ++ "'"
+                    repl syms
+          else do
+            putStrLn $ "file '" ++ fileName ++ "' does not exist"
+            repl env
 
 apply :: Env -> String -> IO ()
 apply env line = do

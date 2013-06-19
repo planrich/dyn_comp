@@ -162,6 +162,8 @@ matchBinding _ _ = False
 listNotEmpty :: Expr -> Bool
 listNotEmpty (ListExpr []) = False
 listNotEmpty (ListExpr _) = True
+listNotEmpty (StrExpr []) = False
+listNotEmpty (StrExpr _) = True
 listNotEmpty _ = False
 -- |How many arguments must a specific function get to be executed?
 --  It is assumed that every pattern of a function has the
