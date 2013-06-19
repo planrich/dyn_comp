@@ -25,6 +25,7 @@ main = do
 handle :: [String] -> IO ()
 handle ("-i":_) = repl newSymT
 handle (f:_) = parse f
+handle [] = putStrLn "usage: am [-i] [<file.am>]"
 
 parse :: String -> IO ()
 parse filePath = do

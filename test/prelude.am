@@ -59,4 +59,4 @@ fn qsort:
 = [] ; []
 = (p:qs) ; let lesser: qsort (filter (\x -> less x p) qs) in
            let greater: qsort (filter (\x -> greater_equal x p) qs) in
-             append (append lesser p) greater
+             concat (append lesser p) greater

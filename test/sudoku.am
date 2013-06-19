@@ -185,9 +185,21 @@ fn map:
 = f []     ; []
 = f (l:ls) ; cons (f l) (map f ls)
 
+fn filter:
+= f [] ; []
+= f (l:ls); if f l 
+            then append (filter f ls) l
+            else filter f ls
+
+fn qsort:
+= [] ; []
+= (p:qs) ; let lesser: qsort (filter (\x -> less x p) qs) in
+           let greater: qsort (filter (\x -> greater_equal x p) qs) in
+             concat (append lesser p) greater
+
 
 fn main:
-=; sudoku_solve (sudoku 1)
+=; sudoku_solve (sudoku 5)
 
 fn sudoku:
 = 0 ; [[9,1,6,0,0,4,0,7,2],

@@ -77,7 +77,7 @@ undef :: [Expr] -> ThrowError Expr
 undef _ = throwError $ Fallback "hit undefined! exiting!"
 
 append :: [Expr] -> ThrowError Expr
-append [(ListExpr ls), (ListExpr ls2)] = return $ ListExpr (ls ++ ls2)
+--append [(ListExpr ls), (ListExpr ls2)] = return $ ListExpr (ls ++ ls2)
 append [(ListExpr ls), a] = return $ ListExpr (ls ++ [a])
 append [(StrExpr str), (CharExpr c)] = return $ StrExpr (str ++ [c])
 append [a,b] = throwError $ Fallback ("could not append " ++ (show b) ++ " to " ++ (show a))
