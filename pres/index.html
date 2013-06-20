@@ -148,6 +148,18 @@
     </section>
     <section class="slide">
         <div>
+            <h2>The goal of my project</h2>
+            <div>
+                <ul>
+                    <li>Implement an interpretor</li>
+                    <li>Utilizing the new 'language' to implement a sudoku solver</li>
+                    <li>Compare the implementation to a Haskell Impl.</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+    <section class="slide">
+        <div>
             <h2>Why?</h2>
             <ol>
                 <li>Interesting new concepts</li>
@@ -174,27 +186,19 @@
             <ul>
                 <li>Entirely written in Haskell</li>
                 <li>Parsec used for parsing</li>
-                <li>Evaluation strongly related to the λ-Kalkulus</li>
+                <li>Evaluation strongly related to the λ-Calculus</li>
             </ul>
+            <div>
+                AM: <code>add 100 (sub 200 100)</code><br/>
+                AM internal: <code>(('add' 100) (('sub' 200) 100))</code>
+            </div>
         </div>
     </section>
     <section class="slide">
         <div>
             <h2>The syntax explained</h2>
-            <img style="float: left; margin-left: -70px; margin-right: -70px;" src="map_example.png" />
-            <img style="float: right; margin-left: 40px;" src="repl_curry.png" />
-        </div>
-    </section>
-    <section class="slide">
-        <div>
-            <h2>The goal of this project</h2>
-            <div>
-                <ul>
-                    <li>Implement an interpretor</li>
-                    <li>Utilizing the new 'language' to implement a sudoku solver</li>
-                    <li>Compare the implementation to a haskell Impl.</li>
-                </ul>
-            </div>
+            <img style="margin-left: 40px;" src="map_example.png" />
+            <img style="margin-left: 40px;" src="qsort_example.png" />
         </div>
     </section>
     <section class="slide">
@@ -393,7 +397,7 @@
             <h2>Algorithm improvements</h2>
             <ul>
                 <li>Tweaked some functions in the sudoku solver</li>
-                <li>Especially the function <i>sudoku_line_valid</i> had a big performance inpact.</li>
+                <li>Especially the function <i>sudoku_line_valid</i> had a big performance impact.</li>
             </ul>
         </div>
     </section>

@@ -100,7 +100,7 @@ instance Error EvalError where
 
 instance Show Expr where
     show (AppExpr e1 e2) = " #(" ++ (show e1) ++ " " ++ (show e2) ++ ")"
-    show (LitExpr i) = (show i)
+    show (LitExpr i) = show i
     show (VarExpr n) = "\"" ++ n ++ "\""
     show (CharExpr c) = ('\'':(c:"'"))
     show (StrExpr s) = ('"':s) ++ "\""

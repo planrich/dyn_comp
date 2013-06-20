@@ -117,6 +117,7 @@ funExpr = do
 atomExpr :: Parser Expr
 atomExpr = try $ choice
     [ litExpr
+    , signedlitExpr
     , boolExpr
     , letExpr
     , varExpr
@@ -170,10 +171,15 @@ litExpr = do
     i <- natural
     return $ LitExpr (fromIntegral i)
 
+signedlitExpr :: Parser Expr
+signedlitExpr = do
+    symbol "-"
+    i <- natural
+    return $ LitExpr (fromIntegral (-i))
+
 varExpr :: Parser Expr
 varExpr = do
     id <- identifier
-    --var' <- var
     return $ VarExpr id
 
 binding :: Parser Binding

@@ -4,16 +4,9 @@ fn list_len:
 = (l:ls) ; add 1 (list_len ls)
 
 fn take:
-= list a ; ptake list a []
--- private method
-fn ptake:
-= n [] list ; if greater_equal n 0
-              then list
-              else fatal "tried to take to much from a list"
-= 0 (l:ls) list ; list
-= n (l:ls) list ; if greater n 0
-                  then ptake (sub n 1) ls (append list l)
-                  else list
+= 0 list ; []
+= a (l:ls) ; cons l (take (sub a 1) ls)
+= a _ ; fatal "could not take enough elements"
 
 fn drop:
 = _ [] ; []
@@ -45,9 +38,12 @@ fn pfor:
               then cons to l
               else pfor from (sub to 1) (cons to l)
 
+-- AM map
 fn map:
 = f []     ; []
 = f (l:ls) ; cons (f l) (map f ls)
+
+
 
 fn filter:
 = f [] ; []
@@ -55,8 +51,82 @@ fn filter:
             then append (filter f ls) l
             else filter f ls
 
+fn flip:
+= f a b ; f b a
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+-- quick sort
 fn qsort:
 = [] ; []
-= (p:qs) ; let lesser: qsort (filter (\x -> less x p) qs) in
-           let greater: qsort (filter (\x -> greater_equal x p) qs) in
-             concat (append lesser p) greater
+= (p:qs) ; let lesser: qsort (filter (flip less p) qs) in
+           let greater: qsort (filter (flip greater_equal p) qs) in
+             concat lesser (cons p greater)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

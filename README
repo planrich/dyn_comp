@@ -1,121 +1,21 @@
 
-Ich möchte in diesem Semeter einen Interpretor implementieren der eine funktionale Sourcesprache hat.
-Als Ziel meiner Arbeit moechte ich gerne eine kleine Applikation in der Sourcesprache implementieren.
-Beispielsweise einen Sudokusolver.
+This is an interpretor strongly related to the lambda calculus. It is written
+entirely in Haskell using Parsec.
 
-Implementierungssprache des Interpretors: Haskell
-Parsing utility: Parsec
+# Install
 
-Aufwandsabschätzung:
+Use cabal to install this project.
+~~~
+cabal install
+~~~
 
-Lexing/Parsing: 15 h
-Arithmetische Ausdruecke: 8 h
-Funktionsaufrufe: 12 h
-Pattern Matching: 14 h
-Listen & String Operationen: 12 h
-Implementierung der App. in der Sourcesprache: 10 h
-Vorbereitung Abgabe und Präsentation: 4 h
-----------------------------------------
-Summe: 75 h
+# Features
 
-Ich habe schon vor den Osterferien begonnen und kann schon arithmetische Ausdruecke berechnen 
-und arbeite gerade am Funktionsaufruf & Pattern Matching.
+See test/prelude.am or test/sudoku.am for examples.
 
+# Repl
 
-LOG:
-
-➜  am git:(master) ✗ ./cabal-dev/bin/am test/sudoku.am +RTS -sstderr
-evaluated [[$(1),$(2),$(3),$(4),$(5),$(6),$(7),$(8),$(9),],[$(4),$(5),$(6),$(7),$(8),$(9),$(1),$(2),$(3),],[$(7),$(8),$(9),$(1),$(2),$(3),$(4),$(5),$(6),],[$(2),$(1),$(4),$(3),$(6),$(5),$(8),$(9),$(7),],[$(3),$(6),$(5),$(8),$(9),$(7),$(2),$(1),$(4),],[$(8),$(9),$(7),$(2),$(1),$(4),$(3),$(6),$(5),],[$(5),$(3),$(1),$(6),$(4),$(2),$(9),$(7),$(8),],[$(6),$(4),$(2),$(9),$(7),$(8),$(5),$(3),$(1),],[$(9),$(7),$(8),$(5),$(3),$(1),$(6),$(4),$(2),],]
-  97,261,814,736 bytes allocated in the heap
-     608,466,632 bytes copied during GC
-         426,144 bytes maximum residency (194 sample(s))
-          38,968 bytes maximum slop
-               2 MB total memory in use (0 MB lost due to fragmentation)
-
-                                    Tot time (elapsed)  Avg pause  Max pause
-  Gen  0     186103 colls,     0 par    1.24s    1.24s     0.0000s    0.0001s
-  Gen  1       194 colls,     0 par    0.05s    0.05s     0.0003s    0.0005s
-
-  INIT    time    0.00s  (  0.00s elapsed)
-  MUT     time   38.91s  ( 39.04s elapsed)
-  GC      time    1.29s  (  1.29s elapsed)
-  EXIT    time    0.00s  (  0.00s elapsed)
-  Total   time   40.20s  ( 40.33s elapsed)
-
-  %GC     time       3.2%  (3.2% elapsed)
-
-  Alloc rate    2,499,802,198 bytes per MUT second
-
-  Productivity  96.8% of total user, 96.5% of total elapsed
-
-COST CENTRE             MODULE      %time %alloc
-
--- data Expr = AppExpr Expr Expr
-subs                    Interpretor  46.4   67.9
-apply                   Interpretor  17.9   11.4
-eval                    Interpretor  10.7   12.2
-
--- data Expr = AppExpr !Expr !Expr
-subs                    Interpretor  53.0   72.7
-apply                   Interpretor  16.6    9.7
-eval                    Interpretor   8.6   10.4
-
-
-
-➜  am git:(master) ✗ ./cabal-dev/bin/am_profile +RTS -hc -s -p -RTS test/sudoku.am
-evaluated [[3,1,5,6,8,7,2,9,4,],[2,9,7,4,5,1,6,8,3,],[6,4,8,9,3,2,5,7,1,],[8,5,9,7,1,4,3,2,6,],[7,2,1,3,9,6,8,4,5,],[4,6,3,8,2,5,9,1,7,],[1,3,6,2,4,8,7,5,9,],[5,7,2,1,6,9,4,3,8,],[9,8,4,5,7,3,1,6,2,],]
-   2,499,736,608 bytes allocated in the heap
-      87,646,912 bytes copied during GC
-         465,664 bytes maximum residency (43 sample(s))
-          31,504 bytes maximum slop
-               3 MB total memory in use (0 MB lost due to fragmentation)
-
-                                    Tot time (elapsed)  Avg pause  Max pause
-  Gen  0      4765 colls,     0 par    0.06s    0.06s     0.0000s    0.0002s
-  Gen  1        43 colls,     0 par    0.02s    0.02s     0.0004s    0.0006s
-
-  INIT    time    0.00s  (  0.00s elapsed)
-  MUT     time    1.43s  (  1.44s elapsed)
-  GC      time    0.07s  (  0.07s elapsed)
-  RP      time    0.00s  (  0.00s elapsed)
-  PROF    time    0.00s  (  0.00s elapsed)
-  EXIT    time    0.00s  (  0.00s elapsed)
-  Total   time    1.51s  (  1.51s elapsed)
-
-  %GC     time       4.8%  (4.8% elapsed)
-
-  Alloc rate    1,746,550,151 bytes per MUT second
-
-  Productivity  94.9% of total user, 94.6% of total elapsed
-
-➜  am git:(master) ✗ ./cabal-dev/bin/am_profile +RTS -hc -s -p -RTS test/sudoku.am
-evaluated [[9,7,6,5,1,3,2,4,8,],[1,5,8,6,4,2,7,9,3,],[2,3,4,7,9,8,5,1,6,],[7,6,1,8,3,5,9,2,4,],[8,2,3,4,7,9,1,6,5,],[5,4,9,1,2,6,8,3,7,],[6,9,7,3,5,1,4,8,2,],[3,1,5,2,8,4,6,7,9,],[4,8,2,9,6,7,3,5,1,],]
- 123,610,178,616 bytes allocated in the heap
-   4,470,283,072 bytes copied during GC
-         585,184 bytes maximum residency (2113 sample(s))
-          31,360 bytes maximum slop
-               3 MB total memory in use (0 MB lost due to fragmentation)
-
-                                    Tot time (elapsed)  Avg pause  Max pause
-  Gen  0     235503 colls,     0 par    2.86s    2.86s     0.0000s    0.0002s
-  Gen  1      2113 colls,     0 par    0.84s    0.84s     0.0004s    0.0007s
-
-  INIT    time    0.00s  (  0.00s elapsed)
-  MUT     time   70.40s  ( 70.86s elapsed)
-  GC      time    3.48s  (  3.48s elapsed)
-  RP      time    0.00s  (  0.00s elapsed)
-  PROF    time    0.22s  (  0.22s elapsed)
-  EXIT    time    0.00s  (  0.00s elapsed)
-  Total   time   74.09s  ( 74.34s elapsed)
-
-  %GC     time       4.7%  (4.7% elapsed)
-
-  Alloc rate    1,755,909,546 bytes per MUT second
-
-  Productivity  95.0% of total user, 94.7% of total elapsed
-
-➜  am git:(master) ✗ 
-
-
-
-
+Start the read evaluate print loop with
+~~~
+am -i
+~~~
