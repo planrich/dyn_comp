@@ -76,7 +76,7 @@ append [(StrExpr str), (CharExpr c)] = return $ StrExpr (str ++ [c])
 append [a,b] = throwError $ Fallback ("could not append " ++ (show b) ++ " to " ++ (show a))
 
 cons :: [Expr] -> ThrowError Expr
-cons [(CharExpr c), (ListExpr [])] = return $ StrExpr (c:[])
+--cons [(CharExpr c), (ListExpr [])] = return $ StrExpr (c:[])
 cons [a, (ListExpr l)] = return $ ListExpr (a:l)
 cons [(CharExpr c), (StrExpr l)] = return $ StrExpr (c:l)
 cons [a,b] = throwError $ Fallback ("could not prepend " ++ (show a) ++ " to " ++ (show b))
