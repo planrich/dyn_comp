@@ -8,10 +8,21 @@ syntax match Number /0x[\da-fA-F]\+/
 syntax match Number /0b[01]\+/
 
 syntax match Keyword /^=/
+syntax match Keyword /^+/
 
-syntax keyword Keyword fn 
+syntax keyword Keyword func
+syntax keyword Keyword data
+syntax keyword Keyword struct
+syntax keyword Keyword mem
+syntax keyword Keyword unit
+syntax keyword Keyword version
+syntax keyword Keyword legacy
+syntax keyword Keyword of
+syntax keyword Keyword let
+syntax keyword Keyword in
+syntax keyword Keyword as
 
-syntax keyword Conditional if then else let in
+syntax keyword Conditional if then else
 syntax keyword Operator "=", ";", ":"
 
 syntax match Comment /\-\-.*/

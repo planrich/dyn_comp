@@ -5,6 +5,8 @@ module Parser
     )
   where
 
+import Data.Char
+
 import Text.Parsec
 import Text.Parsec.String as PS
 import Text.Parsec.Char
@@ -57,16 +59,38 @@ replFunction = do
     eof
     return f
 
+unit = file
+
 file :: Parser Program
 file = do
     whiteSpace
+    unit <- unitHead
     fs <- many function
     eof
-    return $ Program fs
+    return $ Program unit fs
+
+unitHead :: Parser Unit
+unitHead = do
+    reserved "unit"
+    name <- identifier
+    reserved "version"
+    major <- digit
+    minor <- digit
+    patch <- natural
+
+    exports <- many export
+
+    return $ Unit name (digitToInt major) (digitToInt minor) (fromIntegral patch) exports
+
+export :: Parser Export
+export = do
+    symbol "+"
+    name <- identifier
+    return $ name
 
 function :: Parser Func
 function = do
-    reserved "fn"
+    reserved "func"
     fname <- identifier
     symbol ":"
     sig <- signature
@@ -112,7 +136,7 @@ funExpr = do
     atoms <- many atomExpr
     case atoms of
         [] -> fail "not an expression"
-        _ -> return $ foldl1 AppExpr atoms
+        _ -> return $ AppExpr2 atoms
 
 atomExpr :: Parser Expr
 atomExpr = try $ choice
@@ -162,8 +186,8 @@ strExpr = do
     return $ StrExpr str
 
 boolExpr :: Parser Expr
-boolExpr = do{ reserved "true"; return $ BoolExpr True}
-    <|> do { reserved "false"; return $ BoolExpr False}
+boolExpr = do{ reserved "true"; return $ BoolExpr True }
+    <|> do { reserved "false"; return $ BoolExpr False }
 
 litExpr :: Parser Expr
 litExpr = do

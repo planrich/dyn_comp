@@ -20,7 +20,18 @@ am = emptyDef
       , opStart = opLetter am
       , opLetter = oneOf ":=\\->"
       , reservedOpNames = ["=","\\","->","[]",",","<-"]  
-      , reservedNames = [ "fn", "if", "then", "else", "true", "false", "let", "in" ]
+      , reservedNames = 
+          [ "func"
+          , "if"
+          , "then"
+          , "else"
+          , "true"
+          , "false"
+          , "let"
+          , "in" 
+          , "unit"
+          , "version"
+          ]
       , caseSensitive  = True
       }
 

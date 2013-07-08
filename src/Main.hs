@@ -17,12 +17,14 @@ import ParserTypes
 import Interpretor
 import Environment
 import Builtins
+import Compiler
 
 main = do
     arguments <- getArgs
     handle arguments
 
 handle :: [String] -> IO ()
+handle ("-c":f) = compile f
 handle ("-i":_) = repl newSymT
 handle (f:_) = parse f
 handle [] = putStrLn "usage: am [-i] [<file.am>]"

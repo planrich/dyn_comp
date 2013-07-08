@@ -10,6 +10,8 @@ module ParserTypes
     , ThrowError
     , EvalError (..)
     , Builtin (..)
+    , Unit (..)
+    , Export
     , matchPattern
     , bindingName
     , funcArgCount
@@ -24,8 +26,11 @@ import Control.Monad.Error
 
 type ThrowError = Either EvalError
 type Name = String
+type Export = String
 
-data Program = Program { programFunctions :: [Func] }
+data Program = Program { programUnit :: Unit
+                       , programFunctions :: [Func]
+                       }
              deriving (Show)
 
 data Func = Func { funcName :: Name
@@ -34,12 +39,21 @@ data Func = Func { funcName :: Name
                  }
           deriving (Show)
 
+data Unit = Unit { unitName :: String
+                 , unitMajorVersion :: Int
+                 , unitMinorVersion :: Int
+                 , unitPatchVersion :: Int
+                 , unitExports :: [Export]
+                 }
+               deriving (Show)
+
 data Pattern = Pattern { patternBindings :: [Binding]
                        , patternExpr :: Expr
                        }
              deriving (Show)
 
 data Expr = AppExpr Expr Expr
+          | AppExpr2 [Expr]
           | LamExpr Name Expr
           | VarExpr Name
           | LitExpr Int
@@ -100,6 +114,7 @@ instance Error EvalError where
 
 instance Show Expr where
     show (AppExpr e1 e2) = " #(" ++ (show e1) ++ " " ++ (show e2) ++ ")"
+    show (AppExpr2 list) = " #" ++ (show list) ++ ""
     show (LitExpr i) = (show i)
     show (VarExpr n) = "\"" ++ n ++ "\""
     show (CharExpr c) = ('\'':(c:"'"))
