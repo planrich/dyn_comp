@@ -53,7 +53,7 @@ data Pattern = Pattern { patternBindings :: [Binding]
              deriving (Show)
 
 data Expr = AppExpr Expr Expr
-          | AppExpr2 [Expr]
+          | Expr [Expr]
           | LamExpr Name Expr
           | VarExpr Name
           | LitExpr Int
@@ -69,6 +69,7 @@ data Expr = AppExpr Expr Expr
           -- with the parameter. When going back the recursion the parameters are saved and
           -- when the param count the builtin needs is reached the function is executed.
           | FuncCtx Builtin [Expr]
+
 
 data Binding = BNumber !Int
              | BString !String
@@ -114,8 +115,8 @@ instance Error EvalError where
 
 instance Show Expr where
     show (AppExpr e1 e2) = " #(" ++ (show e1) ++ " " ++ (show e2) ++ ")"
-    show (AppExpr2 list) = " #" ++ (show list) ++ ""
     show (LitExpr i) = (show i)
+    show (Expr es) = " %" ++ (show es)
     show (VarExpr n) = "\"" ++ n ++ "\""
     show (CharExpr c) = ('\'':(c:"'"))
     show (StrExpr s) = ('"':s) ++ "\""

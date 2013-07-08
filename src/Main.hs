@@ -24,10 +24,16 @@ main = do
     handle arguments
 
 handle :: [String] -> IO ()
-handle ("-c":f) = compile f
-handle ("-i":_) = repl newSymT
+handle ("-i":fs) = repl newSymT
+handle ("-c":fs) = do
+    result <- parseFile (fs !! 0)
+    case result of
+        Left err -> print err
+        Right prog -> do
+            compile prog
 handle (f:_) = parse f
 handle [] = putStrLn "usage: am [-i] [<file.am>]"
+
 
 parse :: String -> IO ()
 parse filePath = do

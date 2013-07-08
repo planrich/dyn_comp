@@ -6,6 +6,7 @@
 module Builtins 
     ( builtins
     , existsBuiltin
+    , findBuiltin
     )
   where
 
@@ -18,13 +19,9 @@ import ParserTypes
 
 builtins :: M.Map String Builtin
 builtins = M.fromList [ ("add", Builtin 2 $ numericBinary (+))
-                      --, ("+",   Builtin 2 $ numericBinary (+))
                       , ("sub", Builtin 2 $ numericBinary (-))
-                      --, ("-",   Builtin 2 $ numericBinary (-))
                       , ("div", Builtin 2 $ numericBinary div)
-                      --, ("/",   Builtin 2 $ numericBinary div)
                       , ("mul", Builtin 2 $ numericBinary (*))
-                      --, ("*",   Builtin 2 $ numericBinary (*))
                       , ("mod", Builtin 2 $ numericBinary mod)
                       , ("and", Builtin 2 $ boolBinary (&&))
                       , ("or",  Builtin 2 $ boolBinary (||))
@@ -46,8 +43,6 @@ builtins = M.fromList [ ("add", Builtin 2 $ numericBinary (+))
                       , ("at", Builtin 2 at)
 
                       , ("sort", Builtin 1 sortList)
-                      --, ("head", Builtin 1 $ extractListOp 1 (head))
-                      --, ("tail", Builtin 1 extractListOp (tail))
                       ]
 
 ltos :: [Expr] -> ThrowError Expr
@@ -76,13 +71,12 @@ undef :: [Expr] -> ThrowError Expr
 undef _ = throwError $ Fallback "hit undefined! exiting!"
 
 append :: [Expr] -> ThrowError Expr
---append [(ListExpr ls), (ListExpr ls2)] = return $ ListExpr (ls ++ ls2)
 append [(ListExpr ls), a] = return $ ListExpr (ls ++ [a])
 append [(StrExpr str), (CharExpr c)] = return $ StrExpr (str ++ [c])
 append [a,b] = throwError $ Fallback ("could not append " ++ (show b) ++ " to " ++ (show a))
 
 cons :: [Expr] -> ThrowError Expr
-cons [(CharExpr c), (ListExpr [])] = return $ StrExpr (c:[])
+--cons [(CharExpr c), (ListExpr [])] = return $ StrExpr (c:[])
 cons [a, (ListExpr l)] = return $ ListExpr (a:l)
 cons [(CharExpr c), (StrExpr l)] = return $ StrExpr (c:l)
 cons [a,b] = throwError $ Fallback ("could not prepend " ++ (show a) ++ " to " ++ (show b))
@@ -92,6 +86,9 @@ existsBuiltin argcount name =
     case M.lookup name builtins of
         Just bi@(Builtin argcount' b) -> if argcount' == argcount then Just bi else Nothing
         _ -> Nothing
+
+findBuiltin :: Name -> Maybe Builtin
+findBuiltin name = M.lookup name builtins
 
 comparison :: (Expr -> Expr -> Bool) -> [Expr] -> ThrowError Expr
 comparison f [e1, e2]

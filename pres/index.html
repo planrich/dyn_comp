@@ -148,11 +148,22 @@
     </section>
     <section class="slide">
         <div>
+            <h2>The goal of my project</h2>
+            <div>
+                <ul>
+                    <li>Implement an interpretor</li>
+                    <li>Utilizing the new 'language' to implement a sudoku solver</li>
+                    <li>Compare the implementation to a Haskell Impl.</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+    <section class="slide">
+        <div>
             <h2>Why?</h2>
             <ol>
                 <li>Interesting new concepts</li>
                 <li>An adventure <small>(Why would you not implement an interpretor in Haskell?)</small></li>
-                <li>Functional programming matters</li>
             </ol>
         </div>
     </section>
@@ -174,27 +185,19 @@
             <ul>
                 <li>Entirely written in Haskell</li>
                 <li>Parsec used for parsing</li>
-                <li>Evaluation strongly related to the λ-Kalkulus</li>
+                <li>Evaluation strongly related to the λ-Calculus</li>
             </ul>
+            <div>
+                AM: <code>add 100 (sub 200 100)</code><br/>
+                AM internal: <code>(('add' 100) (('sub' 200) 100))</code>
+            </div>
         </div>
     </section>
     <section class="slide">
         <div>
             <h2>The syntax explained</h2>
-            <img style="float: left; margin-left: -70px; margin-right: -70px;" src="map_example.png" />
-            <img style="float: right; margin-left: 40px;" src="repl_curry.png" />
-        </div>
-    </section>
-    <section class="slide">
-        <div>
-            <h2>The goal of this project</h2>
-            <div>
-                <ul>
-                    <li>Implement an interpretor</li>
-                    <li>Utilizing the new 'language' to implement a sudoku solver</li>
-                    <li>Compare the implementation to a haskell Impl.</li>
-                </ul>
-            </div>
+            <img style="margin-left: 40px;" src="map_example.png" />
+            <img style="margin-left: 40px;" src="qsort_example.png" />
         </div>
     </section>
     <section class="slide">
@@ -231,6 +234,7 @@
                     <svg>
                         <!--rect x=0 y=0 width=45 height=45 style="stroke:red;fill:none;stroke-width:5;"/-->
                         <text x=15 y=35 fill="red" class="stext">1</text>
+                        <text x=75 y=125 fill="red" class="stext">←</text>
                     </svg>
                 </div>
             </div>
@@ -244,6 +248,7 @@
                     <svg>
                         <!--rect x=0 y=0 width=45 height=45 style="stroke:red;fill:none;stroke-width:5;"/-->
                         <text x=15 y=35 fill="red" class="stext">2</text>
+                        <text x=250 y=35 fill="red" class="stext">←</text>
                     </svg>
                 </div>
             </div>
@@ -393,7 +398,7 @@
             <h2>Algorithm improvements</h2>
             <ul>
                 <li>Tweaked some functions in the sudoku solver</li>
-                <li>Especially the function <i>sudoku_line_valid</i> had a big performance inpact.</li>
+                <li>Especially the function <i>sudoku_line_valid</i> had a big performance impact.</li>
             </ul>
         </div>
     </section>
@@ -421,12 +426,11 @@
     </section>
     <section class="slide">
         <div>
-            <h2>What is missing?</h2>
-            <ul>
-                <li>I/O</li>
-                <li>A module system</li>
-                <li>Custom data structures</li>
-            </ul>
+            <h2>Want more?</h2>
+            <br/>
+            <a class="note" href="https://github.com/planrich/abstractmachines">
+                https://github.com/planrich/abstractmachines
+            </a>
         </div>
     </section>
     <script src="shower/shower.min.js"></script>
