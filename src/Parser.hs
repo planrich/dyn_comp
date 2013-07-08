@@ -112,7 +112,7 @@ funExpr = do
     atoms <- many atomExpr
     case atoms of
         [] -> fail "not an expression"
-        _ -> return $ foldl1 AppExpr atoms
+        _ -> return $ Expr atoms
 
 atomExpr :: Parser Expr
 atomExpr = try $ choice

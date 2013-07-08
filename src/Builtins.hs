@@ -6,6 +6,7 @@
 module Builtins 
     ( builtins
     , existsBuiltin
+    , findBuiltin
     )
   where
 
@@ -86,6 +87,9 @@ existsBuiltin argcount name =
     case M.lookup name builtins of
         Just bi@(Builtin argcount' b) -> if argcount' == argcount then Just bi else Nothing
         _ -> Nothing
+
+findBuiltin :: Name -> Maybe Builtin
+findBuiltin name = M.lookup name builtins
 
 comparison :: (Expr -> Expr -> Bool) -> [Expr] -> ThrowError Expr
 comparison f [e1, e2]
