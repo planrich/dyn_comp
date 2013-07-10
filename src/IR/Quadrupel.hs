@@ -126,7 +126,7 @@ coreFunc op@(Binary _) (op1:op2:[]) = do
 
 prettyPrint :: Quadrupel -> IO ()
 prettyPrint (Quadrupel r (Binary op) op1 op2) = 
-    putStrLn $ "r" ++ (show r) ++ " = " ++ (show op1) ++ " " ++ (show op) ++ " " ++ (show op2)
+    putStrLn $ (show (Register r)) ++ " = " ++ (show op1) ++ " " ++ (show op) ++ " " ++ (show op2)
 
 
 
