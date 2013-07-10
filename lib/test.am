@@ -2,5 +2,5 @@ unit test version 0000
 + test
 
 
-fn test:
-= ; add 1 1
+func test:
+= ; add 1 (add 1 (sub 1 100))

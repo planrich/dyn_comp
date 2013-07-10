@@ -1,56 +1,9 @@
 module IR.Quadrupel
-<<<<<<< HEAD
-    ( transform
-    )
-  where
-
-
-
-import ParserTypes
-
-import IR.QuadrupelTypes
-
-import Control.Monad.Writer
-import Control.Monad.State
-
-import qualified Data.Map as M
-
-data QuadrupelCode = QuadrupelCode { qrcCode :: [Quadrupel] }
-
-type QCGen = State QuadrupelCode ()
-
-transform :: Program -> QR
-transform (Program unit funcs) = QRUnit unit (map simpleTransform funcs)
-
-simpleTransform :: Func -> QR
-simpleTransform (Func name _ []) = QRFunc name []
-simpleTransform (Func name _ (p:_)) = 
-    let (_,qs) = runState (simpleTransformExpr (patternExpr p)) (QuadrupelCode []) in QRFunc name (qrcCode qs)
-
-simpleTransformExpr :: Expr -> QCGen
-simpleTransformExpr (AppExpr2 (fun:params)) = 
-    undefined
-  where
-    paramCount = length params
-    functionType = 
-simpleTransformExpr (LitExpr i) = do
-    modify $ addQC (QRAssign (Target "") (Value (fromIntegral i)))
-simpleTransformExpr _ = do
-    modify (\x -> QuadrupelCode $ (qrcCode x) ++ [QRAssign (Target "test") (Value 1)])
-
-
-addQC :: Quadrupel -> QuadrupelCode -> QuadrupelCode
-addQC q = (\x -> QuadrupelCode $ (qrcCode x) ++ [q])
-
-simpleApply :: Expr -> [Expr] -> QCGen
-simpleApply (AppExpr f s) l  = 
-    simpleApply f (l ++ [s])
-simpleApply (VarExpr name) params = return ()
-{-
     ( Operation (..)
     , Quadrupel (..)
     , transform
     , TEnv (..)
+    , prettyPrint
     )
   where
 
@@ -59,24 +12,47 @@ import Environment
 import Builtins
 
 import Control.Monad.State
+import Control.Monad.Trans.Error
+
+import qualified Data.Map as M
 
 type Reg = Integer
 
-
-data Operation 
-    = Add
-    | Mul
-    | Div
-    | Sub
+data Operation = Binary BinOp
   deriving (Show)
 
+data BinOp = Add
+           | Sub
+           | Mul
+           | Div
+
+instance Show BinOp where
+    show Add = "+"
+    show Sub = "-"
+    show Mul = "*"
+    show Div = "/"
+
+
+builtinMap = M.fromList 
+             [ ("add", Binary Add)
+             , ("mul", Binary Mul)
+             , ("div", Binary Div)
+             , ("sub", Binary Sub)
+             ]
+
+data Operand = Register Reg
+             | Constant Integer
+
+instance Show Operand where
+    show (Register r) = "r" ++ (show r)
+    show (Constant i) = (show i)
 
 data Quadrupel =
     Quadrupel 
         { targetReg :: Reg
         , operation :: Operation
-        , op1Reg :: Reg
-        , op2Reg :: Reg
+        , op1Reg :: Operand
+        , op2Reg :: Operand
         }
       deriving (Show)
 
@@ -87,34 +63,70 @@ data TEnv = TEnv
     }
   deriving (Show)
 
-type QCT a = StateT TEnv IO a
+appendQuadrupel :: Quadrupel -> TEnv -> TEnv
+appendQuadrupel q (TEnv code table reg) = TEnv (code ++ [q]) table reg
+
+incReg :: TEnv -> TEnv
+incReg (TEnv c t reg) = (TEnv c t (reg + 1))
+
+data TransformError = SymbolNotFound String Expr 
+                    | DefaultError String
+                  deriving (Show)
+
+instance Error TransformError where
+    noMsg = DefaultError ""
+    strMsg msg = DefaultError msg
+
+type GQCT e s a = ErrorT e (StateT s IO) a
+type QCT a = GQCT TransformError TEnv a
 
 type Module = String
 
 data Symbol = FuncSym Module Name
+            | CoreFunc Operation
     deriving (Show)
 
-transform :: Expr -> QCT ()
-transform (Expr ((VarExpr fname):es)) = do
-    mSym <- findSymbol fname
-    tenv <- get
-    lift . putStrLn $ fname ++ " " ++ (show mSym)
-    return ()
+failTransform :: TransformError -> QCT Operand
+failTransform e = throwError e
 
-findSymbol :: Name -> QCT (Maybe Symbol)
-findSymbol name = do
+transform :: Expr -> QCT Operand
+transform (LitExpr i) = return $ Constant $ fromIntegral i
+transform expr@(Expr ((VarExpr fname):es)) = do
     tenv <- get
-    return $
-      mplus 
-        (liftM (\_ -> FuncSym "" name) (findFunc (symTable tenv) name))
-        (liftM (\_ -> FuncSym "builtin" name) (findBuiltin name))
+    mSym <- return $ findSymbol tenv fname
+    case mSym of
+        Just sym -> apply sym es
+        Nothing -> failTransform $ IR.Quadrupel.SymbolNotFound ("could not find symbol '" ++ fname ++ "'") expr
 
-apply :: Symbol -> [Expr] -> QCT ()
+findSymbol :: TEnv -> Name -> Maybe Symbol
+findSymbol tenv name = do
+    mplus (liftM (\_ -> FuncSym "" name) (findFunc (symTable tenv) name)) 
+          (liftM (\op -> CoreFunc op) (M.lookup name builtinMap))
+
+apply :: Symbol -> [Expr] -> QCT Operand
 apply (FuncSym m n) params = undefined
-    -- determin dependencies
+apply (CoreFunc op) params = do
+    results <- mapM transform params
+    coreFunc op results
 
+pushInstr :: Quadrupel -> QCT ()
+pushInstr q = modify (appendQuadrupel q)
 
--}
+uniqueReg :: QCT Reg
+uniqueReg = do
+    tenv <- get
+    put (incReg tenv)
+    return (registerVar tenv)
+
+coreFunc :: Operation -> [Operand] -> QCT Operand
+coreFunc op@(Binary _) (op1:op2:[]) = do
+    reg <- uniqueReg
+    pushInstr $ Quadrupel reg op op1 op2
+    return $ Register reg
+
+prettyPrint :: Quadrupel -> IO ()
+prettyPrint (Quadrupel r (Binary op) op1 op2) = 
+    putStrLn $ "r" ++ (show r) ++ " = " ++ (show op1) ++ " " ++ (show op) ++ " " ++ (show op2)
 
 
 

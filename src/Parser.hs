@@ -136,11 +136,7 @@ funExpr = do
     atoms <- many atomExpr
     case atoms of
         [] -> fail "not an expression"
-<<<<<<< HEAD
-        _ -> return $ AppExpr2 atoms
-=======
         _ -> return $ Expr atoms
->>>>>>> github/compiler
 
 atomExpr :: Parser Expr
 atomExpr = try $ choice
