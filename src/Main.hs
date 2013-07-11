@@ -1,5 +1,3 @@
-
-
 import System.Environment
 import System.Directory
 import System.IO
@@ -33,7 +31,6 @@ handle ("-c":fs) = do
             compile prog
 handle (f:_) = parse f
 handle [] = putStrLn "usage: am [-i] [<file.am>]"
-
 
 parse :: String -> IO ()
 parse filePath = do

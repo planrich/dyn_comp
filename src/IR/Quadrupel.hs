@@ -1,8 +1,8 @@
 module IR.Quadrupel
     ( Operation (..)
     , Quadrupel (..)
+    , QuadrupelCode (..)
     , transform
-    , TEnv (..)
     , prettyPrint
     )
   where
@@ -19,6 +19,7 @@ import qualified Data.Map as M
 type Reg = Integer
 
 data Operation = Binary BinOp
+               | Unary
   deriving (Show)
 
 data BinOp = Add
@@ -39,6 +40,24 @@ builtinMap = M.fromList
              , ("div", Binary Div)
              , ("sub", Binary Sub)
              ]
+
+isConstant :: Operand -> Bool
+isConstant (Constant i) = True
+isConstant _ = False
+
+arithOptimize :: Operation -> Operand -> Operand -> Maybe Operand
+arithOptimize (Binary op) op1 op2 = runArithBinOpt op op1 op2
+-- Cannot optimize
+arithOptimize _ _ _ = Nothing
+
+runArithBinOpt :: BinOp -> Operand -> Operand -> Maybe Operand
+runArithBinOpt Add (Constant i1) (Constant i2) = Just $ Constant ((fromIntegral i1) + (fromIntegral i2))
+runArithBinOpt Sub (Constant i1) (Constant i2) = Just $ Constant ((fromIntegral i1) - (fromIntegral i2))
+-- it is possible to catch a div by zero here
+-- here a floating point should result
+--runArithBinOpt Div (Constant i1) (Constant i2) = Just $ Constant $ toInteger ((fromIntegral i1) / (fromIntegral i2))
+runArithBinOpt Mul (Constant i1) (Constant i2) = Just $ Constant ((fromIntegral i1) * (fromIntegral i2))
+runArithBinOpt _ _ _ = Nothing
 
 data Operand = Register Reg
              | Constant Integer
@@ -69,6 +88,11 @@ appendQuadrupel q (TEnv code table reg) = TEnv (code ++ [q]) table reg
 incReg :: TEnv -> TEnv
 incReg (TEnv c t reg) = (TEnv c t (reg + 1))
 
+data QuadrupelCode = QCode { qcode :: [Quadrupel]
+                           , qcodeResult :: Operand
+                           }
+                         deriving (Show)
+
 data TransformError = SymbolNotFound String Expr 
                     | DefaultError String
                   deriving (Show)
@@ -89,14 +113,21 @@ data Symbol = FuncSym Module Name
 failTransform :: TransformError -> QCT Operand
 failTransform e = throwError e
 
-transform :: Expr -> QCT Operand
-transform (LitExpr i) = return $ Constant $ fromIntegral i
-transform expr@(Expr ((VarExpr fname):es)) = do
+quadrupelize :: Expr -> QCT Operand
+quadrupelize (LitExpr i) = return $ Constant $ fromIntegral i
+quadrupelize expr@(Expr ((VarExpr fname):es)) = do
     tenv <- get
     mSym <- return $ findSymbol tenv fname
     case mSym of
         Just sym -> apply sym es
         Nothing -> failTransform $ IR.Quadrupel.SymbolNotFound ("could not find symbol '" ++ fname ++ "'") expr
+
+transform :: Expr -> SymbolTable -> IO (Either TransformError QuadrupelCode)
+transform expr symTable = do
+    (error, tenv) <- runStateT (runErrorT $ quadrupelize $ expr) (TEnv [] symTable 0)
+    case error of
+        Left error -> return $ Left error
+        Right operand -> return $ Right $ QCode (code tenv) operand
 
 findSymbol :: TEnv -> Name -> Maybe Symbol
 findSymbol tenv name = do
@@ -106,7 +137,7 @@ findSymbol tenv name = do
 apply :: Symbol -> [Expr] -> QCT Operand
 apply (FuncSym m n) params = undefined
 apply (CoreFunc op) params = do
-    results <- mapM transform params
+    results <- mapM quadrupelize params
     coreFunc op results
 
 pushInstr :: Quadrupel -> QCT ()
@@ -120,14 +151,18 @@ uniqueReg = do
 
 coreFunc :: Operation -> [Operand] -> QCT Operand
 coreFunc op@(Binary _) (op1:op2:[]) = do
-    reg <- uniqueReg
-    pushInstr $ Quadrupel reg op op1 op2
-    return $ Register reg
+    -- try to optimize this function
+    mOperand <- return $ arithOptimize op op1 op2
+    case mOperand of
+        Nothing -> do
+            -- could not optimize
+            reg <- uniqueReg
+            pushInstr $ Quadrupel reg op op1 op2
+            return $ Register reg
+        Just operand -> return $ operand
 
 prettyPrint :: Quadrupel -> IO ()
 prettyPrint (Quadrupel r (Binary op) op1 op2) = 
     putStrLn $ (show (Register r)) ++ " = " ++ (show op1) ++ " " ++ (show op) ++ " " ++ (show op2)
-
-
 
 
