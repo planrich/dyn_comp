@@ -24,7 +24,7 @@ compile p = do
 
 
 -- XXX compile a unit and save the representation into a platform independant format
-compileUnit :: Unit -> IO ()
+--compileUnit :: Unit -> IO ()
 
 
 
