@@ -4,15 +4,15 @@ module Compiler
   where
 
 import ParserTypes
-import IR.Quadrupel as QC
+import IR.Quadrupel.Code as QC
 import Environment
 
 import Control.Monad.State
 import Control.Monad.Trans.Error
 
 compile :: Unit -> IO ()
-compile p = do
-    eResult <- runStateT (runErrorT $ QC.transformUnit p)
+compile unit = do
+    (eResult, _) <- runStateT (runErrorT $ QC.transformUnit) (emptyTransEnv (symTable unit) unit)
     
     --eResult <- QC.transform (firstExpr p) (symTable p)
     case eResult of
@@ -21,11 +21,5 @@ compile p = do
             putStrLn $ show $ qc
   where
     symTable p = harvestSymbols (unitFunctions p) newSymT
-    firstExpr p = patternExpr (functionPatterns ((unitFunctions p) !! 0) !! 0)
-
-
--- XXX compile a unit and save the representation into a platform independant format
---compileUnit :: Unit -> IO ()
-
 
 

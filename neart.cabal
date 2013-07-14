@@ -57,7 +57,7 @@ library
     ghc-options: -Wall
     hs-source-dirs: src
     exposed-modules: Compiler
-                   , IR.Quadrupel
+                   , IR.Quadrupel.Code
 
     build-depends: base == 4.6.*
                  , mtl == 2.1.*
