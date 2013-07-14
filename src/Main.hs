@@ -40,9 +40,9 @@ parse filePath = do
             Right prog -> do
                 interpret prog
 
-interpret :: Program -> IO ()
+interpret :: Unit -> IO ()
 interpret prog = do
-    syms <- return $ harvestSymbols (programFunctions prog) (SymbolTable M.empty)
+    syms <- return $ harvestSymbols (unitFunctions prog) (SymbolTable M.empty)
     mMain <- return $ mainExpr syms
     case mMain of
         Just e -> do
@@ -80,7 +80,7 @@ importFile env importstmt =
                     print err
                     repl env
                 Right program -> do
-                    syms <- return $ harvestSymbols (programFunctions program) env
+                    syms <- return $ harvestSymbols (unitFunctions program) env
                     putStrLn $ "imported file '" ++ fileName ++ "'"
                     repl syms
           else do
@@ -116,7 +116,7 @@ replAddFunc env lines = do
             Left err2 -> do
                 putStrLn "neither an expression nor a function given!"
                 repl env
-            Right func -> repl (defineSym env (funcName func) (SymFunc func))
+            Right func -> repl (defineSym env (functionName func) (SymFunc func))
       else
         replAddFunc env (lines ++ [line])
 

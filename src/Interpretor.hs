@@ -62,7 +62,7 @@ apply env c@(FuncCtx bi@(Builtin params f)  args) arg
 apply env c@(FuncCtx de@(Defined params f)  args) arg
     | (length args) + 1 == params = do
         --arg' <- (eval env arg)
-        matchAndEvalPatternExpr (funcName f) env (args ++ [arg]) (funcPatterns f)
+        matchAndEvalPatternExpr (functionName f) env (args ++ [arg]) (functionPatterns f)
     | otherwise = do
         -- arg' <- (eval env arg)
         return $ FuncCtx de (args ++ [arg])
@@ -93,8 +93,8 @@ applyFromEnv env name arg = do
         Nothing -> throwError $ SymbolNotFound name
         Just func -> do
             case funcArgCount func of
-                0 -> matchAndEvalPatternExpr name env [] (funcPatterns func) >>= (\expr -> apply env expr arg)
-                1 -> matchAndEvalPatternExpr name env [arg] (funcPatterns func)
+                0 -> matchAndEvalPatternExpr name env [] (functionPatterns func) >>= (\expr -> apply env expr arg)
+                1 -> matchAndEvalPatternExpr name env [arg] (functionPatterns func)
                 n -> return $ FuncCtx (Defined n func) [arg]
 
 -- |Evaluate a pattern if it matches the given parameters.

@@ -17,18 +17,19 @@ import Text.Parsec.Error
 import Text.Parsec.Expr
 import qualified Text.Parsec.Token as P
 
+
 import Control.Monad
 
 import TokenDef
 import ParserTypes
 
-parseFile :: String -> IO (Either ParseError Program)
+parseFile :: String -> IO (Either ParseError Unit)
 parseFile filePath = PS.parseFromFile file filePath
 
 parseExprFromStr :: String -> IO (Either ParseError Expr)
 parseExprFromStr input = return (runP replExpr () "repl" input)
 
-parseFuncFromStr :: String -> IO (Either ParseError Func)
+parseFuncFromStr :: String -> IO (Either ParseError Function)
 parseFuncFromStr input = return (runP replFunction () "repl" input)
 
 lexer :: P.TokenParser ()
@@ -53,7 +54,7 @@ replExpr = do
     eof
     return e
 
-replFunction :: Parser Func
+replFunction :: Parser Function
 replFunction = do
     f <- function
     eof
@@ -61,15 +62,15 @@ replFunction = do
 
 unit = file
 
-file :: Parser Program
+file :: Parser Unit
 file = do
     whiteSpace
     unit <- unitHead
     fs <- many function
     eof
-    return $ Program unit fs
+    return $ Unit unit fs []
 
-unitHead :: Parser Unit
+unitHead :: Parser MetaUnit
 unitHead = do
     reserved "unit"
     name <- identifier
@@ -80,7 +81,7 @@ unitHead = do
 
     exports <- many export
 
-    return $ Unit name (digitToInt major) (digitToInt minor) (fromIntegral patch) exports
+    return $ MetaUnit name (digitToInt major) (digitToInt minor) (fromIntegral patch) exports
 
 export :: Parser Export
 export = do
@@ -88,14 +89,14 @@ export = do
     name <- identifier
     return $ name
 
-function :: Parser Func
+function :: Parser Function
 function = do
     reserved "func"
     fname <- identifier
     symbol ":"
-    sig <- signature
+    --sig <- signature
     patterns <- many pattern
-    return $ Func fname sig patterns
+    return $ Function fname patterns
 
 pattern :: Parser Pattern
 pattern = do
@@ -252,11 +253,13 @@ banonym = do
     s <- symbol "_"
     return $ BAnon
 
-signature :: Parser [Type]
+{-signature :: Parser [Type]
 signature = do
     sig <- sepBy typ (symbol "->")
     return sig
+    -}
 
+{-
 typ :: Parser Type
 typ = do
           symbol "int"
@@ -267,3 +270,4 @@ typ = do
       <|> do
           typ' <- squares typ
           return $ TList typ'
+          -}

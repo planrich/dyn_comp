@@ -1,16 +1,15 @@
 module ParserTypes
     ( Name
-    , Program (..)
-    , Func (..)
+    , Unit (..)
+    , Function (..)
     , match
-    , Type (..)
     , Pattern (..)
     , Expr (..)
     , Binding (..)
     , ThrowError
     , EvalError (..)
     , Builtin (..)
-    , Unit (..)
+    , MetaUnit (..)
     , Export
     , matchPattern
     , bindingName
@@ -21,36 +20,45 @@ module ParserTypes
     )
   where
 
+import qualified Data.Map as M
 import Data.Maybe
 import Control.Monad.Error
 
 type ThrowError = Either EvalError
 type Name = String
 type Export = String
+type Import = String
 
-data Program = Program { programUnit :: Unit
-                       , programFunctions :: [Func]
-                       }
-             deriving (Show)
+-- | a unit is the internal representation of a syntactically valid file
+data Unit = Unit 
+    { unitMeta :: MetaUnit
+    , unitFunctions :: [Function]
+    , unitImports :: [Import]
+--    , unitFunctionMap :: M.Map Name Function
+    }
+  deriving (Show)
 
-data Func = Func { funcName :: Name
-                 , funcTypes :: [Type]
-                 , funcPatterns :: [Pattern]
-                 }
-          deriving (Show)
+-- | a function
+data Function = Function 
+    { functionName :: Name
+    , functionPatterns :: [Pattern]
+    }
+  deriving (Show)
 
-data Unit = Unit { unitName :: String
-                 , unitMajorVersion :: Int
-                 , unitMinorVersion :: Int
-                 , unitPatchVersion :: Int
-                 , unitExports :: [Export]
-                 }
-               deriving (Show)
+data MetaUnit = MetaUnit 
+    { unitName :: String
+    , unitMajorVersion :: Int
+    , unitMinorVersion :: Int
+    , unitPatchVersion :: Int
+    , unitExports :: [Export]
+    }
+  deriving (Show)
 
-data Pattern = Pattern { patternBindings :: [Binding]
-                       , patternExpr :: Expr
-                       }
-             deriving (Show)
+data Pattern = Pattern 
+    { patternBindings :: [Binding]
+    , patternExpr :: Expr
+    }
+  deriving (Show)
 
 data Expr = AppExpr Expr Expr
           | Expr [Expr]
@@ -84,13 +92,8 @@ data Builtin = Builtin { builtinParamCount :: Int
                        , builtinFunction :: ([Expr] -> ThrowError Expr)
                        }
              | Defined { definedParamCount :: Int
-                       , definedFunction :: Func
+                       , definedFunction :: Function
                        }
-
-data Type = TInt
-          | TString
-          | TList Type
-          deriving Show
 
 data EvalError = TypeMissmatch String Expr
                | InvalidArgument String
@@ -125,7 +128,7 @@ instance Show Expr where
     show (ListExpr (ls)) = "[" ++ (foldr (++) "" (map ((++ ",") . show) ls)) ++ "]"
     show (CondExpr e a1 a2) = "{?" ++ (show e) ++ " either " ++ (show a1) ++ " or " ++ (show a2) ++ "}"
     show (LamExpr name expr) = "\\" ++ name ++ " -> " ++ (show expr)
-    show (FuncCtx (Defined n f) expr) = "@(defined: " ++ funcName f ++ " " ++ (show expr) ++ ")"
+    show (FuncCtx (Defined n f) expr) = "@(defined: " ++ functionName f ++ " " ++ (show expr) ++ ")"
     show (FuncCtx (Builtin n f) expr) = "@(builtin: " ++ (show expr) ++ ")"
 
 instance Ord Expr where
@@ -139,7 +142,7 @@ instance Eq Expr where
     (==) (BoolExpr b) (BoolExpr b2) = b == b2
     (==) (ListExpr ll) (ListExpr lr) = ll == lr
     (==) (FuncCtx (Defined ac1 f1) p1) (FuncCtx (Defined ac2 f2) p2) =
-        ac1 == ac2 && (funcArgCount f1) == (funcArgCount f2) && (funcName f1) == (funcName f2) && p1 == p2
+        ac1 == ac2 && (funcArgCount f1) == (funcArgCount f2) && (functionName f1) == (functionName f2) && p1 == p2
     (==) _ _ = False
 
 isBindingVar :: Binding -> Bool
@@ -184,8 +187,8 @@ listNotEmpty _ = False
 -- |How many arguments must a specific function get to be executed?
 --  It is assumed that every pattern of a function has the
 --  same amount of bindings.
-funcArgCount :: Func -> Int
-funcArgCount (Func name types (p:ps)) = patternArgCount p
+funcArgCount :: Function -> Int
+funcArgCount (Function name (p:ps)) = patternArgCount p
 
 patternArgCount :: Pattern -> Int
 patternArgCount (Pattern bindings _) = length bindings

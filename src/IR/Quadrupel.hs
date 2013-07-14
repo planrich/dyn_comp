@@ -3,6 +3,7 @@ module IR.Quadrupel
     , Quadrupel (..)
     , QuadrupelCode (..)
     , transform
+    , transformUnit
     , prettyPrint
     )
   where
@@ -32,6 +33,25 @@ instance Show BinOp where
     show Sub = "-"
     show Mul = "*"
     show Div = "/"
+
+data QBlock = QBlock
+    { qblockLabel :: Name
+    , qblockCode :: [Quadrupel]
+    }
+  deriving (Show)
+
+data QFunction = QFunction
+    { qfuntionLabel :: Name
+    , qfunctionName :: Name
+    , qfunctionBlocks :: [QBlock]
+    }
+  deriving (Show)
+
+data QUnit = QUnit
+    { qunitMeta :: MetaUnit
+    , qunitFunctions :: [QFunction]
+    }
+  deriving (Show)
 
 
 builtinMap = M.fromList 
@@ -122,12 +142,28 @@ quadrupelize expr@(Expr ((VarExpr fname):es)) = do
         Just sym -> apply sym es
         Nothing -> failTransform $ IR.Quadrupel.SymbolNotFound ("could not find symbol '" ++ fname ++ "'") expr
 
-transform :: Expr -> SymbolTable -> IO (Either TransformError QuadrupelCode)
-transform expr symTable = do
+-- Unit quadrupel transformation context
+type UQT a = ErrorT TransformError (StateT Unit IO) a
+
+transformExpr :: Expr -> SymbolTable -> UQT QuadrupelCode
+transformExpr expr symTable = do
     (error, tenv) <- runStateT (runErrorT $ quadrupelize $ expr) (TEnv [] symTable 0)
     case error of
         Left error -> return $ Left error
         Right operand -> return $ Right $ QCode (code tenv) operand
+
+transformFunction :: Function -> SymbolTable -> UQT QFunction
+transformFunction func symt = do
+    
+    --qCodes <- mapM (\pattern -> transformPattern (patternExpr pattern) symt) (functionPatterns func)
+    throwError $ DefaultError "fail"
+
+transformUnit :: UQT QUnit
+transformUnit unit = do
+    unit <- get
+    symt <- return $ lazyLoadUnits unit
+    
+    mapM (\f -> transformFunction f symt) (unitFunctions unit) >>= (\funcs -> return $ QUnit (unitMeta unit) funcs)
 
 findSymbol :: TEnv -> Name -> Maybe Symbol
 findSymbol tenv name = do
@@ -135,7 +171,7 @@ findSymbol tenv name = do
           (liftM (\op -> CoreFunc op) (M.lookup name builtinMap))
 
 apply :: Symbol -> [Expr] -> QCT Operand
-apply (FuncSym m n) params = undefined
+apply (FuncSym _ _) params = return $ Constant 1
 apply (CoreFunc op) params = do
     results <- mapM quadrupelize params
     coreFunc op results

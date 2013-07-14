@@ -5,6 +5,7 @@
 
 module Environment 
     ( harvestSymbols
+    , lazyLoadUnits
     , mainExpr
     , newSymT
     , defineSym
@@ -25,23 +26,30 @@ import ParserTypes
 
 type Env = SymbolTable
 
-harvestSymbols :: [Func] -> SymbolTable -> SymbolTable
+lazyLoadUnits :: Unit -> SymbolTable
+lazyLoadUnits unit = load (unitImports unit) (SymbolTable M.empty)
+  where
+    load [] symt = symt
+    load (i:is) symt = load is symt
+
+harvestSymbols :: [Function] -> SymbolTable -> SymbolTable
 harvestSymbols [] s = s
-harvestSymbols (f:fs) s@(SymbolTable m) = harvestSymbols fs (defineSym s (funcName f) (SymFunc f))
+harvestSymbols (f:fs) s@(SymbolTable m) = harvestSymbols fs (defineSym s (functionName f) (SymFunc f))
 
 mainExpr :: SymbolTable -> Maybe Expr
 mainExpr t@(SymbolTable m) = do
-    findFunc t "main" >>= firstPat . funcPatterns
+    findFunc t "main" >>= firstPat . functionPatterns
   where
     firstPat ((Pattern [] e):ps) = Just e
     firstPat _ = Nothing
 
-data SymEntry = SymFunc Func
+data SymEntry = SymFunc Function
               | SymBinding Expr
               deriving (Show)
 
 data SymbolTable = SymbolTable (M.Map String SymEntry)
                  deriving (Show)
+
 
 newSymT :: SymbolTable 
 newSymT = SymbolTable M.empty
@@ -52,13 +60,13 @@ defineSym (SymbolTable t) k s = SymbolTable $ M.insert k s t
 findEntry :: SymbolTable -> Name -> Maybe SymEntry
 findEntry sym@(SymbolTable t) k = M.lookup k t
 
-findFunc :: SymbolTable -> Name -> Maybe Func
+findFunc :: SymbolTable -> Name -> Maybe Function
 findFunc sym@(SymbolTable t) k = 
     case M.lookup k t of
         Just (SymFunc f) -> Just f
         _ -> Nothing
 
-findSymsNameStartsWith :: Name -> SymbolTable -> [Func]
+findSymsNameStartsWith :: Name -> SymbolTable -> [Function]
 findSymsNameStartsWith l (SymbolTable t) =
     (map (unpack . snd)) . M.toList $ M.filterWithKey (startswith l) t  
   where
