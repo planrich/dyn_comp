@@ -16,6 +16,7 @@ module IR.Quadrupel.Types
   , tenvPushQuadrupel
   , tenvIncReg
   , tenvResetCode
+  , tenvInsertSymbol
   , isConstant
   , builtinMap
   )
@@ -72,22 +73,22 @@ instance Show Operand where
     show (Register r) = "r" ++ (show r)
     show (Constant i) = (show i)
 
-data Quadrupel =
-    Quadrupel 
-        { targetReg :: Reg
-        , operation :: Operation
-        , op1Reg :: Operand
-        , op2Reg :: Operand
-        }
-      deriving (Show)
+data Quadrupel = QAssignOp { targetReg :: Reg
+                           , operation :: Operation
+                           , op1Reg :: Operand
+                           , op2Reg :: Operand
+                           }
+               | QCall { qcallLabel :: Name } 
+             deriving (Show)
 
 data TEnv = TEnv
-    { code :: [Quadrupel]
-    , symTable :: SymbolTable
+    { tenvCode :: [Quadrupel]
+    , tenvSymTable :: SymbolTable
     , registerVar :: Reg
     , tenvUnit :: Unit
     }
   deriving (Show)
+
 data QuadrupelCode = QCode { qcode :: [Quadrupel]
                            , qcodeResult :: Operand
                            }
@@ -101,7 +102,7 @@ instance Error TransformError where
     noMsg = DefaultError ""
     strMsg msg = DefaultError msg
 
-data Symbol = FuncSym Module Name
+data Symbol = FuncSym Name
             | CoreFunc Operation
     deriving (Show)
 
@@ -131,4 +132,7 @@ tenvResetCode (TEnv code t r u) = TEnv [] t r u
 tenvSetSymTable :: SymbolTable -> TEnv -> TEnv
 tenvSetSymTable symt (TEnv c _ r u) = TEnv c symt r u
 
+tenvInsertSymbol :: Name -> SymEntry -> TEnv -> TEnv
+tenvInsertSymbol key sym (TEnv c symt r u) =
+    let newSymT = defineSym symt key sym in (TEnv c newSymT r u)
 

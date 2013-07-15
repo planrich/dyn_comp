@@ -27,7 +27,9 @@ import ParserTypes
 type Env = SymbolTable
 
 lazyLoadUnits :: Unit -> SymbolTable
-lazyLoadUnits unit = load (unitImports unit) (SymbolTable M.empty)
+lazyLoadUnits unit =
+    let imported = load (unitImports unit) (SymbolTable M.empty) in
+      harvestSymbols (unitFunctions unit) imported
   where
     load [] symt = symt
     load (i:is) symt = load is symt
@@ -45,6 +47,7 @@ mainExpr t@(SymbolTable m) = do
 
 data SymEntry = SymFunc Function
               | SymBinding Expr
+              | SymArgument Int
               deriving (Show)
 
 data SymbolTable = SymbolTable (M.Map String SymEntry)

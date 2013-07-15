@@ -38,9 +38,9 @@ runArithBinOpt Mul (Constant i1) (Constant i2) = Just $ Constant ((fromIntegral 
 runArithBinOpt _ _ _ = Nothing
 
 
-quadrupelize :: Expr -> QCT Operand
-quadrupelize (LitExpr i) = return $ Constant $ fromIntegral i
-quadrupelize expr@(Expr ((VarExpr fname):es)) = do
+transformExpr :: Expr -> QCT Operand 
+transformExpr (LitExpr i) = return $ Constant $ fromIntegral i
+transformExpr expr@(Expr ((VarExpr fname):es)) = do
     tenv <- get
     mSym <- return $ findSymbol tenv fname
     case mSym of
@@ -48,38 +48,73 @@ quadrupelize expr@(Expr ((VarExpr fname):es)) = do
         Nothing -> throwError $
           IR.Quadrupel.Types.SymbolNotFound ("could not find symbol '" ++ fname ++ "'") expr
 
-transformExpr :: Expr -> QCT QuadrupelCode
-transformExpr expr = do
-    quadrupelize expr >>= (\operand -> do
-        tenv <- get
-        qcode <- return $ QCode (code tenv) operand
-        put $ tenvResetCode tenv
-        return qcode
-        )
+transformBinding :: Label -> Index -> Binding -> QCT Index
+transformBinding nextLabel index BAnon = return $ index + 1
+transformBinding nextLabel index (BVar name) = do
+    modify (\tenv -> tenvInsertSymbol name (SymArgument index) tenv)
+    return $ index + 1
 
-transformFunction :: Function -> QCT QFunction
-transformFunction func = do
-    
-    --qCodes <- mapM (\pattern -> transformPattern (patternExpr pattern) symt) (functionPatterns func)
-    throwError $ DefaultError "fail"
+transformPattern :: Label -> Label -> Pattern -> QCT QBlock
+transformPattern nextLabel label pattern = do
+    tenv <- get
+
+    -- save the old symbol table. trasnformBinding is going to add new symbols
+    oldSymT <- return $ tenvSymTable tenv
+
+    foldM_ (transformBinding nextLabel) 0 (patternBindings pattern)
+    operand <- transformExpr (patternExpr pattern)
+
+    qc <- return $ tenvCode tenv
+    put $ tenvSetSymTable oldSymT (tenvResetCode tenv)
+
+    return $ QBlock label qc
+
+patternFallThroughLabel = "__pattern_fall_through"
+
+type Label = String
+type LabelPrefix = String
+type Index = Int
+
+transformPatterns :: LabelPrefix -> Int -> [Pattern] -> QCT [QBlock]
+transformPatterns labelPrefix index [] = return $ []
+transformPatterns labelPrefix index (p:ps) = do
+    nextLabel <- return $ if length ps >= 1 then patternLabel labelPrefix (index+1) else patternFallThroughLabel
+    np <- transformPattern nextLabel (patternLabel labelPrefix index) p
+    nps <- transformPatterns labelPrefix (index+1) ps
+    return (np:nps)
+  where
+    patternLabel prefix index = prefix ++ "__" ++ (show index)
+
+transformFunction :: LabelPrefix -> Function -> QCT QFunction
+transformFunction labelPrefix func = do
+    qBlocks <- transformPatterns newLabelPrefix 0 (functionPatterns func)
+    return $ QFunction (functionName func) newLabelPrefix qBlocks
+  where
+    newLabelPrefix = labelPrefix ++ "__" ++ (functionName func)
+
 
 transformUnit :: QCT QUnit
 transformUnit = do
     modify (\tenv -> let newSymT = (lazyLoadUnits (tenvUnit tenv)) in tenvSetSymTable newSymT tenv)
     tenv <- get
 
-    let unit = tenvUnit tenv in
-      mapM (\f -> transformFunction f) (unitFunctions $ unit) >>= (\funcs -> return $ QUnit (unitMeta unit) funcs)
+    let unit = tenvUnit tenv
+        uName = unitName $ unitMeta $ tenvUnit tenv in
+      mapM (\f -> transformFunction uName f) (unitFunctions $ unit) >>= (\funcs -> return $ QUnit (unitMeta unit) funcs)
 
 findSymbol :: TEnv -> Name -> Maybe Symbol
 findSymbol tenv name = do
-    mplus (liftM (\_ -> FuncSym "" name) (findFunc (symTable tenv) name)) 
+    mplus (liftM (\_ -> FuncSym (uName ++ "__" ++ name)) (findFunc (tenvSymTable tenv) name)) 
           (liftM (\op -> CoreFunc op) (M.lookup name builtinMap))
+  where
+    uName = unitName $ unitMeta $ tenvUnit tenv
 
 apply :: Symbol -> [Expr] -> QCT Operand
-apply (FuncSym _ _) params = return $ Constant 1
+apply (FuncSym qualifiedName) params = do
+    pushInstr $ QCall qualifiedName
+    return $ Constant 1
 apply (CoreFunc op) params = do
-    results <- mapM quadrupelize params
+    results <- mapM transformExpr params
     coreFunc op results
 
 pushInstr :: Quadrupel -> QCT ()
@@ -99,12 +134,12 @@ coreFunc op@(Binary _) (op1:op2:[]) = do
         Nothing -> do
             -- could not optimize
             reg <- uniqueReg
-            pushInstr $ Quadrupel reg op op1 op2
+            pushInstr $ QAssignOp reg op op1 op2
             return $ Register reg
         Just operand -> return $ operand
 
 prettyPrint :: Quadrupel -> IO ()
-prettyPrint (Quadrupel r (Binary op) op1 op2) = 
+prettyPrint (QAssignOp r (Binary op) op1 op2) = 
     putStrLn $ (show (Register r)) ++ " = " ++ (show op1) ++ " " ++ (show op) ++ " " ++ (show op2)
 
 
