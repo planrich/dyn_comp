@@ -68,6 +68,7 @@ data QUnit = QUnit
 
 data Operand = Register Reg
              | Constant Integer
+             | Nil
 
 instance Show Operand where
     show (Register r) = "r" ++ (show r)
@@ -79,6 +80,7 @@ data Quadrupel = QAssignOp { targetReg :: Reg
                            , op2Reg :: Operand
                            }
                | QCall { qcallLabel :: Name } 
+               | QReturn { qreturnOperand :: Operand }
              deriving (Show)
 
 data TEnv = TEnv

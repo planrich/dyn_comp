@@ -10,6 +10,7 @@ module IR.Quadrupel.Code
   where
 
 import IR.Quadrupel.Types
+import IR.Quadrupel.Optimizer
 
 import ParserTypes
 import Environment
@@ -20,23 +21,12 @@ import Control.Monad.Trans.Error
 
 import qualified Data.Map as M
 
+type Label = String
+type LabelPrefix = String
+type Index = Int
+
 type GQCT e s a = ErrorT e (StateT s IO) a
 type QCT a = GQCT TransformError TEnv a
-
-arithOptimize :: Operation -> Operand -> Operand -> Maybe Operand
-arithOptimize (Binary op) op1 op2 = runArithBinOpt op op1 op2
--- Cannot optimize
-arithOptimize _ _ _ = Nothing
-
-runArithBinOpt :: BinOp -> Operand -> Operand -> Maybe Operand
-runArithBinOpt Add (Constant i1) (Constant i2) = Just $ Constant ((fromIntegral i1) + (fromIntegral i2))
-runArithBinOpt Sub (Constant i1) (Constant i2) = Just $ Constant ((fromIntegral i1) - (fromIntegral i2))
--- it is possible to catch a div by zero here
--- here a floating point should result
---runArithBinOpt Div (Constant i1) (Constant i2) = Just $ Constant $ toInteger ((fromIntegral i1) / (fromIntegral i2))
-runArithBinOpt Mul (Constant i1) (Constant i2) = Just $ Constant ((fromIntegral i1) * (fromIntegral i2))
-runArithBinOpt _ _ _ = Nothing
-
 
 transformExpr :: Expr -> QCT Operand 
 transformExpr (LitExpr i) = return $ Constant $ fromIntegral i
@@ -56,24 +46,25 @@ transformBinding nextLabel index (BVar name) = do
 
 transformPattern :: Label -> Label -> Pattern -> QCT QBlock
 transformPattern nextLabel label pattern = do
-    tenv <- get
 
     -- save the old symbol table. trasnformBinding is going to add new symbols
-    oldSymT <- return $ tenvSymTable tenv
+    oldSymT <- liftM tenvSymTable get
 
     foldM_ (transformBinding nextLabel) 0 (patternBindings pattern)
     operand <- transformExpr (patternExpr pattern)
 
-    qc <- return $ tenvCode tenv
+    case operand of
+        Nil -> return ()
+        _ -> pushInstr $ QReturn operand
+
+    qc <- liftM tenvCode get
+
+    tenv <- get
     put $ tenvSetSymTable oldSymT (tenvResetCode tenv)
 
     return $ QBlock label qc
 
 patternFallThroughLabel = "__pattern_fall_through"
-
-type Label = String
-type LabelPrefix = String
-type Index = Int
 
 transformPatterns :: LabelPrefix -> Int -> [Pattern] -> QCT [QBlock]
 transformPatterns labelPrefix index [] = return $ []
@@ -110,9 +101,9 @@ findSymbol tenv name = do
     uName = unitName $ unitMeta $ tenvUnit tenv
 
 apply :: Symbol -> [Expr] -> QCT Operand
-apply (FuncSym qualifiedName) params = do
+apply (FuncSym qualifiedName) [] = do
     pushInstr $ QCall qualifiedName
-    return $ Constant 1
+    return $ Nil
 apply (CoreFunc op) params = do
     results <- mapM transformExpr params
     coreFunc op results
