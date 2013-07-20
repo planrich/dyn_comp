@@ -24,7 +24,7 @@ compile unit = do
         Right qc -> do
             putStrLn $ show $ qc
             putStrLn "writing assembler code"
-            handle <- openFile "test.s" WriteMode
+            handle <- openFile "tmp/test.s" WriteMode
             (eResult, _) <- runStateT (runErrorT $ assembleToFile qc) (newAssembleState handle)
             hClose handle
   where

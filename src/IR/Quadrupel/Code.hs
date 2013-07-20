@@ -53,9 +53,7 @@ transformPattern nextLabel label pattern = do
     foldM_ (transformBinding nextLabel) 0 (patternBindings pattern)
     operand <- transformExpr (patternExpr pattern)
 
-    case operand of
-        Nil -> return ()
-        _ -> pushInstr $ QReturn operand
+    pushInstr $ QReturn operand
 
     qc <- liftM tenvCode get
 
@@ -79,7 +77,7 @@ transformPatterns labelPrefix index (p:ps) = do
 transformFunction :: LabelPrefix -> Function -> QCT QFunction
 transformFunction labelPrefix func = do
     qBlocks <- transformPatterns newLabelPrefix 0 (functionPatterns func)
-    return $ QFunction (functionName func) newLabelPrefix qBlocks
+    return $ QFunction newLabelPrefix (functionName func) qBlocks
   where
     newLabelPrefix = labelPrefix ++ "__" ++ (functionName func)
 

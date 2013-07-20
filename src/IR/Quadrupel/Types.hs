@@ -54,7 +54,7 @@ data QBlock = QBlock
   deriving (Show)
 
 data QFunction = QFunction
-    { qfuntionLabel :: Name
+    { qfunctionLabel :: Name
     , qfunctionName :: Name
     , qfunctionBlocks :: [QBlock]
     }
@@ -73,6 +73,7 @@ data Operand = Register Reg
 instance Show Operand where
     show (Register r) = "r" ++ (show r)
     show (Constant i) = (show i)
+    show Nil = "nil"
 
 data Quadrupel = QAssignOp { targetReg :: Reg
                            , operation :: Operation
