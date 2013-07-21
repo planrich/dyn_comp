@@ -19,6 +19,7 @@ module IR.Quadrupel.Types
   , tenvInsertSymbol
   , isConstant
   , builtinMap
+  , prettyPrintQU
   )
  where
 
@@ -47,6 +48,8 @@ instance Show BinOp where
     show Mul = "*"
     show Div = "/"
 
+
+
 data QBlock = QBlock
     { qblockLabel :: Name
     , qblockCode :: [Quadrupel]
@@ -67,12 +70,14 @@ data QUnit = QUnit
   deriving (Show)
 
 data Operand = Register Reg
+             | ArgRegister Reg
              | Constant Integer
              | Nil
 
 instance Show Operand where
     show (Register r) = "r" ++ (show r)
     show (Constant i) = (show i)
+    show (ArgRegister r) = "a" ++ (show r)
     show Nil = "nil"
 
 data Quadrupel = QAssignOp { targetReg :: Reg
@@ -80,6 +85,12 @@ data Quadrupel = QAssignOp { targetReg :: Reg
                            , op1Reg :: Operand
                            , op2Reg :: Operand
                            }
+               | QAssign { targetReg :: Reg
+                         , operand :: Operand
+                         }
+               | QParam { paramIdx :: Int
+                        , operand :: Operand
+                        }
                | QCall { qcallLabel :: Name } 
                | QReturn { qreturnOperand :: Operand }
              deriving (Show)
@@ -124,7 +135,7 @@ emptyTransEnv :: SymbolTable -> Unit -> TEnv
 emptyTransEnv symTable = TEnv [] symTable 0
 
 tenvPushQuadrupel :: Quadrupel -> TEnv -> TEnv
-tenvPushQuadrupel q (TEnv code table reg u) = TEnv (code ++ [q]) table reg u
+tenvPushQuadrupel q (TEnv code table reg u) = TEnv (q:code) table reg u
 
 tenvIncReg :: TEnv -> TEnv
 tenvIncReg (TEnv c t reg u) = (TEnv c t (reg + 1) u)
@@ -139,3 +150,18 @@ tenvInsertSymbol :: Name -> SymEntry -> TEnv -> TEnv
 tenvInsertSymbol key sym (TEnv c symt r u) =
     let newSymT = defineSym symt key sym in (TEnv c newSymT r u)
 
+
+prettyPrintQU :: QUnit -> IO ()
+prettyPrintQU (QUnit meta fns) = do
+    mapM_ ppF fns
+  where
+    ppF func = do
+        putStrLn $ (qfunctionLabel func) ++ ":"
+        mapM_ ppB (qfunctionBlocks func)
+    ppB block = do
+        putStrLn $ (qblockLabel block) ++ ":"
+        ppCs $ reverse (qblockCode block)
+    ppCs [] = return ()
+    ppCs (c:cs) = do
+        putStrLn $ "\t" ++ (show c)
+        ppCs cs

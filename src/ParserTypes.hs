@@ -45,6 +45,9 @@ data Function = Function
     }
   deriving (Show)
 
+functionParameterCount :: Function -> Int
+functionParameterCount function = length $ functionPatterns function
+
 data MetaUnit = MetaUnit 
     { unitName :: String
     , unitMajorVersion :: Int

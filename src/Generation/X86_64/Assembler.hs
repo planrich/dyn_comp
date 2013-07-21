@@ -9,6 +9,8 @@ module Generation.X86_64.Assembler
 import Control.Monad.State
 import Control.Monad.Trans.Error
 
+import Generation.X86_64.Register
+
 import IR.Quadrupel.Types
 
 import System.IO
@@ -45,8 +47,6 @@ writeToHandle b s
     | otherwise = do
         handle <- liftM asHandle get
         lift $ lift $  hPutStrLn handle s
-      
-
 
 assembleToFile :: QUnit -> MAssemble AssembleState ()
 assembleToFile q = do
@@ -62,6 +62,8 @@ assembleFunction func = do
 
 assembleBlock :: QBlock -> MAssemble AssembleState ()
 assembleBlock block = do
+    --lifeRanges <- return $ lifeRange
+    writeToHandle False ((qblockLabel block) ++ ":")
     mapM_ assembleQuadrupel (qblockCode block)
 
 assembleQuadrupel :: Quadrupel -> MAssemble AssembleState ()
@@ -70,11 +72,23 @@ assembleQuadrupel q = do
 
 
 toasm :: Quadrupel -> [String]
+toasm (QReturn (ArgRegister r)) = ("movq %" ++ (argRegName64 $ fromIntegral r) ++ ", %rax") : toasm (QReturn Nil)
 toasm (QReturn (Register r)) = ("movq %" ++ (show r) ++ ", %rax") : toasm (QReturn Nil)
 toasm (QReturn (Constant o)) = ("movq $" ++ (show o) ++ ", %rax") : toasm (QReturn Nil)
 toasm (QReturn Nil) = ["retq"]
 toasm (QCall label) = ["callq " ++ label]
-toasm _ = []
+toasm (QParam i operand) = ["movq " ++ (operandToAsm operand) ++ ", %" ++ (argRegName64 i)]
+toasm (QAssignOp t op o1 o2) = [ (asmOperation op) ++ " "  ++ ", "]
+toasm e = error $ "could not gen asm: " ++  (show e)
+
+operandToAsm :: Operand -> String
+operandToAsm (Constant i) = "$" ++ (show i)
+
+asmOperation :: Operation -> String
+asmOperation (Binary Add) = "addq"
+asmOperation (Binary Sub) = "subq"
+asmOperation (Binary Mul) = "imulq"
+asmOperation _ = error "cannot convert operation"
 
 simpleHeader :: MAssemble AssembleState ()
 simpleHeader = do

@@ -67,6 +67,7 @@ library
                  , containers == 0.5.*
                  , directory
                  , transformers
+                 , array == 0.4.*
 
 executable neartc
     default-language: Haskell2010
@@ -82,5 +83,6 @@ executable neartc
                 , containers == 0.5.2.*
                 , directory
                 , transformers
+                , array == 0.4.*
                 , neart
 

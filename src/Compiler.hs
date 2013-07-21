@@ -6,7 +6,10 @@ module Compiler
 
 import ParserTypes
 import IR.Quadrupel.Code as QC
+import IR.Quadrupel.Types (prettyPrintQU)
 import Environment
+
+
 
 import Control.Monad.State
 
@@ -22,7 +25,7 @@ compile unit = do
     case eResult of
         Left err -> putStrLn (show err)
         Right qc -> do
-            putStrLn $ show $ qc
+            prettyPrintQU qc
             putStrLn "writing assembler code"
             handle <- openFile "tmp/test.s" WriteMode
             (eResult, _) <- runStateT (runErrorT $ assembleToFile qc) (newAssembleState handle)

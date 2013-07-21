@@ -37,6 +37,15 @@ transformExpr expr@(Expr ((VarExpr fname):es)) = do
         Just sym -> apply sym es
         Nothing -> throwError $
           IR.Quadrupel.Types.SymbolNotFound ("could not find symbol '" ++ fname ++ "'") expr
+transformExpr expr@(VarExpr name) = do
+    tenv <- get
+    mEntry <- return $ findEntry (tenvSymTable tenv) name
+    case mEntry of
+        Just (SymArgument a) -> return $ ArgRegister (fromIntegral a)
+        _ -> throwError $
+          IR.Quadrupel.Types.SymbolNotFound ("could not find symbol '" ++ name ++ "'") expr
+
+transformExpr e = lift $ lift $ putStrLn ("oh no" ++ (show e)) >> error "transformExpr"
 
 transformBinding :: Label -> Index -> Binding -> QCT Index
 transformBinding nextLabel index BAnon = return $ index + 1
@@ -102,9 +111,22 @@ apply :: Symbol -> [Expr] -> QCT Operand
 apply (FuncSym qualifiedName) [] = do
     pushInstr $ QCall qualifiedName
     return $ Nil
+apply (FuncSym qualifiedName) params = do
+    operands <- mapM transformExpr params
+    pushArguments operands
+    pushInstr $ QCall qualifiedName
+    return $ Nil
 apply (CoreFunc op) params = do
     results <- mapM transformExpr params
     coreFunc op results
+
+pushArguments :: [Operand] -> QCT ()
+pushArguments operands = pushArg 0 operands
+  where
+    pushArg _ [] = return ()
+    pushArg i (o:os) = do
+        pushInstr $ QParam i o
+        pushArg (i+1) os
 
 pushInstr :: Quadrupel -> QCT ()
 pushInstr q = modify (tenvPushQuadrupel q)
