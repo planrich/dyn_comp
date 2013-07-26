@@ -41,7 +41,7 @@ transformExpr expr@(VarExpr name) = do
     tenv <- get
     mEntry <- return $ findEntry (tenvSymTable tenv) name
     case mEntry of
-        Just (SymArgument a) -> return $ ArgRegister (fromIntegral a)
+        Just (SymArgument a) -> return $ OpRegister $ ARegister (fromIntegral a)
         _ -> throwError $
           IR.Quadrupel.Types.SymbolNotFound ("could not find symbol '" ++ name ++ "'") expr
 
@@ -56,7 +56,7 @@ transformBinding nextLabel index (BVar name) = do
 transformPattern :: Label -> Label -> Pattern -> QCT QBlock
 transformPattern nextLabel label pattern = do
 
-    -- save the old symbol table. trasnformBinding is going to add new symbols
+    -- save the old symbol table. trasnformBinding will add new symbols
     oldSymT <- liftM tenvSymTable get
 
     foldM_ (transformBinding nextLabel) 0 (patternBindings pattern)
@@ -108,9 +108,6 @@ findSymbol tenv name = do
     uName = unitName $ unitMeta $ tenvUnit tenv
 
 apply :: Symbol -> [Expr] -> QCT Operand
-apply (FuncSym qualifiedName) [] = do
-    pushInstr $ QCall qualifiedName
-    return $ Nil
 apply (FuncSym qualifiedName) params = do
     operands <- mapM transformExpr params
     pushArguments operands
@@ -145,12 +142,11 @@ coreFunc op@(Binary _) (op1:op2:[]) = do
         Nothing -> do
             -- could not optimize
             reg <- uniqueReg
-            pushInstr $ QAssignOp reg op op1 op2
-            return $ Register reg
+            let tReg = VRegister reg in do
+              pushInstr $ QAssignOp tReg op op1 op2
+              return $ OpRegister tReg
         Just operand -> return $ operand
 
 prettyPrint :: Quadrupel -> IO ()
 prettyPrint (QAssignOp r (Binary op) op1 op2) = 
-    putStrLn $ (show (Register r)) ++ " = " ++ (show op1) ++ " " ++ (show op) ++ " " ++ (show op2)
-
-
+    putStrLn $ (show r) ++ " = " ++ (show op1) ++ " " ++ (show op) ++ " " ++ (show op2)

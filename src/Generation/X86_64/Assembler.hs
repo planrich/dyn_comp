@@ -72,8 +72,8 @@ assembleQuadrupel q = do
 
 
 toasm :: Quadrupel -> [String]
-toasm (QReturn (ArgRegister r)) = ("movq %" ++ (argRegName64 $ fromIntegral r) ++ ", %rax") : toasm (QReturn Nil)
-toasm (QReturn (Register r)) = ("movq %" ++ (show r) ++ ", %rax") : toasm (QReturn Nil)
+toasm (QReturn (OpRegister (VRegister r))) = ("movq %" ++ (argRegName64 $ fromIntegral r) ++ ", %rax") : toasm (QReturn Nil)
+toasm (QReturn (OpRegister (ARegister r))) = ("movq %" ++ (show r) ++ ", %rax") : toasm (QReturn Nil)
 toasm (QReturn (Constant o)) = ("movq $" ++ (show o) ++ ", %rax") : toasm (QReturn Nil)
 toasm (QReturn Nil) = ["retq"]
 toasm (QCall label) = ["callq " ++ label]

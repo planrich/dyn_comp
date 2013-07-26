@@ -12,9 +12,9 @@ import Control.Monad
 import Parser
 import ParserTypes
 
-import Interpretor
+--import Interpretor
 import Environment
-import Builtins
+--import Builtins
 import Compiler
 
 main = do
@@ -22,16 +22,17 @@ main = do
     handle arguments
 
 handle :: [String] -> IO ()
-handle ("-i":fs) = repl newSymT
+--handle ("-i":fs) = repl newSymT
 handle ("-c":fs) = do
     result <- parseFile (fs !! 0)
     case result of
         Left err -> print err
         Right prog -> do
             compile prog
-handle (f:_) = parse f
-handle [] = putStrLn "usage: am [-i] [<file.am>]"
+--handle (f:_) = parse f
+handle _ = putStrLn "usage: am [-i] [<file.am>]"
 
+{-
 parse :: String -> IO ()
 parse filePath = do
         result <- parseFile filePath
@@ -121,4 +122,5 @@ replAddFunc env lines = do
         replAddFunc env (lines ++ [line])
 
 
+-}
     

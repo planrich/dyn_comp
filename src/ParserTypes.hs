@@ -1,67 +1,24 @@
 module ParserTypes
-    ( Name
-    , Unit (..)
-    , Function (..)
-    , match
-    , Pattern (..)
-    , Expr (..)
-    , Binding (..)
+    ( Expr (..)
     , ThrowError
     , EvalError (..)
     , Builtin (..)
-    , MetaUnit (..)
-    , Export
+    , match
     , matchPattern
     , bindingName
-    , funcArgCount
     , isListExpr
     , listHead
     , listTail
     )
   where
 
-import qualified Data.Map as M
 import Data.Maybe
 import Control.Monad.Error
 
+import Neart.Types
+
 type ThrowError = Either EvalError
 type Name = String
-type Export = String
-type Import = String
-
--- | a unit is the internal representation of a syntactically valid file
-data Unit = Unit 
-    { unitMeta :: MetaUnit
-    , unitFunctions :: [Function]
-    , unitImports :: [Import]
---    , unitFunctionMap :: M.Map Name Function
-    }
-  deriving (Show)
-
--- | a function
-data Function = Function 
-    { functionName :: Name
-    , functionPatterns :: [Pattern]
-    }
-  deriving (Show)
-
-functionParameterCount :: Function -> Int
-functionParameterCount function = length $ functionPatterns function
-
-data MetaUnit = MetaUnit 
-    { unitName :: String
-    , unitMajorVersion :: Int
-    , unitMinorVersion :: Int
-    , unitPatchVersion :: Int
-    , unitExports :: [Export]
-    }
-  deriving (Show)
-
-data Pattern = Pattern 
-    { patternBindings :: [Binding]
-    , patternExpr :: Expr
-    }
-  deriving (Show)
 
 data Expr = AppExpr Expr Expr
           | Expr [Expr]
@@ -81,21 +38,11 @@ data Expr = AppExpr Expr Expr
           -- when the param count the builtin needs is reached the function is executed.
           | FuncCtx Builtin [Expr]
 
-
-data Binding = BNumber !Int
-             | BString !String
-             | BBool !Bool
-             | BAnon
-             | BVar !String
-             | BList !(Binding,Binding)
-             | BNil
-             deriving (Show)
-
 data Builtin = Builtin { builtinParamCount :: Int
                        , builtinFunction :: ([Expr] -> ThrowError Expr)
                        }
              | Defined { definedParamCount :: Int
-                       , definedFunction :: Function
+                       , definedFunction :: Function Expr
                        }
 
 data EvalError = TypeMissmatch String Expr
@@ -131,8 +78,9 @@ instance Show Expr where
     show (ListExpr (ls)) = "[" ++ (foldr (++) "" (map ((++ ",") . show) ls)) ++ "]"
     show (CondExpr e a1 a2) = "{?" ++ (show e) ++ " either " ++ (show a1) ++ " or " ++ (show a2) ++ "}"
     show (LamExpr name expr) = "\\" ++ name ++ " -> " ++ (show expr)
-    show (FuncCtx (Defined n f) expr) = "@(defined: " ++ functionName f ++ " " ++ (show expr) ++ ")"
-    show (FuncCtx (Builtin n f) expr) = "@(builtin: " ++ (show expr) ++ ")"
+    show (FuncCtx (Defined _ f) expr) = "@(defined: " ++ functionName f ++ " " ++ (show expr) ++ ")"
+    show (FuncCtx (Builtin _ _) expr) = "@(builtin: " ++ (show expr) ++ ")"
+    show _ = "cannot show expr!!!"
 
 instance Ord Expr where
     compare (LitExpr i) (LitExpr j) = compare i j
@@ -145,7 +93,7 @@ instance Eq Expr where
     (==) (BoolExpr b) (BoolExpr b2) = b == b2
     (==) (ListExpr ll) (ListExpr lr) = ll == lr
     (==) (FuncCtx (Defined ac1 f1) p1) (FuncCtx (Defined ac2 f2) p2) =
-        ac1 == ac2 && (funcArgCount f1) == (funcArgCount f2) && (functionName f1) == (functionName f2) && p1 == p2
+        ac1 == ac2 && (functionArgumentCount f1) == (functionArgumentCount f2) && (functionName f1) == (functionName f2) && p1 == p2
     (==) _ _ = False
 
 isBindingVar :: Binding -> Bool
@@ -156,11 +104,11 @@ bindingName :: Binding -> Maybe String
 bindingName (BVar s) = Just s
 bindingName _ = Nothing
 
-match :: [Expr] -> [Pattern] -> Maybe Pattern
+match :: [Expr] -> [Pattern Expr] -> Maybe (Pattern Expr)
 match es [] = Nothing
 match es (p:ps) = mplus (if isJust $ matchPattern p es then Just p else Nothing) (match es ps) 
 
-matchPattern :: Pattern -> [Expr] -> Maybe Pattern
+matchPattern :: Pattern Expr -> [Expr] -> Maybe (Pattern Expr)
 matchPattern p [] = Just p
 matchPattern (Pattern (b:bs) expr) (e:es)
     | matchBinding b e = matchPattern (Pattern bs expr) es
@@ -187,14 +135,6 @@ listNotEmpty (ListExpr _) = True
 listNotEmpty (StrExpr []) = False
 listNotEmpty (StrExpr _) = True
 listNotEmpty _ = False
--- |How many arguments must a specific function get to be executed?
---  It is assumed that every pattern of a function has the
---  same amount of bindings.
-funcArgCount :: Function -> Int
-funcArgCount (Function name (p:ps)) = patternArgCount p
-
-patternArgCount :: Pattern -> Int
-patternArgCount (Pattern bindings _) = length bindings
 
 isListExpr :: Expr -> Bool
 isListExpr (ListExpr _) = True

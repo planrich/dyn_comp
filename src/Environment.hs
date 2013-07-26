@@ -5,7 +5,7 @@
 
 module Environment 
     ( harvestSymbols
-    , lazyLoadUnits
+    , lazyLoadExprUnits
     , mainExpr
     , newSymT
     , defineSym
@@ -24,10 +24,14 @@ import Data.Maybe
 
 import ParserTypes
 
+import Neart.Types
+
+type ExprUnit = Unit Expr
+
 type Env = SymbolTable
 
-lazyLoadUnits :: Unit -> SymbolTable
-lazyLoadUnits unit =
+lazyLoadExprUnits :: ExprUnit -> SymbolTable
+lazyLoadExprUnits unit =
     let imported = load (unitImports unit) (SymbolTable M.empty) in
       harvestSymbols (unitFunctions unit) imported
   where

@@ -1,9 +1,10 @@
 module IR.Quadrupel.Types
   ( Reg
   , Operation (..)
+  , VirtualRegister (..)
   , QUnit (..)
   , QFunction (..)
-  , QBlock (..)
+  , QPattern (..)
   , BinOp (..)
   , Operand (..)
   , Quadrupel (..)
@@ -48,18 +49,16 @@ instance Show BinOp where
     show Mul = "*"
     show Div = "/"
 
-
-
-data QBlock = QBlock
-    { qblockLabel :: Name
-    , qblockCode :: [Quadrupel]
+data QPattern = QPattern
+    { qpatternLabel :: Name
+    , qpatternCode :: [Quadrupel]
     }
   deriving (Show)
 
 data QFunction = QFunction
     { qfunctionLabel :: Name
     , qfunctionName :: Name
-    , qfunctionBlocks :: [QBlock]
+    , qfunctionPatterns :: [QPattern]
     }
   deriving (Show)
 
@@ -69,44 +68,48 @@ data QUnit = QUnit
     }
   deriving (Show)
 
-data Operand = Register Reg
-             | ArgRegister Reg
-             | Constant Integer
-             | Nil
+data VirtualRegister = VRegister Reg
+                     | ARegister Reg
+                   deriving (Show)
+
+data Operand r = OpRegister Register r
+               | Constant Integer
+               | Nil
+
+class Register r where
+    registerName :: r -> String
+
+instance Register VirtualRegister where
+    registerName (VRegister r) = "r" ++ (show r)
+    registerName (ARegister r) = "a" ++ (show r)
 
 instance Show Operand where
-    show (Register r) = "r" ++ (show r)
+    show (OpRegister r) = (show r)
     show (Constant i) = (show i)
-    show (ArgRegister r) = "a" ++ (show r)
     show Nil = "nil"
 
-data Quadrupel = QAssignOp { targetReg :: Reg
+data Quadrupel r = QAssignOp { targetReg :: Register r
                            , operation :: Operation
-                           , op1Reg :: Operand
-                           , op2Reg :: Operand
+                           , op1Reg :: Operand r
+                           , op2Reg :: Operand r
                            }
-               | QAssign { targetReg :: Reg
-                         , operand :: Operand
+               | QAssign { targetReg :: Register r
+                         , operand :: Operand r
                          }
                | QParam { paramIdx :: Int
-                        , operand :: Operand
+                        , operand :: Operand r
                         }
                | QCall { qcallLabel :: Name } 
-               | QReturn { qreturnOperand :: Operand }
+               | QReturn { qreturnOperand :: Operand r }
              deriving (Show)
 
 data TEnv = TEnv
     { tenvCode :: [Quadrupel]
     , tenvSymTable :: SymbolTable
-    , registerVar :: Reg
+    , tenvRegisterVar :: Reg
     , tenvUnit :: Unit
     }
   deriving (Show)
-
-data QuadrupelCode = QCode { qcode :: [Quadrupel]
-                           , qcodeResult :: Operand
-                           }
-                         deriving (Show)
 
 data TransformError = SymbolNotFound String Expr 
                     | DefaultError String
@@ -150,17 +153,16 @@ tenvInsertSymbol :: Name -> SymEntry -> TEnv -> TEnv
 tenvInsertSymbol key sym (TEnv c symt r u) =
     let newSymT = defineSym symt key sym in (TEnv c newSymT r u)
 
-
 prettyPrintQU :: QUnit -> IO ()
 prettyPrintQU (QUnit meta fns) = do
     mapM_ ppF fns
   where
     ppF func = do
         putStrLn $ (qfunctionLabel func) ++ ":"
-        mapM_ ppB (qfunctionBlocks func)
-    ppB block = do
-        putStrLn $ (qblockLabel block) ++ ":"
-        ppCs $ reverse (qblockCode block)
+        mapM_ ppB (qfunctionPatterns func)
+    ppB pattern = do
+        putStrLn $ (qpatternLabel pattern) ++ ":"
+        ppCs $ reverse (qpatternCode pattern)
     ppCs [] = return ()
     ppCs (c:cs) = do
         putStrLn $ "\t" ++ (show c)
