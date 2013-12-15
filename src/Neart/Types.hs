@@ -1,34 +1,13 @@
 module Neart.Types
     ( Unit (..)
     , Function (..)
-    , Pattern (..)
-    , Binding (..)
     , MetaUnit (..)
-    , functionArgumentCount
-    , functionParameterCount
-    , patternArgumentCount
     )
   where
 
 type Export = String
 type Import = String
 type Name = String
-
--- | a unit is the internal representation of a syntactically valid file
-data Unit t = Unit 
-    { unitMeta :: MetaUnit
-    , unitFunctions :: [Function t]
-    , unitImports :: [Import]
---    , unitFunctionMap :: M.Map Name Function
-    }
-  deriving (Show)
-
--- | a function
-data Function t = Function 
-    { functionName :: Name
-    , functionPatterns :: [Pattern t]
-    }
-  deriving (Show)
 
 data MetaUnit = MetaUnit 
     { unitName :: String
@@ -39,30 +18,41 @@ data MetaUnit = MetaUnit
     }
   deriving (Show)
 
-data Pattern t = Pattern 
-    { patternBindings :: [Binding]
-    , patternCode :: t
-    }
-  deriving (Show)
+class CompUnit u where
+    unitFunctions :: CompFunction f => u -> [f]
+    unitTransform :: (CompFunction f1, CompFunction f2) => (f1 -> f2) -> u -> u
 
-data Binding = BNumber !Int
-             | BString !String
-             | BBool !Bool
-             | BAnon
-             | BVar !String
-             | BList !(Binding,Binding)
-             | BNil
-             deriving (Show)
+class CompFunction f where
+    funcName :: f -> Name
+    funcCode :: CompCode c => f -> c
+    funcTransform :: (CompCode c1, CompCode c2) => (c1 -> c2) -> f -> f
+    funcArgCount :: f -> Int
 
--- |How many arguments must a specific function get to be executed?
---  It is assumed that every pattern of a function has the
---  same amount of bindings.
-functionArgumentCount :: Function t -> Int
-functionArgumentCount (Function _ []) = error "function must have a pattern"
-functionArgumentCount (Function _ (p:_)) = patternArgumentCount p
+class CompCode c where
+    codeArgCount :: c -> Int
+    --where
+    --codeMeta :: CMeta m => p -> m
 
-patternArgumentCount :: Pattern t -> Int
-patternArgumentCount (Pattern bindings _) = length bindings
+-- | a unit is the internal representation of a syntactically valid file
+data (CompFunction f) => Unit f = Unit MetaUnit [f] deriving (Show)
 
-functionParameterCount :: Function t -> Int
-functionParameterCount function = length $ functionPatterns function
+instance (CompFunction f) => CompUnit (Unit f) where
+    unitFunctions (Unit m fs) = fs
+    unitTransform func (Unit m fs) = (Unit m (map func fs))
+
+data (CompCode c) => Function c = Function Name c deriving (Show)
+instance CompFunction (Function c) where
+    funcName (Function n _) = n
+    funcCode (Function _ p) = p
+    funcTransform f (Function n p) = (Function n (f p))
+
+    funcArgCount (Function _ _) = 0 -- error "fatal: function does not have a pattern which is invalid"
+--    funcArgCount (Function _ []) = error "fatal: function does not have a pattern which is invalid"
+--    funcArgCount (Function _ (p:_)) = length $ patternBindings p
+
+transformCompCode :: (CompUnit c1, CompUnit c2) => (a -> b) -> c1 -> c2
+transformCompCode f unit = unitTransform (\u -> map convertFunction (unitFunctions u)) unit
+  where
+    convertFunction funcs = funcTransform (\func -> map f (funcCode func)) funcs
+
+

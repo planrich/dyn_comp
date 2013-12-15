@@ -1,4 +1,4 @@
-import System.Environment
+{-import System.Environment
 import System.Directory
 import System.IO
 import qualified Data.Text as T
@@ -11,15 +11,21 @@ import Control.Monad
 
 import Parser
 import ParserTypes
+-}
 
 --import Interpretor
-import Environment
 --import Builtins
-import Compiler
+--
+--import Environment
+--import Compiler
+--
+import Neart.Types
 
 main = do
-    arguments <- getArgs
-    handle arguments
+    putStrLn "OKE"
+    --arguments <- getArgs
+    --handle arguments
+{-
 
 handle :: [String] -> IO ()
 --handle ("-i":fs) = repl newSymT
@@ -31,6 +37,8 @@ handle ("-c":fs) = do
             compile prog
 --handle (f:_) = parse f
 handle _ = putStrLn "usage: am [-i] [<file.am>]"
+
+-}
 
 {-
 parse :: String -> IO ()

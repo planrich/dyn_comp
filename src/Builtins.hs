@@ -17,6 +17,8 @@ import qualified Data.List as L
 
 import ParserTypes
 
+type Name = String
+
 builtins :: M.Map String Builtin
 builtins = M.fromList [ ("add", Builtin 2 $ numericBinary (+))
                       , ("sub", Builtin 2 $ numericBinary (-))

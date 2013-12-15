@@ -30,15 +30,19 @@ type ExprUnit = Unit Expr
 
 type Env = SymbolTable
 
+type Name = String
+
+type ExprFunction = Function Expr
+
 lazyLoadExprUnits :: ExprUnit -> SymbolTable
 lazyLoadExprUnits unit =
     let imported = load (unitImports unit) (SymbolTable M.empty) in
-      harvestSymbols (unitFunctions unit) imported
+      harvestSymbols (unitExprFunctions unit) imported
   where
     load [] symt = symt
     load (i:is) symt = load is symt
 
-harvestSymbols :: [Function] -> SymbolTable -> SymbolTable
+harvestSymbols :: [ExprFunction] -> SymbolTable -> SymbolTable
 harvestSymbols [] s = s
 harvestSymbols (f:fs) s@(SymbolTable m) = harvestSymbols fs (defineSym s (functionName f) (SymFunc f))
 
@@ -49,7 +53,7 @@ mainExpr t@(SymbolTable m) = do
     firstPat ((Pattern [] e):ps) = Just e
     firstPat _ = Nothing
 
-data SymEntry = SymFunc Function
+data SymEntry = SymFunc ExprFunction
               | SymBinding Expr
               | SymArgument Int
               deriving (Show)
@@ -67,13 +71,13 @@ defineSym (SymbolTable t) k s = SymbolTable $ M.insert k s t
 findEntry :: SymbolTable -> Name -> Maybe SymEntry
 findEntry sym@(SymbolTable t) k = M.lookup k t
 
-findFunc :: SymbolTable -> Name -> Maybe Function
+findFunc :: SymbolTable -> Name -> Maybe ExprFunction
 findFunc sym@(SymbolTable t) k = 
     case M.lookup k t of
         Just (SymFunc f) -> Just f
         _ -> Nothing
 
-findSymsNameStartsWith :: Name -> SymbolTable -> [Function]
+findSymsNameStartsWith :: Name -> SymbolTable -> [ExprFunction]
 findSymsNameStartsWith l (SymbolTable t) =
     (map (unpack . snd)) . M.toList $ M.filterWithKey (startswith l) t  
   where
