@@ -1,0 +1,7 @@
+
+def build(c):
+    tg = c( features = 'c cprogram',
+            source = 'neart.l neart.y main.c',
+            target = 'neartc',
+            use = 'NEART',
+            includes = '.')
