@@ -3,10 +3,8 @@
 extern int yyparse();
 extern int yylineno;
 
-//int yyerror (char const *a)
-void yyerror (void *locp, char const *msg);
-{
-    printf("yyerror: (%s)\n", msg);
+int yyerror (char const * msg) {
+    printf("failed at: (%s) %d\n", msg, yylineno);
     return 1;
 }
 

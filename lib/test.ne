@@ -1,8 +1,7 @@
-unit test version 0 
 
-func assert:
-=; 1
-    
+unit prelude
 
+func id: a -> a
 
-
+impl func id: a -> a
+= value ; value

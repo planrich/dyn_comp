@@ -8,42 +8,38 @@
 ID  [a-zA-Z_][a-zA-Z0-9_]*
 DIGIT [0-9]
 
-WS  [ \t]
-NL  \n
+WS  [ \t]+
+NL  (\n|\r\n)
 
 %%
 
-{WS}+ { 
-    yylval.ws = strlen(yytext);
-    return TOK_WS;
-    //printf("ws %ld\n", strlen(yytext)); 
-}
 
-{NL} {
-    return TOK_NL;
-}
-
-unit { return TOK_UNIT; }
-version { return TOK_VERSION; }
-func { return TOK_FUNC; }
+"unit" { return T_UNIT; }
+"version" { return T_VERSION; }
+"func" { return T_FUNC; }
 
 {ID} { 
     yylval.text = strdup(yytext);
     // TODO free?
-    return TOK_ID;
+    return T_ID;
 }
 
 {DIGIT}+ {
-    yylval.text = strdup(yytext);
+    //yylval.text = strdup(yytext);
     // TODO free?
-    return TOK_INT;
-    //printf("natural \n");
+    return T_INT;
 }
 
-<<EOF>> { return TOK_EOF; }
+{WS} {
+    yylval.ws = strlen(yytext);
+    return T_WS;
+}
 
-":" { return TOK_COLON; }
-"=" { return TOK_EQUAL; }
-";" { return TOK_SEMI_COLON; }
+{NL} { return T_NL; }
 
-. { printf("unexpected input\n"); exit(-1); }
+"->" { return T_ARROW; }
+":" { return T_COLON; }
+"=" { return T_EQUAL; }
+";" { return T_SEMI_COLON; }
+
+. { printf("unexpected input %s\n", yytext); exit(-1); }
