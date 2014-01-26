@@ -1,3 +1,8 @@
-unit test version 0
+unit test version 0 
 
-func test:
+func assert:
+=; 1
+    
+
+
+

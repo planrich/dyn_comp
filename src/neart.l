@@ -11,8 +11,6 @@ DIGIT [0-9]
 WS  [ \t]
 NL  \n
 
-SPECIAL [:;.,=(){}]
-
 %%
 
 {WS}+ { 
@@ -42,12 +40,10 @@ func { return TOK_FUNC; }
     //printf("natural \n");
 }
 
-{SPECIAL} {
-    //printf("special \n");
-}
+<<EOF>> { return TOK_EOF; }
 
-: { return TOK_DEF; }
-= { return TOK_EQ; }
-; { return TOK_SC; }
+":" { return TOK_COLON; }
+"=" { return TOK_EQUAL; }
+";" { return TOK_SEMI_COLON; }
 
 . { printf("unexpected input\n"); exit(-1); }
