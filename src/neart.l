@@ -1,5 +1,6 @@
 %{
 
+#include "structs.h"
 #include "neart.tab.h"
 #include "lexer.h"
 
@@ -11,6 +12,10 @@ DIGIT [0-9]
 WS  [ \t]+
 NL  (\n|\r\n)
 
+%option bison-bridge
+%option bison-locations
+%option yylineno
+
 %%
 
 
@@ -19,7 +24,7 @@ NL  (\n|\r\n)
 "func" { return T_FUNC; }
 
 {ID} { 
-    yylval.text = strdup(yytext);
+    yylval->text = strdup(yytext);
     // TODO free?
     return T_ID;
 }
@@ -30,16 +35,23 @@ NL  (\n|\r\n)
     return T_INT;
 }
 
-{WS} {
-    yylval.ws = strlen(yytext);
-    return T_WS;
-}
 
-{NL} { return T_NL; }
+"[" { return T_OBRACKET; }
+"]" { return T_CBRACKET; }
+"{" { return T_OBRACE; }
+"}" { return T_CBRACE; }
+"(" { return T_OPARENS; }
+")" { return T_CPARENS; }
 
-"->" { return T_ARROW; }
+"_" { return T_UNDERSCORE; }
+"-" { return T_MINUS; }
+"+" { return T_PLUS; }
+">" { return T_GT; }
 ":" { return T_COLON; }
 "=" { return T_EQUAL; }
 ";" { return T_SEMI_COLON; }
+
+{WS} { }
+{NL} { }
 
 . { printf("unexpected input %s\n", yytext); exit(-1); }
