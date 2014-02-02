@@ -13,10 +13,9 @@ int yyerror (YYLTYPE *locp, context_t * ctx, char const * msg) {
 int main(int argc, char *argv[])
 {
     int yy;
-    context_t ctx;
+    context_t * ctx = context_alloc();
 
-    ctx.root = expr_tree_alloc(TT_UNIT);
-    yy = yyparse(&ctx);
+    yy = yyparse(ctx);
     if (yy != 0)
     {
         printf("failed at line %d\n", yylineno);
@@ -25,7 +24,8 @@ int main(int argc, char *argv[])
     else{
         printf("Success.\n");
     }
-    expr_tree_free_r(ctx.root);
+
+    context_free(ctx);
 
     return 0;
 }

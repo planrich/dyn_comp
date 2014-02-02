@@ -15,7 +15,8 @@ int yyerror (YYLTYPE *locp, context_t * ctx, char const * msg);
 
 %union {
     char * text;
-    expr_tree_t * node;
+    expr_t * expr;
+    void * generic;
 }
 
 %start file
@@ -73,24 +74,24 @@ funclist:
   ;
 
 func:
-    T_FUNC T_ID[name] {
-      $<node>func_node = expr_tree_alloc(TT_FUNC);
-      $<node>func_node->leaf = $2;
-      context_add_function(ctx, $<node>func_node);
-    }[func_node]
-    T_COLON params patterns { 
-        $<node>func_node->right = $<node>patterns;
-
-    }
+    T_FUNC T_ID[name] { 
+        func_t * func = func_alloc($name);
+        context_add_function(ctx, func);
+    } T_COLON params patterns
   ;
 
 patterns:
-    T_EQUAL bindings T_SEMI_COLON expr patterns
-  | { $<node>$ = NULL; }
+    T_EQUAL {
+      $<generic>pat = pattern_alloc();
+      ctx->last_pattern = (pattern_t*)$<generic>pat;
+    }[pat] bindings T_SEMI_COLON expr {
+      ((pattern_t*)$<generic>pat)->expr = $<expr>expr;
+    } patterns
+  |
   ;
 
 bindings:
-    binding bindings
+    binding { pattern_add_binding(ctx->last_pattern, $<expr>binding);  } bindings
   |
   ;
 

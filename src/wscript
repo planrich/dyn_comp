@@ -4,4 +4,4 @@ def build(c):
             source = 'neart.l neart.y structs.c main.c',
             target = 'neartc',
             use = 'NEART',
-            includes = '.')
+            includes = ['.','../third/klib'])
