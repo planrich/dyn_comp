@@ -13,7 +13,7 @@ int yyerror (YYLTYPE *locp, context_t * ctx, char const * msg) {
 int main(int argc, char *argv[])
 {
     int yy;
-    context_t * ctx = context_alloc();
+    context_t * ctx = neart_context_alloc("stdin");
 
     yy = yyparse(ctx);
     if (yy != 0)
@@ -23,9 +23,10 @@ int main(int argc, char *argv[])
     }
     else{
         printf("Success.\n");
+        neart_write_syntax_tree_to_file("syntax_tree.dot", ctx->syntax_tree);
     }
 
-    context_free(ctx);
+    neart_context_free(ctx);
 
     return 0;
 }

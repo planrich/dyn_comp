@@ -5,39 +5,80 @@
 #include "khash.h"
 #include "klist.h"
 
+#define FOREACH_EXPR_TYPE(PPF) \
+    PPF(ET_UNIT, "unit"), \
+    PPF(ET_FUNC, "func"), \
+    PPF(ET_PARAMS, "params"), \
+    PPF(ET_PARAM, "param"), \
+    PPF(ET_PATTERNS, "patterns"), \
+    PPF(ET_PATTERN, "pattern"), \
+    PPF(ET_VARIBALE, "var"), \
+    PPF(ET_PARENS, "()") \
+
+#define ENUM_CNAME(cname, hname) cname
+#define ENUM_HNAME(cname, hname) hname
+
+static const char * expr_type_names[] = {
+
+    FOREACH_EXPR_TYPE(ENUM_HNAME)
+
+};
+
+/**
+ * => detail
+ * -> next
+ *
+ * + func xyz
+ *   +=> params
+ *   +-> <func>
+ *
+ * + params
+ *   +=> NULL
+ *   +-> param | NULL
+ *
+ * + param
+ *   +=> <expr>
+ *   +-> NULL | param
+ *
+ * + patterns
+ *   +=> pattern
+ *   +-> NULL
+ *
+ * + pattern
+ *   +=> <expr>
+ *   +-> pattern | NULL
+ */
 typedef enum expr_type_t {
-    TT_UNIT,
-    TT_FUNC,
-    TT_PATS,
-    TT_LET,
-    TT_ADD,
-    TT_SUB,
-    TT_MUL,
-    TT_DIV,
-    TT_LEAF
+    FOREACH_EXPR_TYPE(ENUM_CNAME)
 } expr_type_t;
 
 typedef struct expr_t {
-    struct expr_t * left;
-    struct expr_t * right;
+    union {
+        struct expr_t * next;
+        struct expr_t * right;
+    };
+    union {
+        struct expr_t * detail;
+        struct expr_t * left;
+    };
     expr_type_t type;
-    char * leaf;
+    char * data;
 } expr_t;
 
 /**
  * alloc a expression node
  */
-expr_t * expr_alloc(expr_type_t type);
+expr_t * neart_expr_alloc(expr_type_t type);
 
 /**
  * free the tree recursively
  */
-void expr_free_r(expr_t * tree);
+void neart_expr_free_r(expr_t * tree);
 
 /**
  * free one node
  */
-void expr_free(expr_t * tree);
+void neart_expr_free(expr_t * tree);
 
 #define __expr_free(x)
 KLIST_INIT(expr_t, expr_t*, __expr_free);
@@ -81,22 +122,14 @@ void func_free(func_t * func);
 
 typedef struct context_t {
     khash_t(str_func_t) * func_table;
-
-    // the following are needed because a bison rules cannot have a parameter
-    // thus they are set 'globally' in the context. One could have solved
-    // this by just using the same structure (expr_t) for the syntax tree
-    //
-    // the last added function
-    func_t * last_func;
-    // the last created pattern
-    pattern_t * last_pattern;
-
+    const char * filename;
+    expr_t * syntax_tree;
 } context_t;
 
-context_t * context_alloc(void);
+context_t * neart_context_alloc(const char * filename);
 
-void context_free(context_t * ctx);
+void neart_context_free(context_t * ctx);
 
-void context_add_function(context_t * ctx, func_t * func);
+void neart_context_add_function(context_t * ctx, func_t * func);
 
 #endif

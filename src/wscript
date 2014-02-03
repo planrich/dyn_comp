@@ -1,7 +1,9 @@
 
 def build(c):
     tg = c( features = 'c cprogram',
-            source = 'neart.l neart.y structs.c main.c',
+            source = 'neart.l neart.y structs.c main.c visual/dot_syntax_tree.c',
+            cflags = '-g',
+            debug = True,
             target = 'neartc',
             use = 'NEART',
-            includes = ['.','../third/klib'])
+            includes = ['.', 'visual', '../third/klib'])

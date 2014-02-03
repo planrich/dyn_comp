@@ -61,7 +61,10 @@ int yyerror (YYLTYPE *locp, context_t * ctx, char const * msg);
 %%
 
 file:
-    meta funclist
+    meta funclist {
+      ctx->syntax_tree = $<expr>funclist;
+    }
+
   ;
 
 meta: 
@@ -69,29 +72,37 @@ meta:
   ;
 
 funclist:
-    func funclist
+    func funclist {
+        expr_t * func = $<expr>1;
+        func->next = $<expr>2; 
+        $<expr>$ = func;
+    }
   |
   ;
 
 func:
-    T_FUNC T_ID[name] { 
-        func_t * func = func_alloc($name);
-        context_add_function(ctx, func);
-    } T_COLON params patterns
+    T_FUNC T_ID[name] T_COLON params patterns {
+        expr_t * func = neart_expr_alloc(ET_FUNC);
+        expr_t * params = neart_expr_alloc(ET_PARAMS);
+        expr_t * patterns = neart_expr_alloc(ET_PATTERNS);
+
+        func->data = $<text>name;
+        func->detail = params;
+        params->detail = $<expr>params;
+        params->next = patterns;
+        patterns->detail = $<expr>patterns;
+    }
   ;
 
 patterns:
     T_EQUAL {
-      $<generic>pat = pattern_alloc();
-      ctx->last_pattern = (pattern_t*)$<generic>pat;
     }[pat] bindings T_SEMI_COLON expr {
-      ((pattern_t*)$<generic>pat)->expr = $<expr>expr;
     } patterns
   |
   ;
 
 bindings:
-    binding { pattern_add_binding(ctx->last_pattern, $<expr>binding);  } bindings
+    binding { } bindings
   |
   ;
 

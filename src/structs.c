@@ -11,27 +11,28 @@
        exit(1);                     \
    }                                \
 
-expr_t * expr_alloc(expr_type_t type) {
+// IDEA alloc sizeof(expr_t * x) -> and dyn inc x if space it too little
+expr_t * neart_expr_alloc(expr_type_t type) {
     ALLOC_STRUCT(expr_t, tree);
     tree->type = type;
-    tree->left = NULL;
-    tree->right = NULL;
-    tree->leaf = NULL;
+    tree->next = NULL;
+    tree->detail = NULL;
+    tree->data = NULL;
     return tree;
 }
 
-void expr_free(expr_t * tree) {
+void neart_expr_free(expr_t * tree) {
     free(tree);
 }
 
-void expr_free_r(expr_t * tree) {
+void neart_expr_free_r(expr_t * tree) {
     if (tree->left != NULL) {
-        expr_free_r(tree->left);
+        neart_expr_free_r(tree->left);
     }
     if (tree->right != NULL) {
-        expr_free_r(tree->right);
+        neart_expr_free_r(tree->right);
     }
-    expr_free(tree);
+    neart_expr_free(tree);
 }
 
 //////////////////////////////////////// pattern
@@ -44,7 +45,7 @@ pattern_t * pattern_alloc(void) {
 
 void pattern_free(pattern_t * pattern) {
     kl_destroy(expr_t, pattern->bindings);
-    expr_free_r(pattern->expr);
+    neart_expr_free_r(pattern->expr);
     free(pattern);
     pattern = NULL;
 
@@ -66,24 +67,24 @@ func_t * func_alloc(const char * name) {
 
 //////////////////////////////////////// context
 
-context_t * context_alloc(void) {
+context_t * neart_context_alloc(const char * filename) {
     ALLOC_STRUCT(context_t, ctx);
     ctx->func_table = kh_init(str_func_t);
-    ctx->last_func = NULL;
+    ctx->syntax_tree = NULL;
+    ctx->filename = filename;
     return ctx;
 }
 
-void context_free(context_t * ctx) {
+void neart_context_free(context_t * ctx) {
     kh_destroy(str_func_t, ctx->func_table);
     free(ctx);
     ctx = NULL;
 }
 
-void context_add_function(context_t * ctx, func_t * func) {
+void neart_context_add_function(context_t * ctx, func_t * func) {
     int ret;
     khint_t k;
 
-    ctx->last_func = func;
     k = kh_put(str_func_t, ctx->func_table, func->name, &ret);
     kh_value(ctx->func_table, k) = func;
 }
