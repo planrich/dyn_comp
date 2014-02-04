@@ -22,6 +22,9 @@ expr_t * neart_expr_alloc(expr_type_t type) {
 }
 
 void neart_expr_free(expr_t * tree) {
+    if (tree->data != NULL) {
+        free(tree->data);
+    }
     free(tree);
 }
 
@@ -77,6 +80,7 @@ context_t * neart_context_alloc(const char * filename) {
 
 void neart_context_free(context_t * ctx) {
     kh_destroy(str_func_t, ctx->func_table);
+    neart_expr_free_r(ctx->syntax_tree);
     free(ctx);
     ctx = NULL;
 }

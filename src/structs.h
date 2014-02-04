@@ -12,8 +12,20 @@
     PPF(ET_PARAM, "param"), \
     PPF(ET_PATTERNS, "patterns"), \
     PPF(ET_PATTERN, "pattern"), \
-    PPF(ET_VARIBALE, "var"), \
-    PPF(ET_PARENS, "()") \
+    PPF(ET_VARIABLE, "var"), \
+    PPF(ET_BINDINGS, "bindings"), \
+    PPF(ET_BINDING, "binding"), \
+    PPF(ET_PARENS, "()"), \
+    PPF(ET_LIST, "[]"), \
+    PPF(ET_CONS, ":"), \
+    PPF(ET_MATCH_ANY, "_"), \
+    PPF(ET_INTEGER, "int"), \
+    PPF(ET_NIL, "nil"), \
+    PPF(ET_OP_IADD, "+"), \
+    PPF(ET_OP_ISUB, "-"), \
+    PPF(ET_OP_IMUL, "*"), \
+    PPF(ET_OP_IDIV, "/"), \
+    PPF(ET_NEGATIVE, "-"), \
 
 #define ENUM_CNAME(cname, hname) cname
 #define ENUM_HNAME(cname, hname) hname

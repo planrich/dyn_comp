@@ -25,13 +25,11 @@ NL  (\n|\r\n)
 
 {ID} { 
     yylval->text = strdup(yytext);
-    // TODO free?
     return T_ID;
 }
 
 {DIGIT}+ {
-    //yylval.text = strdup(yytext);
-    // TODO free?
+    yylval->text = strdup(yytext);
     return T_INT;
 }
 
@@ -46,6 +44,8 @@ NL  (\n|\r\n)
 "_" { return T_UNDERSCORE; }
 "-" { return T_MINUS; }
 "+" { return T_PLUS; }
+"*" { return T_STAR; }
+"/" { return T_FSLASH; }
 ">" { return T_GT; }
 ":" { return T_COLON; }
 "=" { return T_EQUAL; }

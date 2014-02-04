@@ -10,3 +10,6 @@ func head: [a] -> a
 func tail: [a] -> [a]
 = (l:ls) ; ls
 = [] ; []
+
+func add: a -> a -> a
+=; 1 + 133 * 2 / 1 - -2
