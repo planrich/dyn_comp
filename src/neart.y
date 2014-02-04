@@ -56,10 +56,9 @@ int yyerror (YYLTYPE *locp, context_t * ctx, char const * msg);
 %token T_FSLASH
 %token T_GT
 
-// TODO
-%left T_FSLASH T_STAR T_MINUS T_PLUS
-%right '('
-
+%left T_MINUS T_PLUS 
+%left T_FSLASH T_STAR
+%left T_COLON
 
 %%
 
@@ -154,16 +153,36 @@ binding:
   | nil { $<expr>$ = neart_expr_alloc(ET_NIL); }
   ;
 
-binary_op:
-    T_PLUS   { $<expr>$ = neart_expr_alloc(ET_OP_IADD); }
-  | T_MINUS  { $<expr>$ = neart_expr_alloc(ET_OP_ISUB); }
-  | T_STAR   { $<expr>$ = neart_expr_alloc(ET_OP_IMUL); }
-  | T_FSLASH { $<expr>$ = neart_expr_alloc(ET_OP_IDIV); }
-  ;
-
-op:
-    expr binary_op expr {
-        expr_t * expr = $<expr>binary_op;
+expr:
+    T_OPARENS expr T_CPARENS {
+        $<expr>$ = $<expr>2; 
+    }
+  | expr T_PLUS expr {
+        expr_t * expr = neart_expr_alloc(ET_OP_IADD);
+        expr->left = $<expr>1;
+        expr->right = $<expr>3;
+        $<expr>$ = expr; 
+    }
+  | expr T_STAR expr {
+        expr_t * expr = neart_expr_alloc(ET_OP_IMUL);
+        expr->left = $<expr>1;
+        expr->right = $<expr>3;
+        $<expr>$ = expr; 
+    }
+  | expr T_FSLASH expr {
+        expr_t * expr = neart_expr_alloc(ET_OP_IDIV);
+        expr->left = $<expr>1;
+        expr->right = $<expr>3;
+        $<expr>$ = expr; 
+    }
+  | expr T_MINUS expr {
+        expr_t * expr = neart_expr_alloc(ET_OP_ISUB);
+        expr->left = $<expr>1;
+        expr->right = $<expr>3;
+        $<expr>$ = expr; 
+    }
+  | expr T_COLON expr {
+        expr_t * expr = neart_expr_alloc(ET_OP_CONS);
         expr->left = $<expr>1;
         expr->right = $<expr>3;
         $<expr>$ = expr; 
@@ -173,27 +192,21 @@ op:
         expr->detail= $<expr>2;
         $<expr>$ = expr; 
     }
-  ;
-
-expr:
-    T_ID { 
-        expr_t * expr = neart_expr_alloc(ET_VARIABLE);
-        expr->data = $<text>1;
-        $<expr>$ = expr; 
-    }
-  | op { $<expr>$ = $<expr>op; }
-  | T_OPARENS expr T_CPARENS {
-        expr_t * expr = neart_expr_alloc(ET_PARENS);
-        expr->detail = $<expr>2;
-        $<expr>$ = expr; 
-    }
+  | nil { $<expr>$ = neart_expr_alloc(ET_NIL); }
   | T_INT { 
         expr_t * expr = neart_expr_alloc(ET_INTEGER);
         expr->data = $<text>1;
+        //expr->next = $<expr>2;
         $<expr>$ = expr; 
     }
-  | nil { $<expr>$ = neart_expr_alloc(ET_NIL); }
+  | T_ID { 
+        expr_t * expr = neart_expr_alloc(ET_VARIABLE);
+        expr->data = $<text>1;
+       // expr->next = $<expr>2;
+        $<expr>$ = expr; 
+    }
   ;
+
 
 params:
     param T_MINUS T_GT params[params_p] {
@@ -215,6 +228,9 @@ param:
         expr_t * param = neart_expr_alloc(ET_LIST);
         param->detail = $<expr>2;
         $<expr>$ = param;
+    }
+  | T_OPARENS params T_CPARENS {
+        $<expr>$ = $<expr>params;
     }
   | var { $<expr>$ = $<expr>var; }
   ;

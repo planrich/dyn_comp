@@ -3,11 +3,20 @@
 
 #include <stdio.h>
 #include "logging.h"
+#include "string.h"
+
+static const char * filter_func = NULL;
 
 int _write_node(FILE * file, int id, expr_t * tree) {
 
     if (tree == NULL) {
         return id;
+    }
+
+    if (filter_func != NULL && tree->type == ET_FUNC) {
+        if (strcmp(tree->data,filter_func) != 0) {
+            return _write_node(file, id, tree->next);
+        }
     }
 
     int root = id++;
@@ -50,7 +59,8 @@ void _write_tree(FILE * file, expr_t * tree) {
     fprintf(file, "}\n");
 }
 
-void neart_write_syntax_tree_to_file(const char * filename, expr_t * tree) {
+void neart_write_syntax_tree_to_file(const char * filename, expr_t * tree, const char * ff) {
+    filter_func = ff;
     FILE * file = fopen(filename, "w");
 
     _write_tree(file, tree);

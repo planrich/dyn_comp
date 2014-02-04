@@ -26,6 +26,8 @@
     PPF(ET_OP_IMUL, "*"), \
     PPF(ET_OP_IDIV, "/"), \
     PPF(ET_NEGATIVE, "-"), \
+    PPF(ET_OP_CONS, ":"), \
+
 
 #define ENUM_CNAME(cname, hname) cname
 #define ENUM_HNAME(cname, hname) hname

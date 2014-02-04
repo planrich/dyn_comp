@@ -4,6 +4,6 @@
 
 #include "structs.h"
 
-void neart_write_syntax_tree_to_file(const char * filename, expr_t * tree);
+void neart_write_syntax_tree_to_file(const char * filename, expr_t * tree, const char * filter_func);
 
 #endif
