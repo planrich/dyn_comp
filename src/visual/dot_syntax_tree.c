@@ -2,8 +2,8 @@
 #include "dot_syntax_tree.h"
 
 #include <stdio.h>
+#include <string.h>
 #include "logging.h"
-#include "string.h"
 
 static const char * filter_func = NULL;
 
@@ -21,7 +21,6 @@ int _write_node(FILE * file, int id, expr_t * tree) {
 
     int root = id++;
     int nullidnext = id++;
-    int nulliddetail = id++;
 
     if (tree->type == ET_FUNC) { fprintf(file, "subgraph cluster_%d { label=\"func %s\"; \n", root, tree->data); }
     fprintf(file, " n%d [ label=\"%s %s\" ]; \n", root, expr_type_names[tree->type], tree->data == NULL ? "" : tree->data);

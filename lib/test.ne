@@ -17,5 +17,6 @@ func add: a -> a -> a
 
 func map: (a -> b) -> [a] -> [b]
 = f [] ; []
-= f (l:ls) ; ( f l : map f ls )
+= f (l:ls) ; ( f l : (map f ls) )
+=; get i + 13
 

@@ -1,9 +1,6 @@
 %{
-
-#include "structs.h"
+#include "ast.h"
 #include "neart.tab.h"
-#include "lexer.h"
-
 %}
 
 ID  [a-zA-Z_][a-zA-Z0-9_]*
@@ -11,13 +8,13 @@ DIGIT [0-9]
 
 WS  [ \t]+
 NL  (\n|\r\n)
+STRING \"[^\"]\";
 
 %option bison-bridge
 %option bison-locations
 %option yylineno
 
 %%
-
 
 "unit" { return T_UNIT; }
 "version" { return T_VERSION; }
@@ -33,6 +30,10 @@ NL  (\n|\r\n)
     return T_INT;
 }
 
+{STRING} {
+    yylval->text = strdup(yytext);
+    return T_STR;
+}
 
 "[" { return T_OBRACKET; }
 "]" { return T_CBRACKET; }
@@ -41,6 +42,7 @@ NL  (\n|\r\n)
 "(" { return T_OPARENS; }
 ")" { return T_CPARENS; }
 
+"," { return T_COMMA; }
 "_" { return T_UNDERSCORE; }
 "-" { return T_MINUS; }
 "+" { return T_PLUS; }

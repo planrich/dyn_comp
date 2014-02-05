@@ -1,12 +1,12 @@
 %{ 
 #include <stdio.h>
-#include "structs.h"
+#include "ast.h"
 #include "neart.tab.h"
 #include "logging.h"
 
 int yylex ( YYSTYPE * lvalp, YYLTYPE * llocp );
 
-int yyerror (YYLTYPE *locp, context_t * ctx, char const * msg);
+int yyerror (YYLTYPE *locp, expr_t * root, char const * msg);
 
 %}
 
@@ -24,7 +24,7 @@ int yyerror (YYLTYPE *locp, context_t * ctx, char const * msg);
 
 %verbose
 
-%parse-param { context_t * ctx }
+%parse-param { expr_t * root }
 
 // keywords
 %token T_UNIT
@@ -32,15 +32,17 @@ int yyerror (YYLTYPE *locp, context_t * ctx, char const * msg);
 %token T_FUNC
 
 // numeric
-%token T_INT
+%token<text> T_INT
 
 %token<text> T_ID
+
+%token<text> T_STR;
 
 // punctuation
 %token T_COLON
 %token T_EQUAL
 %token T_SEMI_COLON
-
+%token T_COMMA;
 %token T_UNDERSCORE
 
 %token T_OBRACKET
@@ -56,15 +58,21 @@ int yyerror (YYLTYPE *locp, context_t * ctx, char const * msg);
 %token T_FSLASH
 %token T_GT
 
-%left T_MINUS T_PLUS 
-%left T_FSLASH T_STAR
 %left T_COLON
+%left T_MINUS 
+%left T_PLUS 
+%left T_FSLASH 
+%left T_STAR
+%left UNARY_MINUS
+
+%precedence "flist"
+%precedence "expr"
 
 %%
 
 file:
     meta funclist {
-      ctx->syntax_tree = $<expr>funclist;
+      root->detail = $<expr>funclist;
     }
   ;
 
@@ -187,9 +195,15 @@ expr:
         expr->right = $<expr>3;
         $<expr>$ = expr; 
     }
-  | T_MINUS expr {
+  | T_MINUS expr %prec UNARY_MINUS {
         expr_t * expr = neart_expr_alloc(ET_NEGATIVE);
         expr->detail= $<expr>2;
+        $<expr>$ = expr; 
+    }
+  | T_ID flist  { 
+        expr_t * expr = neart_expr_alloc(ET_VARIABLE);
+        expr->data = $<text>1;
+        expr->next = $<expr>2;
         $<expr>$ = expr; 
     }
   | nil { $<expr>$ = neart_expr_alloc(ET_NIL); }
@@ -199,14 +213,21 @@ expr:
         //expr->next = $<expr>2;
         $<expr>$ = expr; 
     }
-  | T_ID { 
-        expr_t * expr = neart_expr_alloc(ET_VARIABLE);
+  | T_STR { 
+        expr_t * expr = neart_expr_alloc(ET_STRING);
         expr->data = $<text>1;
-       // expr->next = $<expr>2;
         $<expr>$ = expr; 
     }
   ;
 
+flist: 
+    expr %prec "expr" { 
+        expr_t * expr = $<expr>expr; 
+        //expr->next=$<expr>2; 
+        $<expr>$ = expr; 
+    } 
+  | %prec "expr" { $<expr>$ = NULL; } 
+  ;
 
 params:
     param T_MINUS T_GT params[params_p] {
