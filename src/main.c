@@ -1,12 +1,14 @@
 #include <stdio.h>
 #include <unistd.h>
 #include <getopt.h>
+#include <errno.h>
 #include "ast.h"
 #include "neart.tab.h"
 #include "logging.h"
 #include "config.h"
 #include "gpir.h"
 #include "code.h"
+#include "sem.h"
 
 #ifdef NEART_VISUAL
   #include "dot_syntax_tree.h"
@@ -36,7 +38,7 @@ int main(int argc, char *argv[])
             {"syntax",  required_argument, 0,  0 },
             {"filter",  required_argument, 0,  1 },
 #endif
-            {"verbose", no_argument,       0,  0 },
+            {"verbose", no_argument,       0,  'v' },
             {0,         0,                 0,  0 }
         };
 
@@ -72,12 +74,10 @@ int main(int argc, char *argv[])
 
     NEART_LOG(LOG_PARSING, "parsing file '%s'\n", file);
     yy = yyparse(root);
-    if (yy != 0)
-    {
+    if (yy != 0) {
         NEART_LOG(LOG_FATAL, "failed at line %d\n", yylineno);
         return 1;
-    }
-    else{
+    } else {
         NEART_LOG(LOG_INFO, "parsing '%s' succeded\n", file);
 #ifdef NEART_VISUAL
         if (dot_syntax_tree) {
@@ -87,15 +87,15 @@ int main(int argc, char *argv[])
 #endif
     }
     compile_context_t cc;
-    int error = 1;
-    module_t * module = neart_check_semantics(&cc, root, &error);
+    errno = 0;
+    module_t * module = neart_check_semantics(&cc, root);
     neart_expr_free_r(root);
 
-    if (error) {
-        NEART_LOG(LOG_FATAL, "semantics error found. analysis returned %d\n", error);
+    if (errno) {
+        NEART_LOG(LOG_FATAL, "semantics error found. analysis returned %d\n", errno);
     } else {
         neart_generate_register_code(module, stdout);
     }
 
-    return error;
+    return errno;
 }

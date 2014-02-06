@@ -42,6 +42,7 @@ def configure(c):
         c.recurse('test')
 
 def build(c):
+    c.objects( target = 'klib', source = 'third/klib/kstring.c', includes = 'third/klib' )
     c.recurse('src')
     if c.options.test:
         c.recurse('test')

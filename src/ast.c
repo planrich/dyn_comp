@@ -5,6 +5,11 @@
 #include <stdlib.h>
 #include "utils.h"
 
+
+const char * expr_type_names[] = {
+    FOREACH_EXPR_TYPE(ENUM_HNAME)
+};
+
 // IDEA alloc sizeof(expr_t * x) -> and dyn inc x if space it too little
 expr_t * neart_expr_alloc(expr_type_t type) {
     ALLOC_STRUCT(expr_t, tree);

@@ -10,26 +10,24 @@
 
 #include "ast.h"
 
-#define __expr_free(x)
+#define __expr_free(x) neart_expr_free
 KLIST_INIT(expr_t, expr_t*, __expr_free);
 
 typedef struct pattern_t {
-    klist_t(expr_t) * bindings;
+    klist_t(expr_t) * expr_postfix;
     expr_t * expr;
+
 } pattern_t;
 
-#define __pattern_free(x)
+void neart_pattern_free(pattern_t * pattern);
+
+#define __pattern_free(x) neart_pattern_free
 KLIST_INIT(pattern_t, pattern_t*, __pattern_free);
 
-/*
-pattern_t * pattern_alloc(void);
+pattern_t * neart_pattern_alloc(klist_t(expr_t) * postfix);
 
-void pattern_free(pattern_t * pattern);
 
-void pattern_add_binding(pattern_t * pattern, expr_t * expr);
-*/
-
-////////////////////////////////////////
+//////////////////////////////////////// func
 
 typedef struct func_t {
     const char * name;
@@ -38,30 +36,30 @@ typedef struct func_t {
     // can be null if this function just exists for declaration purpose
     klist_t(pattern_t) * patterns;
 } func_t;
-
 KHASH_MAP_INIT_STR(str_func_t, func_t*)
 
 /**
  * create a function with a name
  */
-    /*
-func_t * func_alloc(const char * name);
+func_t * neart_func_alloc(const char * name);
 
-void func_add_param(func_t * func, expr_t * param);
+void neart_func_free(func_t * func);
 
-void func_add_pattern(func_t * func, pattern_t * pattern);
+void neart_func_add_pattern(func_t * func, pattern_t * pattern);
 
-void func_free(func_t * func);
-*/
-
-////////////////////////////////////////
+//////////////////////////////////////// module
 
 typedef struct module_t {
     khash_t(str_func_t) * func_table;
-    const char * filename;
-    expr_t * syntax_tree;
+    const char * name;
 } module_t;
 KHASH_MAP_INIT_STR(str_module_t, module_t*)
+
+module_t * neart_module_alloc(const char * name);
+
+void neart_module_free(module_t * module);
+
+//////////////////////////////////////// compile context
 
 typedef struct compile_context_t {
     khash_t(str_func_t) * qualified_func_table;

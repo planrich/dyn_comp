@@ -4,6 +4,6 @@
 #include "ast.h"
 #include "gpir.h"
 
-module_t * neart_check_semantics(compile_context_t * cc, expr_t * root, int * error);
+module_t * neart_check_semantics(compile_context_t * cc, expr_t * root);
 
-#endif /* _SEM_H_ */
+#endif /* _SEM_H */

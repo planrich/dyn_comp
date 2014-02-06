@@ -73,12 +73,13 @@ int yyerror (YYLTYPE *locp, expr_t * root, char const * msg);
 file:
     meta funclist {
       root->detail = $<expr>funclist;
+      root->data = $<text>meta;
     }
   ;
 
 meta: 
     T_UNIT T_ID[module] {
-        free($<text>module);
+        $<text>$ = $<text>module;
     }
   ;
 

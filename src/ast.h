@@ -1,10 +1,11 @@
 
-#ifndef _STRUCTS_H_
-#define _STRUCTS_H_
+#ifndef _AST_H_
+#define _AST_H_
 
 #include "khash.h"
 #include "klist.h"
 
+const char * expr_type_names[24];
 #define FOREACH_EXPR_TYPE(PPF) \
     PPF(ET_ROOT, "root"), \
     PPF(ET_UNIT, "unit"), \
@@ -33,9 +34,6 @@
 #define ENUM_CNAME(cname, hname) cname
 #define ENUM_HNAME(cname, hname) hname
 
-static const char * expr_type_names[] = {
-    FOREACH_EXPR_TYPE(ENUM_HNAME)
-};
 
 typedef enum expr_type_t {
     FOREACH_EXPR_TYPE(ENUM_CNAME)
@@ -68,6 +66,7 @@ void neart_expr_free_r(expr_t * tree);
  * free one node
  */
 void neart_expr_free(expr_t * tree);
+
 
 
 #endif

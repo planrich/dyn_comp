@@ -18,6 +18,6 @@ def build(c):
 
     c.program( source = 'main.c',
             target = 'neartc',
-            use = 'neart_core neart_debug',
+            use = 'neart_core klib neart_debug',
             includes = includes
           )

@@ -4,20 +4,25 @@
 
 typedef enum log_level_t {
     LOG_OFF = 0,
-    LOG_DEBUG = 1,
-    LOG_INFO = 2,
-    LOG_WARN = 4,
-    LOG_FATAL = 8,
+    LOG_TRACE = 1,
+    LOG_DEBUG = 2,
+    LOG_INFO = 4,
+    LOG_WARN = 8,
+    LOG_FATAL = 16,
 
-    LOG_PARSING = 16
+    LOG_PARSING = 32,
 
 } log_level_t;
 
-static int neart_log_level = LOG_OFF;
+int neart_log_level;
 
-#define NEART_LOG(level, msg, args ...) if ((neart_log_level & level) != 0) { printf(msg, args); }
-#define NEART_LOG_INFO(msg, args ...) NEART_LOG(LOG_INFO, msg, args)
-#define NEART_LOG_ANY(msg, args ...) NEART_LOG(0xff, msg, args)
+#define NEART_LOG(level, msg, ...) if ((neart_log_level & level) != 0) { printf(msg, ##__VA_ARGS__); }
+#define NEART_LOG_ANY(msg, ...) NEART_LOG(0xff, msg, ##__VA_ARGS__)
+#define NEART_LOG_INFO(msg, ...) NEART_LOG(LOG_INFO, msg, ##__VA_ARGS__)
+#define NEART_LOG_DEBUG(msg, ...) NEART_LOG(LOG_DEBUG, msg, ##__VA_ARGS__)
+#define NEART_LOG_TRACE() NEART_LOG(LOG_TRACE, "[trace] %s\n", __PRETTY_FUNCTION__)
+
+#define NLH() NEART_LOG_ANY("here\n");
 
 #endif
 

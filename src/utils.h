@@ -3,12 +3,12 @@
 #define _UTILS_H_
 
 
-#define ALLOC_STRUCT(structure,var) \
-   structure * var = malloc(sizeof(structure)); \
-   if (var == NULL) {               \
+#define ALLOC_STRUCT(S,V) \
+   S * V = malloc(sizeof(S)); \
+   if (V == NULL) {               \
        perror("out of memory\n");   \
        exit(1);                     \
-   }                                \
+   }                                
 
 
 
