@@ -52,6 +52,9 @@ typedef struct expr_t {
     char * data;
 } expr_t;
 
+#define __expr_free(x) 
+KLIST_INIT(expr_t, expr_t*, __expr_free);
+
 /**
  * alloc a expression node
  */

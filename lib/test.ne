@@ -11,11 +11,11 @@ func tail: [a] -> [a]
 = (l:ls) ; ls
 = [] ; []
 
-func add: a -> a -> a
+func add: a
 =; 1 + 133 * 2 / 4 - -2
 =; (1 + ((133 * 2) / 4)) - -2
 
-func map: (a -> b) -> [a] -> [b]
+func map: (a -> b) -> (c -> d) -> [a] -> [b]
 = f [] ; []
 = f (l:ls) ; ( f l : (map f ls) )
 =; get i + 13

@@ -10,18 +10,13 @@
 
 #include "ast.h"
 
-#define __expr_free(x) neart_expr_free
-KLIST_INIT(expr_t, expr_t*, __expr_free);
-
 typedef struct pattern_t {
     klist_t(expr_t) * expr_postfix;
-    expr_t * expr;
-
 } pattern_t;
 
 void neart_pattern_free(pattern_t * pattern);
 
-#define __pattern_free(x) neart_pattern_free
+#define __pattern_free(x)
 KLIST_INIT(pattern_t, pattern_t*, __pattern_free);
 
 pattern_t * neart_pattern_alloc(klist_t(expr_t) * postfix);
@@ -66,6 +61,11 @@ typedef struct compile_context_t {
     khash_t(str_module_t) * qualified_module_table;
 } compile_context_t;
 
+/**
+ * add a function to the module and register it in the compile context.
+ *
+ * check the errno. it is set when the funciton in this module is already defined.
+ */
 void neart_module_add_function(compile_context_t * cc, module_t * ctx, func_t * func);
 
 #endif

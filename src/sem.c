@@ -86,16 +86,15 @@ void _check_func_semantics(compile_context_t * cc, module_t * module, expr_t * f
             errno = 0;
             _check_pattern_semantics(cc, module, function, cur, paramCount, pattern_idx++);
             if (errno) { goto bail_out_func; }
-            //_check_func_semantics(cc, module, cur);
-            //if (errno) { return NULL; }
         }
 
     })
 
+    neart_module_add_function(cc, module, function);
+
     return;
 bail_out_func:
     neart_func_free(function);
-
 }
 
 void _to_postfix(klist_t(expr_t) * stack, expr_t * expr) {
@@ -136,7 +135,9 @@ void _check_pattern_semantics(compile_context_t * cc, module_t * module, func_t 
 
     pattern_t * pat = neart_pattern_alloc(postfix);
 
-    neart_func_add_pattern(func, pat);
+    errno = 0;
+    neart_func_add_pattern(func,pat);
+    if (errno) { goto bail_out_pat; }
 
     kliter_t(expr_t) * it;
 
@@ -152,11 +153,8 @@ void _check_pattern_semantics(compile_context_t * cc, module_t * module, func_t 
     }
     NEART_LOG_DEBUG("\n");
 
-
-
     return;
 bail_out_pat:
-    errno = 1;
     kl_destroy(expr_t, postfix);
     bindings->next = expr;
 }

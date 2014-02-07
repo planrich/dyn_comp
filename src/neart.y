@@ -131,9 +131,9 @@ bindings:
 
 var:
     T_ID[variable] {
-        expr_t * binding = neart_expr_alloc(ET_VARIABLE);
-        binding->data = $<text>variable;
-        $<expr>$ = binding;
+        expr_t * var = neart_expr_alloc(ET_VARIABLE);
+        var->data = $<text>variable;
+        $<expr>$ = var;
     }
   ;
 
@@ -242,7 +242,7 @@ params:
   ;
 
 nil:
-    T_OBRACKET T_CBRACKET
+    T_OBRACKET T_CBRACKET { $<expr>$ = NULL; }
   ;
 
 param:
@@ -252,7 +252,9 @@ param:
         $<expr>$ = param;
     }
   | T_OPARENS params T_CPARENS {
-        $<expr>$ = $<expr>params;
+        expr_t * param = neart_expr_alloc(ET_PARENS);
+        param->detail = $<expr>params;
+        $<expr>$ = param;
     }
   | var { $<expr>$ = $<expr>var; }
   ;
