@@ -2,6 +2,8 @@
 #ifndef _LOGGING_H_
 #define _LOGGING_H_
 
+#include <stdio.h>
+
 typedef enum log_level_t {
     LOG_OFF = 0,
     LOG_TRACE = 1,

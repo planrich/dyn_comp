@@ -11,7 +11,7 @@ def build(c):
                includes = includes,
              )
 
-    c.objects( source = 'neart.l neart.y ast.c gpir.c sem.c code.c', 
+    c.objects( source = 'neart.l neart.y ast.c gpir.c sem.c code.c symt.c', 
                target = 'neart_core',
                includes = includes,
              )
