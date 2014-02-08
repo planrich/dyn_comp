@@ -15,6 +15,7 @@
 module_t * neart_module_alloc(const char * name) {
     ALLOC_STRUCT(module_t, m);
     m->func_table = kh_init(str_func_t);
+    m->symbols = neart_sym_table_alloc();
     m->name = strdup(name);
     return m;
 }
@@ -32,6 +33,7 @@ void neart_module_free(module_t * mod) {
         }
     }
     kh_destroy(str_func_t, h);
+    neart_sym_table_free(mod->symbols);
     free((void*)mod->name);
     free(mod);
 }

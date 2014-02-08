@@ -1,8 +1,10 @@
 #ifndef _SYMT_H_
 #define _SYMT_H_
 
-#include "ast.h"
-#include "gpir.h"
+#include "khash.h"
+
+struct expr_t;
+struct func_t;
 
 typedef enum __sym_entry_type_t {
     SYM_FUNC,
@@ -13,8 +15,8 @@ typedef enum __sym_entry_type_t {
 typedef struct __sym_entry_t {
     sym_entry_type_t type;
     union {
-        expr_t * var;
-        func_t * func;
+        struct expr_t * var;
+        struct func_t * func;
     };
 } sym_entry_t;
 KHASH_MAP_INIT_STR(str_sym_entry_t, sym_entry_t);

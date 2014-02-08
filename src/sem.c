@@ -48,6 +48,17 @@ module_t * neart_check_semantics(compile_context_t * cc, expr_t * root) {
 
     module_t * module = neart_module_alloc(root->data);
 
+    // harvest module symbols
+    /* TODO
+    ITERATE_EXPR(root->detail, cur, {
+        if (cur->type == ET_FUNC) {
+            error = 0;
+            _harvest_file_functions(cc, module, cur);
+            if (errno) { return NULL; }
+        }
+    })*/
+
+
     ITERATE_EXPR(root->detail, cur, {
 
         if (cur->type == ET_FUNC) {

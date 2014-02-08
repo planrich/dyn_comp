@@ -5,6 +5,9 @@
 #include "error.h"
 #include "logging.h"
 #include "utils.h"
+#include "ast.h"
+#include "gpir.h"
+
 
 sym_table_t * neart_sym_table_alloc() {
     ALLOC_STRUCT(sym_table_t, sym);
@@ -15,11 +18,13 @@ sym_table_t * neart_sym_table_alloc() {
 
 void neart_sym_table_free(sym_table_t * table) {
 
+    khiter_t k;
     sym_table_t * t = table;
     sym_table_t * next = table->next;
 
     while (t != NULL) {
         kh_destroy(str_sym_entry_t, t->symbols); 
+
         free(t);
 
         t = next;

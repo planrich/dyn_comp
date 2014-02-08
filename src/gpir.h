@@ -9,6 +9,7 @@
  */
 
 #include "ast.h"
+#include "symt.h"
 
 typedef struct pattern_t {
     klist_t(expr_t) * expr_postfix;
@@ -46,6 +47,7 @@ void neart_func_add_pattern(func_t * func, pattern_t * pattern);
 
 typedef struct module_t {
     khash_t(str_func_t) * func_table;
+    sym_table_t * symbols;
     const char * name;
 } module_t;
 KHASH_MAP_INIT_STR(str_module_t, module_t*)
