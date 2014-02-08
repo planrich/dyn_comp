@@ -48,17 +48,6 @@ module_t * neart_check_semantics(compile_context_t * cc, expr_t * root) {
 
     module_t * module = neart_module_alloc(root->data);
 
-    // harvest module symbols
-    /* TODO
-    ITERATE_EXPR(root->detail, cur, {
-        if (cur->type == ET_FUNC) {
-            error = 0;
-            _harvest_file_functions(cc, module, cur);
-            if (errno) { return NULL; }
-        }
-    })*/
-
-
     ITERATE_EXPR(root->detail, cur, {
 
         if (cur->type == ET_FUNC) {
@@ -80,6 +69,7 @@ void _check_func_semantics(compile_context_t * cc, module_t * module, expr_t * f
     expr_t * patterns = params->next;
 
     func_t * function = neart_func_alloc(func_name);
+    neart_module_add_function(cc, module, function);
 
     int paramCount = -1;
     if (params != NULL) {
@@ -90,22 +80,15 @@ void _check_func_semantics(compile_context_t * cc, module_t * module, expr_t * f
         NEART_LOG_DEBUG("func: %s has %d param(s)\n", func_name, paramCount);
     }
 
+
     int pattern_idx = 0;
     ITERATE_EXPR(patterns, cur, {
 
         if (cur->type == ET_PATTERN) {
-            errno = 0;
             _check_pattern_semantics(cc, module, function, cur, paramCount, pattern_idx++);
-            if (errno) { goto bail_out_func; }
         }
 
     })
-
-    neart_module_add_function(cc, module, function);
-
-    return;
-bail_out_func:
-    neart_func_free(function);
 }
 
 void _to_postfix(klist_t(expr_t) * stack, expr_t * expr) {
@@ -127,6 +110,11 @@ void _check_pattern_semantics(compile_context_t * cc, module_t * module, func_t 
     expr_t * expr = bindings->next;
     bindings->next = NULL; // unhinge -> free of syntax tree should not free the expressions
     klist_t(expr_t) * postfix = kl_init(expr_t);
+
+    // override the context within this pattern
+    sym_table_t * table = neart_sym_table_push(cc->symbols);
+    cc->symbols = table;
+
 
     int bindingCount = 0;
     if (bindings != NULL) {

@@ -92,6 +92,7 @@ int main(int argc, char *argv[])
     errno = 0;
     module_t * module = neart_check_semantics(&cc, root);
     neart_expr_free_r(root);
+    cc.symbols = module->symbols;
 
     if (errno) {
         NEART_LOG(LOG_FATAL, "semantics error found. analysis returned %d\n", errno);

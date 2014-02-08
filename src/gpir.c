@@ -118,8 +118,14 @@ void neart_module_add_function(compile_context_t * cc, module_t * mod, func_t * 
     k = kh_put(str_func_t, mod->func_table, func->name, &ret);
     if (!ret) {
         errno = ERR_FUNC_ALREADY_DEF;
-        NEART_LOG(LOG_FATAL, "function %s is already defined in modulde %s\n", func->name, mod->name);
+        NEART_LOG(LOG_FATAL, "function %s is already defined in module %s\n", func->name, mod->name);
     } else {
         kh_value(mod->func_table, k) = func;
     }
+
+    // add it to the current symbol table
+    sym_entry_t entry;
+    entry.func = func;
+    entry.type = SYM_FUNC;
+    neart_sym_table_insert(cc->symbols, func->name, entry);
 }

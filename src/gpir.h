@@ -61,6 +61,8 @@ void neart_module_free(module_t * module);
 typedef struct compile_context_t {
     khash_t(str_func_t) * qualified_func_table;
     khash_t(str_module_t) * qualified_module_table;
+
+    sym_table_t * symbols;
 } compile_context_t;
 
 /**
