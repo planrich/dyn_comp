@@ -127,5 +127,5 @@ void neart_module_add_function(compile_context_t * cc, module_t * mod, func_t * 
     sym_entry_t entry;
     entry.func = func;
     entry.type = SYM_FUNC;
-    neart_sym_table_insert(cc->symbols, func->name, entry);
+    neart_sym_table_insert(mod->symbols, func->name, entry);
 }

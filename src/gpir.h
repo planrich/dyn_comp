@@ -32,7 +32,12 @@ typedef struct func_t {
     // can be null if this function just exists for declaration purpose
     klist_t(pattern_t) * patterns;
 } func_t;
+
 KHASH_MAP_INIT_STR(str_func_t, func_t*)
+
+#define __func_free(x)
+KLIST_INIT(func_t, func_t*, __func_free)
+
 
 /**
  * create a function with a name
