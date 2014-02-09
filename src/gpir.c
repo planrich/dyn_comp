@@ -8,9 +8,11 @@
 #include "logging.h"
 #include "ast.h"
 
+static void _params_transform(expr_t * expr, const params_t * const params, param_offset_t * off, param_t * param);
+static param_t * _params_transform_param(expr_t * expr, param_t * param, int right);
+static int _expr_node_count(expr_t * e);
 
 //////////////////////////////////////// module
-
 
 module_t * neart_module_alloc(const char * name) {
     ALLOC_STRUCT(module_t, m);
@@ -128,4 +130,99 @@ void neart_module_add_function(compile_context_t * cc, module_t * mod, func_t * 
     entry.func = func;
     entry.type = SYM_FUNC;
     neart_sym_table_insert(mod->symbols, func->name, entry);
+}
+
+//////////////////////////////////////// param
+
+static int _expr_node_count(expr_t * e) {
+    if (e == NULL) { return 0; }
+    return 1 + _expr_node_count(e->left) + _expr_node_count(e->right);
+}
+
+
+static void _params_transform(expr_t * expr, const params_t * const params, param_offset_t * off, param_t * param) {
+
+    expr_t * next = expr;
+
+    while (next != NULL) {
+        *off = (param_offset_t)(((void*)param) - ((void*)params));
+
+        param = _params_transform_param(next, param, 0);
+
+        *param = ','; param++;
+        next = next->next;
+        off++;
+    }
+}
+
+static param_t * _params_transform_param(expr_t * expr, param_t * param, int right) {
+
+    if (expr == NULL) { return param; }
+
+    switch (expr->type) {
+        case ET_VARIABLE: { 
+            // check if it is builtin type
+            *param = type_generic; param++; break; 
+        }
+        case ET_LIST: { *param = type_list; param++; break; }
+        case ET_PARENS: { *param = type_func; param++; break; }
+        default: { 
+           NEART_LOG_FATAL("did not implement type %s\n", expr_type_names[expr->type]);
+           exit(1);
+        }
+    };
+
+    param = _params_transform_param(expr->left, param, 1);
+    if (right) {
+        param = _params_transform_param(expr->right, param, 1);
+    }
+
+    return param;
+}
+
+params_t * neart_params_transform(expr_t * param_expr, int * param_count) {
+
+    params_t * params;
+    int nodes = 0;
+
+    ITER_EXPR_NEXT(param_expr, p, it)
+        (*param_count)++;
+        nodes += _expr_node_count(p);
+    ITER_EXPR_END(it)
+
+    // param count is at least 1
+    int colons = *param_count;
+    params = malloc( sizeof(params_t) /* count */ 
+                   + sizeof(param_offset_t) * *param_count /* offsets to parameters */
+                   + sizeof(param_t) * (nodes + colons) ) /* bytes describing the types */;
+
+    *params = *param_count;
+
+    param_offset_t * off = (param_offset_t*) (params+1);
+
+    param_t * param = (param_t*) off + (*param_count) * sizeof(param_offset_t);
+
+    _params_transform(param_expr, params, off, param);
+
+    {
+        int i;
+
+        NEART_LOG_DEBUG("parameter trans to: %d|", *params);
+        param_offset_t * ptr = (param_offset_t*) (params+1);
+        for (i = 0; i < *params; i++ ) {
+            NEART_LOG_DEBUG("%d|", *ptr);
+            ptr++;
+        }
+        param_t * par = (param_t*)ptr;
+        for (i = 0; i < *params;) {
+            NEART_LOG_DEBUG("%c", *par);
+            if (*par == ',') {
+                i++;
+            }
+            par++;
+        }
+        NEART_LOG_DEBUG("\n");
+    }
+
+    return params;
 }

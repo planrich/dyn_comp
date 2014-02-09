@@ -7,8 +7,7 @@
 
 const char * expr_type_names[24];
 #define FOREACH_EXPR_TYPE(PPF) \
-    PPF(ET_ROOT, "root"), \
-    PPF(ET_UNIT, "unit"), \
+    PPF(ET_ROOT, "module"), \
     PPF(ET_FUNC, "func"), \
     PPF(ET_PARAMS, "params"), \
     PPF(ET_PARAM, "param"), \

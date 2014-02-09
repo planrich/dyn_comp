@@ -10,6 +10,7 @@
 
 #include "ast.h"
 #include "symt.h"
+#include "types.h"
 
 typedef struct pattern_t {
     klist_t(expr_t) * expr_postfix;
@@ -22,6 +23,43 @@ KLIST_INIT(pattern_t, pattern_t*, __pattern_free);
 
 pattern_t * neart_pattern_alloc(klist_t(expr_t) * postfix);
 
+//////////////////////////////////////// params
+
+typedef int params_t;
+
+typedef short param_offset_t;
+
+typedef char param_t;
+
+typedef char type_t;
+
+/**
+ * Given the following parameters of a function:
+ *
+ * (a -> int) -> (int -> a) -> [int] -> [int]
+ *
+ * they are represented the following way:
+ * 
+ *  +---> offset
+ *  |
+ * 4++++(gi,(ig,[i,[i
+ *  ||||^   ^   ^  ^
+ *  |||+|---|---|--+
+ *  ||+-|---|---+
+ *  |+--|---+
+ *  +---+
+ *
+ * int first_match_second(type * t2, type * t2) {
+ *     if (*t1 == G) return 1;
+ *     if (*t1 == P && *t2 == P) return first_match_second(t1+1,t2+1);
+ *     if (*t1 == L && *t2 == L) return first_match_second(t1+1,t2+1);
+ *     if (*t1 == *t2) return 1;
+ *     return 0;
+ * }
+ */
+params_t * neart_params_transform(expr_t * param_expr, int * param_count);
+
+#define neart_params_free(params) free(params);
 
 //////////////////////////////////////// func
 
