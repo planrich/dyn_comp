@@ -43,6 +43,7 @@ void neart_module_free(module_t * mod) {
 pattern_t * neart_pattern_alloc(klist_t(expr_t) * postfix) {
     ALLOC_STRUCT(pattern_t, pat);
     pat->expr_postfix = postfix;
+    pat->bindings = NULL;
     return pat;
 }
 
@@ -72,23 +73,13 @@ func_t * neart_func_alloc(const char * name) {
     ALLOC_STRUCT(func_t, f);
 
     f->name = strdup(name);
-    f->params = kl_init(expr_t);
+    f->params = NULL;
     f->patterns = kl_init(pattern_t);
+    f->symbols = NULL;
     return f;
 }
 
 void neart_func_free(func_t * func) {
-
-    {
-        kliter_t(expr_t) * it;
-        klist_t(expr_t) * l = func->params;
-
-        for (it = kl_begin(l); it != kl_end(l); it = kl_next(it)) {
-            expr_t * expr = kl_val(it);
-            neart_expr_free(expr);
-        }
-        kl_destroy(expr_t,func->params);
-    }
 
     free((void*)func->name);
 
@@ -102,6 +93,15 @@ void neart_func_free(func_t * func) {
 
         kl_destroy(pattern_t,func->patterns);
     }
+
+    if (func->params != NULL) {
+        neart_params_free(func->params);
+    }
+
+    if (func->symbols != NULL) {
+        neart_sym_table_free(func->symbols);
+    }
+
     free(func);
 }
 
@@ -126,7 +126,8 @@ void neart_module_add_function(compile_context_t * cc, module_t * mod, func_t * 
     // add it to the current symbol table
     sym_entry_t entry;
     entry.func = func;
-    entry.type = SYM_FUNC;
+    entry.entry_type = SYM_FUNC;
+    entry.type = 0;
     neart_sym_table_insert(mod->symbols, func->name, entry);
 }
 
@@ -297,4 +298,28 @@ params_t * neart_params_transform(module_t * module, expr_t * param_expr, int * 
     }
 
     return params;
+}
+
+
+
+param_t * neart_param_at(params_t * params, int idx, int nesting) {
+
+    if (idx < 0 && *params <= idx) {
+        return NULL;
+    }
+
+    param_offset_t * off = (param_offset_t*)(params+1); // note: cast binds stronge than +1
+    off += idx;
+
+    param_t * param = ((param_t*)params) + *off;
+
+    while (!neart_param_end(param)) {
+        if (nesting == 0) {
+            return param;
+        }
+        nesting--;
+        param = neart_param_next(param);
+    }
+
+    return NULL;
 }

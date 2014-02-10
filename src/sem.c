@@ -8,6 +8,7 @@
 #include "logging.h"
 #include "types.h"
 
+const char * BINDING_WILDCARD_STR = "_";
 
 /**
  * Validate the function semantics.
@@ -39,7 +40,6 @@ static void _func_context_add(compile_context_t * cc, module_t * module, klist_t
 static void _to_postfix(klist_t(expr_t) * stack, expr_t * expr);
 
 module_t * neart_check_semantics(compile_context_t * cc, expr_t * root) {
-    NEART_LOG_TRACE();
 
     module_t * module = neart_module_alloc(root->data);
 
@@ -103,18 +103,15 @@ static void _check_func_semantics(compile_context_t * cc,
         func_t * func,
         expr_t * expr) {
 
-    NEART_LOG_TRACE();
-
     const char * func_name = func->name;
     expr_t * params_expr = expr->detail;
     expr_t * patterns = params_expr->next;
 
     int param_count = 0;
     if (params_expr != NULL) {
-        params_t * params = neart_params_transform(module, params_expr->detail, &param_count);
+        func->params = neart_params_transform(module, params_expr->detail, &param_count);
         NEART_LOG_DEBUG("func: %s has %d param(s)\n", func_name, param_count);
     }
-
 
     int pattern_idx = 0;
     ITER_EXPR_NEXT(patterns, cur, it)
@@ -139,6 +136,62 @@ static void _to_postfix(klist_t(expr_t) * stack, expr_t * expr) {
     *kl_pushp(expr_t, stack) = expr;
 }
 
+static void _declare_bindings(compile_context_t * cc, params_t * params, expr_t * binding, int param_index, int depth) {
+
+    if (binding == NULL) {
+        return;
+    }
+
+    const char * name = binding->data;
+    if (binding->type == ET_VARIABLE) {
+        if (strcmp(name, BINDING_WILDCARD_STR) == 0) {
+            return;
+        }
+
+        param_t * param = neart_param_at(params, param_index, depth);
+        if (param == NULL) {
+            NEART_LOG_FATAL("parameter %d at nesting %d not available\n", param_index, depth);
+        }
+        type_t type = neart_param_type(param);
+        NEART_LOG_DEBUG("binding defining %s as %c\n", name, type);
+        // consider this? can one unpack a function (a -> (b -> c)) unpack (a:bc)?
+        param_t * top_param = neart_param_at(params, param_index, 0);
+        if (neart_param_type(top_param) == type_func && depth > 0) {
+            NEART_LOG_FATAL("tried to unpack func as you do with lists!\n");
+        }
+
+        sym_table_t * table = cc->symbols;
+        sym_entry_t entry;
+        entry.type = type;
+        entry.entry_type = SYM_VAR;
+
+        entry.var = binding;
+
+        neart_sym_table_insert(table, name, entry);
+    }
+
+    _declare_bindings(cc, params, binding->left, param_index, depth + ((binding->type == ET_CONS) ? 1 : 0));
+    _declare_bindings(cc, params, binding->right, param_index, depth);
+}
+/**
+ * bindings can are nested/wrapped by [] or (_:_)
+ */
+static void _declare_all_bindings(compile_context_t * cc, params_t * params, expr_t * binding, int * binding_count) {
+    int param_index = 0;
+    expr_t * next = binding;
+    expr_t * tmp;
+    while (next != NULL) {
+        tmp = next->next;
+        next->next = NULL; // unhinge to not recurse in _declare_bindings
+
+        _declare_bindings(cc, params, next, param_index++, 0);
+
+        next->next = tmp;
+        next = tmp;
+    }
+    *binding_count = param_index;
+}
+
 static void _check_pattern_semantics(compile_context_t * cc, 
         module_t * module, 
         func_t * func, 
@@ -146,7 +199,6 @@ static void _check_pattern_semantics(compile_context_t * cc,
         int param_count, 
         int pattern_idx) {
 
-    NEART_LOG_TRACE();
     expr_t * bindings = pattern->detail;
     expr_t * expr = bindings->next;
     bindings->next = NULL; // unhinge -> free of syntax tree should not free the expressions
@@ -154,27 +206,22 @@ static void _check_pattern_semantics(compile_context_t * cc,
 
     // override the context within this pattern
     sym_table_t * table = neart_sym_table_push(cc->symbols);
+    func->symbols = table;
     cc->symbols = table;
-
-
-    int bindingCount = 0;
-    if (bindings != NULL) {
-        ITER_EXPR_NEXT(bindings->detail, binding, it)
-            bindingCount++;
-        ITER_EXPR_END(it)
-
-        NEART_LOG_DEBUG("func %s pattern has %d binding(s)\n", func->name, bindingCount);
-    }
-
-    /*if (bindingCount != (paramCount - 1)) {
-        errno = 1;
-        NEART_LOG(LOG_FATAL, "in func '%s' pattern nmr %d has %d bindings but should have %d \n", func->name, pattern_idx+1, bindingCount, (paramCount - 1));
-        goto bail_out_pat;
-    }*/
 
     _to_postfix(postfix, expr);
 
     pattern_t * pat = neart_pattern_alloc(postfix);
+
+    // bindings
+    int binding_count = 0;
+    if (bindings != NULL) {
+        _declare_all_bindings(cc, func->params, bindings->detail, &binding_count);
+        pat->bindings = bindings->detail;
+        bindings->detail = NULL; // unhinge to prevent free of ast
+
+        NEART_LOG_DEBUG("func %s pattern has %d binding(s)\n", func->name, binding_count);
+    }
 
     errno = 0;
     neart_func_add_pattern(func,pat);
@@ -193,6 +240,8 @@ static void _check_pattern_semantics(compile_context_t * cc,
 
     }
     NEART_LOG_DEBUG("\n");
+
+    cc->symbols = neart_sym_table_pop(cc->symbols, 0);
 
     return;
 bail_out_pat:

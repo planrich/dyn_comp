@@ -29,6 +29,7 @@ typedef enum builtin_types_t {
 } builtin_types_t;
 
 const char * builtin_types_name[BUILTIN_TYPE_COUNT];
+const char builtin_types[BUILTIN_TYPE_COUNT];
 
 int neart_is_builtin_type(const char * name, type_t * type);
 

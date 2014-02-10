@@ -78,8 +78,8 @@ sym_table_t * neart_sym_table_push(sym_table_t * sym) {
     return new;
 }
 
-sym_table_t * neart_sym_table_pop(sym_table_t * sym) {
+sym_table_t * neart_sym_table_pop(sym_table_t * sym, int free) {
     sym_table_t * table = sym->parent;
-    neart_sym_table_free(table);
+    if (free) { neart_sym_table_free(table); }
     return table;
 }

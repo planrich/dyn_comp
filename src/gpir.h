@@ -12,8 +12,16 @@
 #include "symt.h"
 #include "types.h"
 
+typedef int params_t;
+
+typedef short param_offset_t;
+
+typedef char param_t;
+
+
 typedef struct pattern_t {
     klist_t(expr_t) * expr_postfix;
+    expr_t * bindings;
 } pattern_t;
 
 void neart_pattern_free(pattern_t * pattern);
@@ -27,7 +35,8 @@ pattern_t * neart_pattern_alloc(klist_t(expr_t) * postfix);
 
 typedef struct func_t {
     const char * name;
-    klist_t(expr_t) * params;
+    params_t * params;
+    sym_table_t * symbols;
 
     // can be null if this function just exists for declaration purpose
     klist_t(pattern_t) * patterns;
@@ -79,12 +88,6 @@ void neart_module_add_function(compile_context_t * cc, module_t * ctx, func_t * 
 
 //////////////////////////////////////// params
 
-typedef int params_t;
-
-typedef short param_offset_t;
-
-typedef char param_t;
-
 /**
  * Given the following parameters of a function:
  *
@@ -112,5 +115,29 @@ typedef char param_t;
 params_t * neart_params_transform(module_t * module, expr_t * param_expr, int * param_count);
 
 #define neart_params_free(params) free(params);
+
+/**
+ * get the paramter at the specific nesting.
+ *
+ * (a -> [[b]]) -> a -> [b]
+ * is: (g0[[g1 g0 g1
+ *
+ * idx = 0, nesting = 0 -> (a -> [[b]]) == (g0[[g1
+ * idx = 0, nesting = 1 -> a == g0
+ * idx = 0, nesting = 2 -> [[b]] == [[g1
+ * idx = 0, nesting = 3 -> [b] == [g1
+ * idx = 0, nesting = 4 -> b == g1
+ * idx = 0, nesting = 5 -> NULL
+ * idx = 3, nesting = _ -> NULL
+ * idx = 2, nesting = 1 -> NULL
+ *
+ * returns NULL if there is no such parameter.
+ */
+param_t * neart_param_at(params_t * params, int idx, int nesting);
+
+#define neart_param_type(param) (*param)
+#define neart_param_idx(param) (*(param+1))
+#define neart_param_next(param) (param+=2)
+#define neart_param_end(param) (neart_param_type(param) == ',')
 
 #endif

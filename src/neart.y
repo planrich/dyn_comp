@@ -147,10 +147,10 @@ binding:
         binding->data = $<text>num;
         $<expr>$ = binding;
     }
-  | var T_COLON binding[binding_p]  { 
+  | binding[left] T_COLON binding[right]  { 
         expr_t * binding = neart_expr_alloc(ET_CONS);
-        binding->left = $<expr>var;
-        binding->right = $<expr>binding_p;
+        binding->left = $<expr>left;
+        binding->right = $<expr>right;
         $<expr>$ = binding;
     }
   | T_UNDERSCORE { $<expr>$ = neart_expr_alloc(ET_MATCH_ANY); }
