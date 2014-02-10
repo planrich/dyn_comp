@@ -1,5 +1,11 @@
 unit prelude
 
+func id2: int -> int
+= value ; value
+
+func id3: str -> str -> bin
+= value ; value
+
 func id: a -> a
 = value ; value
 

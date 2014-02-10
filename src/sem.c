@@ -111,7 +111,7 @@ static void _check_func_semantics(compile_context_t * cc,
 
     int param_count = 0;
     if (params_expr != NULL) {
-        params_t * params = neart_params_transform(params_expr->detail, &param_count);
+        params_t * params = neart_params_transform(module, params_expr->detail, &param_count);
         NEART_LOG_DEBUG("func: %s has %d param(s)\n", func_name, param_count);
     }
 

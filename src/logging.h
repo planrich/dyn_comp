@@ -25,7 +25,7 @@ int neart_log_level;
 #define NEART_LOG_FATAL(msg, ...) NEART_LOG(LOG_FATAL, msg, ##__VA_ARGS__)
 #define NEART_LOG_TRACE() NEART_LOG(LOG_TRACE, "[trace] %s\n", __PRETTY_FUNCTION__)
 
-#define NLH() NEART_LOG_ANY("here\n");
+#define NLH NEART_LOG_ANY("here\n");
 
 #endif
 

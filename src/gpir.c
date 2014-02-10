@@ -4,13 +4,11 @@
 #include <errno.h>
 #include "utils.h"
 #include "kstring.h"
+#include "klist.h"
 #include "sem.h"
 #include "logging.h"
 #include "ast.h"
 
-static void _params_transform(expr_t * expr, const params_t * const params, param_offset_t * off, param_t * param);
-static param_t * _params_transform_param(expr_t * expr, param_t * param, int right);
-static int _expr_node_count(expr_t * e);
 
 //////////////////////////////////////// module
 
@@ -139,48 +137,111 @@ static int _expr_node_count(expr_t * e) {
     return 1 + _expr_node_count(e->left) + _expr_node_count(e->right);
 }
 
+static int _generic_param_defined(expr_t * expr, int first_n_params) {
 
-static void _params_transform(expr_t * expr, const params_t * const params, param_offset_t * off, param_t * param) {
-
-    expr_t * next = expr;
-
-    while (next != NULL) {
-        *off = (param_offset_t)(((void*)param) - ((void*)params));
-
-        param = _params_transform_param(next, param, 0);
-
-        *param = ','; param++;
-        next = next->next;
-        off++;
-    }
+    return -1;
 }
 
-static param_t * _params_transform_param(expr_t * expr, param_t * param, int right) {
+#define __char_free(x)
+KLIST_INIT(string, char*, __char_free);
 
-    if (expr == NULL) { return param; }
+typedef struct __param_transform {
+    expr_t * first_param;
+    expr_t * cur;
+    params_t * params;
+    param_t * param;
+    param_offset_t * offset;
+    int param_index;
+    klist_t(string) * generic_params;
+} _ptrans_t;
+
+static int _param_find_already_declared(_ptrans_t * c) {
+
+    klist_t(string) * l = c->generic_params;
+    kliter_t(string) * it = kl_begin(l);
+    int i = 0;
+
+    while (it != kl_end(l)) {
+        const char * name = kl_val(it);
+        if (strcmp(name, c->cur->data) == 0) {
+            return i;
+        }
+
+        i++;
+        it = kl_next(it);
+    }
+
+    *kl_pushp(string, l) = c->cur->data;
+
+    return i;
+}
+static void _params_transform_param(_ptrans_t * c) {
+
+    param_t * param = c->param;
+    expr_t * expr = c->cur;
+    if (expr == NULL) { return; }
 
     switch (expr->type) {
         case ET_VARIABLE: { 
             // check if it is builtin type
-            *param = type_generic; param++; break; 
+            type_t type;
+
+            if (neart_is_builtin_type(expr->data, &type)) {
+                *param++ = type;
+                *param++ = 0;
+            } else {
+                int idx = _param_find_already_declared(c);
+                *param++ = type_generic;
+                *param++ = idx;
+            }
+            break; 
         }
-        case ET_LIST: { *param = type_list; param++; break; }
-        case ET_PARENS: { *param = type_func; param++; break; }
+        case ET_LIST:
+            *param++ = type_list;
+            *param++ = 0;
+            break;
+        case ET_PARENS: 
+            *param++ = type_func;
+            *param++ = 0;
+            break;
         default: { 
            NEART_LOG_FATAL("did not implement type %s\n", expr_type_names[expr->type]);
            exit(1);
         }
     };
 
-    param = _params_transform_param(expr->left, param, 1);
-    if (right) {
-        param = _params_transform_param(expr->right, param, 1);
-    }
-
-    return param;
+    c->param = param;
+    c->cur = expr->left;
+    _params_transform_param(c);
+    c->cur = expr->right;
+    _params_transform_param(c);
 }
 
-params_t * neart_params_transform(expr_t * param_expr, int * param_count) {
+static void _params_transform(_ptrans_t * c) {
+
+    expr_t * next = c->cur;
+    expr_t * tmp = NULL;
+
+    while (next != NULL) {
+        *c->offset++ = (param_offset_t)(((void*)c->param) - ((void*)c->params));
+
+        tmp = next->next;
+        // unhinge -> must not follow next chain in transform
+        next->next = NULL; 
+
+        c->cur = next;
+        _params_transform_param(c);
+
+        *c->param++ = ',';
+        *c->param++ = 0;
+        c->param_index++;
+
+        next->next = tmp; // hinge again
+        next = tmp;
+    }
+}
+
+params_t * neart_params_transform(module_t * module, expr_t * param_expr, int * param_count) {
 
     params_t * params;
     int nodes = 0;
@@ -194,7 +255,7 @@ params_t * neart_params_transform(expr_t * param_expr, int * param_count) {
     int colons = *param_count;
     params = malloc( sizeof(params_t) /* count */ 
                    + sizeof(param_offset_t) * *param_count /* offsets to parameters */
-                   + sizeof(param_t) * (nodes + colons) ) /* bytes describing the types */;
+                   + sizeof(param_t) * (nodes + colons) * 2 ) /* bytes describing the types. 1 byte char, 2 byte id */;
 
     *params = *param_count;
 
@@ -202,7 +263,18 @@ params_t * neart_params_transform(expr_t * param_expr, int * param_count) {
 
     param_t * param = (param_t*) off + (*param_count) * sizeof(param_offset_t);
 
-    _params_transform(param_expr, params, off, param);
+    _ptrans_t trans;
+    trans.first_param = param_expr;
+    trans.cur = param_expr;
+    trans.params = params;
+    trans.param = param;
+    trans.offset = off;
+    trans.param_index = 0;
+    trans.generic_params = kl_init(string);
+    _params_transform(&trans);
+
+    kl_destroy(string, trans.generic_params);
+
 
     {
         int i;
@@ -215,11 +287,11 @@ params_t * neart_params_transform(expr_t * param_expr, int * param_count) {
         }
         param_t * par = (param_t*)ptr;
         for (i = 0; i < *params;) {
-            NEART_LOG_DEBUG("%c", *par);
+            NEART_LOG_DEBUG("%c%d ", *par, *(par+1));
             if (*par == ',') {
                 i++;
             }
-            par++;
+            par+=2;
         }
         NEART_LOG_DEBUG("\n");
     }
