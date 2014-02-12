@@ -7,5 +7,6 @@ typedef enum __semantic_error_t {
     ERR_INTERNAL_ENUMERATION_WRONG
 } semantic_error_t;
 
+int neart_error;
 
 #endif /* _ERROR_H_ */

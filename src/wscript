@@ -5,19 +5,35 @@ def configure(c):
 
 def build(c):
 
-    includes = '. visual ../third/klib'
+    includes = '. vm ncode visual ../third/klib'
     c.objects( source = 'visual/dot_syntax_tree.c', 
                target = 'neart_debug',
                includes = includes,
              )
 
-    c.objects( source = 'neart.l neart.y ast.c gpir.c sem.c code.c symt.c types.c', 
+    c.objects( source = 'ncode/code.c ncode/cpool.c ncode/nfile.c', 
+               target = 'neart_code',
+               includes = includes,
+             )
+
+    c.objects( source = 'neart.l neart.y ast.c gpir.c sem.c symt.c types.c', 
                target = 'neart_core',
                includes = includes,
              )
 
     c.program( source = 'main.c',
             target = 'neartc',
-            use = 'neart_core klib neart_debug',
+            use = 'neart_core neart_code klib neart_debug',
             includes = includes
           )
+
+    c.objects( source = 'vm/vm.c',
+               target = 'neart_vm',
+               includes = includes,
+             )
+
+    c.program( source = 'vm/main.c',
+               target = 'nvm',
+               use = 'neart_vm neart_code',
+               includes = includes,
+             )

@@ -8,6 +8,11 @@
 #include "logging.h"
 #include "types.h"
 
+#define BAIL_OUT(stmt,label) \
+            errno = 0; \
+            stmt; \
+            if (errno) { goto label; }
+
 const char * BINDING_WILDCARD_STR = "_";
 
 /**
@@ -48,9 +53,7 @@ module_t * neart_check_semantics(compile_context_t * cc, expr_t * root) {
 
     ITER_EXPR_NEXT(root->detail, cur, it)
         if (cur->type == ET_FUNC) {
-            errno = 0;
-            _func_context_add(cc, module, funcs, cur);
-            if (errno) { goto bail_out_sem_check; }
+            BAIL_OUT(_func_context_add(cc, module, funcs, cur), bail_out_sem_check)
         }
     ITER_EXPR_END(it)
 
@@ -68,9 +71,7 @@ module_t * neart_check_semantics(compile_context_t * cc, expr_t * root) {
             }
 
 
-            errno = 0;
-            _check_func_semantics(cc, module, function, cur);
-            if (errno) { goto bail_out_sem_check; }
+            BAIL_OUT(_check_func_semantics(cc, module, function, cur), bail_out_sem_check);
             fit = kl_next(fit);
         }
     ITER_EXPR_END(it)
@@ -116,11 +117,12 @@ static void _check_func_semantics(compile_context_t * cc,
     int pattern_idx = 0;
     ITER_EXPR_NEXT(patterns, cur, it)
         if (cur->type == ET_PATTERN) {
-            errno = 0;
-            _check_pattern_semantics(cc, module, func, cur, param_count, pattern_idx++);
-            if (errno) { return; }
+            BAIL_OUT(_check_pattern_semantics(cc, module, func, cur, param_count, pattern_idx++), bail_out_func_sem)
         }
     ITER_EXPR_END(it)
+    return;
+bail_out_func_sem:
+    return;
 }
 
 static void _to_postfix(klist_t(expr_t) * stack, expr_t * expr) {
@@ -150,6 +152,7 @@ static void _declare_bindings(compile_context_t * cc, params_t * params, expr_t 
 
         param_t * param = neart_param_at(params, param_index, depth);
         if (param == NULL) {
+            // TODO error
             NEART_LOG_FATAL("parameter %d at nesting %d not available\n", param_index, depth);
         }
         type_t type = neart_param_type(param);
@@ -157,6 +160,7 @@ static void _declare_bindings(compile_context_t * cc, params_t * params, expr_t 
         // consider this? can one unpack a function (a -> (b -> c)) unpack (a:bc)?
         param_t * top_param = neart_param_at(params, param_index, 0);
         if (neart_param_type(top_param) == type_func && depth > 0) {
+            // TODO error
             NEART_LOG_FATAL("tried to unpack func as you do with lists!\n");
         }
 
@@ -192,6 +196,40 @@ static void _declare_all_bindings(compile_context_t * cc, params_t * params, exp
     *binding_count = param_index;
 }
 
+/*
+typedef struct __postcode_t {
+    struct __postcode_t * next;
+    type_t simple_type;
+    expr_t * expr;
+    sym_entry_t * entry;
+} postcode_t;
+
+static postcode_t * _transform_expr_to_abstract_code(expr_t * expr) {
+
+    postcode_t * acode = NULL;
+    postcode_t * tmp;
+
+    tmp = acode;
+
+    if (expr->left != NULL) {
+        postcode_t * left = _transform_expr_to_abstract_code(expr->left);
+        if (left != NULL) {
+            tmp->next = left;
+            tmp = left;
+        }
+    }
+
+    if (expr->right != NULL) {
+        postcode_t * right _transform_expr_to_abstract_code(expr->right);
+        if (right != NULL) {
+            tmp->next = right;
+            tmp = right;
+        }
+    }
+
+    return acode;
+}*/
+
 static void _check_pattern_semantics(compile_context_t * cc, 
         module_t * module, 
         func_t * func, 
@@ -222,6 +260,13 @@ static void _check_pattern_semantics(compile_context_t * cc,
 
         NEART_LOG_DEBUG("func %s pattern has %d binding(s)\n", func->name, binding_count);
     }
+
+
+    // the expr is transformed into the postfix representation
+    // maybe alloc array of structs that also save pointer to
+    // the symbol table entry + expr_t
+    // iterate the postfix and check if the types match + insert into 
+    // new table
 
     errno = 0;
     neart_func_add_pattern(func,pat);

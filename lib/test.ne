@@ -1,5 +1,10 @@
 unit prelude
 
+func test: int -> int -> int
+= 1 3 ; 4
+= 2 4 ; 6
+= a b ; a + b
+
 func id: a -> a
 = value ; value
 
