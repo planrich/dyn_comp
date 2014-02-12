@@ -12,6 +12,20 @@
 #include "symt.h"
 #include "types.h"
 
+//////////////////////////////////////// semantic post expr
+
+typedef struct __sem_post_expr_t {
+    struct __sem_post_expr_t * next;
+    type_t type;
+    expr_t * expr;
+    sym_entry_t * entry;
+} sem_post_expr_t;
+
+#define __sem_free(x)
+KLIST_INIT(sem_post_expr_t, sem_post_expr_t*, __sem_free)
+
+//////////////////////////////////////// params
+
 typedef int params_t;
 
 typedef short param_offset_t;
@@ -20,7 +34,7 @@ typedef char param_t;
 
 
 typedef struct pattern_t {
-    klist_t(expr_t) * expr_postfix;
+    sem_post_expr_t * expr;
     expr_t * bindings;
 } pattern_t;
 
@@ -29,7 +43,7 @@ void neart_pattern_free(pattern_t * pattern);
 #define __pattern_free(x)
 KLIST_INIT(pattern_t, pattern_t*, __pattern_free);
 
-pattern_t * neart_pattern_alloc(klist_t(expr_t) * postfix);
+pattern_t * neart_pattern_alloc(sem_post_expr_t * expr);
 
 //////////////////////////////////////// func
 

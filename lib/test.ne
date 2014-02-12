@@ -10,12 +10,12 @@ func id: a -> a
 
 func head: [a] -> a
 = (l:ls) ; l
-= [] ; error
+= [] ; 1
 
 func tail: [a] -> [a]
 = (l:ls) ; ls
-= [] ; []
+= [] ; 1
 
 func map: (a -> b) -> [a] -> [b]
-= f [] ; []
+= f [] ; 1
 = f (l:ls) ; ( f l : (map f ls) )

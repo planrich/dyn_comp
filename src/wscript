@@ -5,7 +5,7 @@ def configure(c):
 
 def build(c):
 
-    includes = '. vm syntax ncode visual ../third/klib'
+    includes = '. vm syntax semantic ncode visual ../third/klib'
     c.objects( source = 'visual/dot_syntax_tree.c', 
                target = 'neart_debug',
                includes = includes,
@@ -16,7 +16,9 @@ def build(c):
                includes = includes,
              )
 
-    c.objects( source = 'neart.l neart.y syntax/ast.c gpir.c sem.c symt.c types.c', 
+    c.objects( source = 'syntax/neart.l syntax/neart.y syntax/ast.c ' +
+                        'gpir.c semantic/sem.c semantic/typecheck.c ' +
+                        'symt.c types.c semantic/binding.c ', 
                target = 'neart_core',
                includes = includes,
              )

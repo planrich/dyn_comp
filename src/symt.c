@@ -50,23 +50,16 @@ void neart_sym_table_insert(sym_table_t * table, const char * name, sym_entry_t 
 
 sym_entry_t * neart_sym_table_lookup(sym_table_t * sym, const char * name) {
 
-    sym_table_t * t = sym;
-    sym_table_t * next = t->parent;
     khint_t k;
 
-    while (t != NULL) {
-
-        k = kh_get(str_sym_entry_t, t->symbols, name);
-        if (k != kh_end(t->symbols)) {
-            return & kh_value(t->symbols, k);
+    while (sym != NULL) {
+        k = kh_get(str_sym_entry_t, sym->symbols, name);
+        if (k != kh_end(sym->symbols)) {
+            return & kh_value(sym->symbols, k);
         }
 
-        t = next;
-        if (t != NULL) {
-            t = t->parent;
-        }
+        sym = sym->parent;
     }
-
 
     return NULL;
 }
@@ -80,6 +73,6 @@ sym_table_t * neart_sym_table_push(sym_table_t * sym) {
 
 sym_table_t * neart_sym_table_pop(sym_table_t * sym, int free) {
     sym_table_t * table = sym->parent;
-    if (free) { neart_sym_table_free(table); }
+    if (free) { neart_sym_table_free(sym); }
     return table;
 }

@@ -89,10 +89,10 @@ int main(int argc, char *argv[])
     }
 
     compile_context_t cc;
+    cc.symbols = neart_sym_table_alloc();
     errno = 0;
     module_t * module = neart_check_semantics(&cc, root);
     neart_expr_free_r(root);
-    cc.symbols = module->symbols;
 
     if (errno) {
         NEART_LOG(LOG_FATAL, "semantics error found. analysis returned %d\n", errno);
@@ -100,7 +100,9 @@ int main(int argc, char *argv[])
         neart_generate_register_code(module, stdout);
     }
 
-    neart_module_free(module);
+    if (module != NULL) {
+        neart_module_free(module);
+    }
 
     return errno;
 }

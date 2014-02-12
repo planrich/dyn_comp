@@ -15,8 +15,8 @@
 module_t * neart_module_alloc(const char * name) {
     ALLOC_STRUCT(module_t, m);
     m->func_table = kh_init(str_func_t);
-    m->symbols = neart_sym_table_alloc();
     m->name = strdup(name);
+    m->symbols = NULL;
     return m;
 }
 
@@ -33,30 +33,33 @@ void neart_module_free(module_t * mod) {
         }
     }
     kh_destroy(str_func_t, h);
-    neart_sym_table_free(mod->symbols);
     free((void*)mod->name);
     free(mod);
 }
 
 //////////////////////////////////////// pattern
 
-pattern_t * neart_pattern_alloc(klist_t(expr_t) * postfix) {
+pattern_t * neart_pattern_alloc(sem_post_expr_t * expr) {
     ALLOC_STRUCT(pattern_t, pat);
-    pat->expr_postfix = postfix;
+    pat->expr = expr;
     pat->bindings = NULL;
     return pat;
 }
 
 void neart_pattern_free(pattern_t * pattern) {
     {
-        kliter_t(expr_t) * it;
-        klist_t(expr_t) * l = pattern->expr_postfix;
+        sem_post_expr_t * it = pattern->expr;
+        sem_post_expr_t * tmp;
 
-        for (it = kl_begin(l); it != kl_end(l); it = kl_next(it)) {
-            expr_t * expr = kl_val(it);
-            neart_expr_free(expr);
+        while (it != NULL) {
+
+            neart_expr_free(it->expr);
+
+            tmp = it;
+            it = it->next;
+
+            free(tmp);
         }
-        kl_destroy(expr_t, pattern->expr_postfix);
     }
     free(pattern);
 }
