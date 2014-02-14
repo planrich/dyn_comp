@@ -11,18 +11,21 @@
 #include "ast.h"
 #include "symt.h"
 #include "types.h"
+#include <inttypes.h>
 
 //////////////////////////////////////// semantic post expr
 
-typedef struct __sem_post_expr_t {
+struct __sem_post_expr_t {
     struct __sem_post_expr_t * next;
+    struct __sem_post_expr_t * prev;
     type_t type;
     expr_t * expr;
     sym_entry_t * entry;
-} sem_post_expr_t;
+};
+typedef struct __sem_post_expr_t sem_post_expr_t;
 
 #define __sem_free(x)
-KLIST_INIT(sem_post_expr_t, sem_post_expr_t*, __sem_free)
+KLIST_INIT(sem_post_expr_t, sem_post_expr_t, __sem_free)
 
 //////////////////////////////////////// params
 
@@ -33,10 +36,13 @@ typedef short param_offset_t;
 typedef char param_t;
 
 
-typedef struct pattern_t {
+struct __pattern_t {
     sem_post_expr_t * expr;
+    sym_table_t * symbols;
     expr_t * bindings;
-} pattern_t;
+};
+
+typedef struct __pattern_t pattern_t;
 
 void neart_pattern_free(pattern_t * pattern);
 
@@ -47,14 +53,15 @@ pattern_t * neart_pattern_alloc(sem_post_expr_t * expr);
 
 //////////////////////////////////////// func
 
-typedef struct func_t {
+struct __func_t {
     const char * name;
     params_t * params;
     sym_table_t * symbols;
 
     // can be null if this function just exists for declaration purpose
     klist_t(pattern_t) * patterns;
-} func_t;
+};
+typedef struct __func_t func_t;
 
 KHASH_MAP_INIT_STR(str_func_t, func_t*)
 
@@ -74,7 +81,6 @@ void neart_func_add_pattern(func_t * func, pattern_t * pattern);
 //////////////////////////////////////// module
 
 typedef struct module_t {
-    khash_t(str_func_t) * func_table;
     sym_table_t * symbols;
     const char * name;
 } module_t;
@@ -101,6 +107,8 @@ typedef struct compile_context_t {
 void neart_module_add_function(compile_context_t * cc, module_t * ctx, func_t * func);
 
 //////////////////////////////////////// params
+//
+#define NEART_PARAM_SIZE (2)
 
 /**
  * Given the following parameters of a function:
@@ -128,6 +136,20 @@ void neart_module_add_function(compile_context_t * cc, module_t * ctx, func_t * 
  */
 params_t * neart_params_transform(module_t * module, expr_t * param_expr, int * param_count);
 
+/**
+ * (ggii,
+ * becomes:
+ * 4++++ggii
+ *  ||||^^^^
+ *  |||+|||+
+ *  ||+-||+
+ *  |+--|+
+ *  +---+
+ */
+params_t * neart_params_anon_func(param_t * param);
+
+void neart_params_debug_print(params_t * params);
+
 #define neart_params_free(params) free(params);
 
 /**
@@ -149,8 +171,11 @@ params_t * neart_params_transform(module_t * module, expr_t * param_expr, int * 
  */
 param_t * neart_param_at(params_t * params, int idx, int nesting);
 
+#define neart_params_count(params) ((*params)-1)
+#define neart_params_last(params) (((param_t*)params) + *(((param_offset_t*)(params+1)) + ((*params)-1)))
+
 #define neart_param_type(param) (*param)
-#define neart_param_idx(param) (*(param+1))
+#define neart_param_idx(param) ((uint8_t)*(param+1))
 #define neart_param_next(param) (param+=2)
 #define neart_param_end(param) (neart_param_type(param) == ',')
 

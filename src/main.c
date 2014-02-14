@@ -15,6 +15,7 @@
 #endif
 
 extern int yyparse();
+extern int yylex_destory(void);
 extern int yylineno;
 
 int yyerror (YYLTYPE *locp, expr_t * root, char const * msg) {

@@ -14,7 +14,6 @@
 
 module_t * neart_module_alloc(const char * name) {
     ALLOC_STRUCT(module_t, m);
-    m->func_table = kh_init(str_func_t);
     m->name = strdup(name);
     m->symbols = NULL;
     return m;
@@ -22,17 +21,9 @@ module_t * neart_module_alloc(const char * name) {
 
 void neart_module_free(module_t * mod) {
     NEART_LOG_TRACE();
-    khiter_t k;
-    khash_t(str_func_t) * h = mod->func_table;
-
-    for (k = kh_begin(h) ; k < kh_end(h); ++k) {
-        if (kh_exist(h, k)) {
-            func_t * f = kh_value(h, k);
-            neart_func_free(f);
-            kh_value(h, k) = NULL;
-        }
+    if (mod->symbols != NULL) {
+        neart_sym_table_free(mod->symbols);
     }
-    kh_destroy(str_func_t, h);
     free((void*)mod->name);
     free(mod);
 }
@@ -43,6 +34,7 @@ pattern_t * neart_pattern_alloc(sem_post_expr_t * expr) {
     ALLOC_STRUCT(pattern_t, pat);
     pat->expr = expr;
     pat->bindings = NULL;
+    pat->symbols = NULL;
     return pat;
 }
 
@@ -63,11 +55,6 @@ void neart_pattern_free(pattern_t * pattern) {
     }
     free(pattern);
 }
-/*
-
-void pattern_add_binding(pattern_t * pattern, expr_t * expr) {
-    *kl_pushp(expr_t, pattern->bindings) = expr;
-}*/
 
 //////////////////////////////////////// func
 
@@ -115,40 +102,41 @@ void neart_func_add_pattern(func_t * func, pattern_t * pattern) {
 
 
 void neart_module_add_function(compile_context_t * cc, module_t * mod, func_t * func) {
-    int ret;
-    khint_t k;
-
-    k = kh_put(str_func_t, mod->func_table, func->name, &ret);
-    if (!ret) {
-        errno = ERR_FUNC_ALREADY_DEF;
-        NEART_LOG(LOG_FATAL, "function %s is already defined in module %s\n", func->name, mod->name);
-    } else {
-        kh_value(mod->func_table, k) = func;
-    }
 
     // add it to the current symbol table
     sym_entry_t entry;
     entry.func = func;
     entry.entry_type = SYM_FUNC;
     entry.type = 0;
-    neart_sym_table_insert(mod->symbols, func->name, entry);
+    if (neart_sym_table_insert(cc->symbols, func->name, entry)) {
+        errno = ERR_FUNC_ALREADY_DEF;
+        NEART_LOG_FATAL("function %s is already defined in module %s\n", func->name, mod->name);
+    }
 }
 
 //////////////////////////////////////// param
 
+/**
+ * each node takes on slot, for each func (parens) an
+ * additional slot is reserved for termination
+ */
 static int _expr_node_count(expr_t * e) {
     if (e == NULL) { return 0; }
-    return 1 + _expr_node_count(e->left) + _expr_node_count(e->right);
+    int i = 1;
+    if (e->type == ET_PARENS) {
+        i++;
+    }
+    return i + _expr_node_count(e->left) + _expr_node_count(e->right);
 }
 
 static int _generic_param_defined(expr_t * expr, int first_n_params) {
-
     return -1;
 }
 
 #define __char_free(x)
 KLIST_INIT(string, char*, __char_free);
 
+// temp structure holding the context of construction
 typedef struct __param_transform {
     expr_t * first_param;
     expr_t * cur;
@@ -157,6 +145,7 @@ typedef struct __param_transform {
     param_offset_t * offset;
     int param_index;
     klist_t(string) * generic_params;
+    uint8_t sub_param_count;
 } _ptrans_t;
 
 static int _param_find_already_declared(_ptrans_t * c) {
@@ -217,8 +206,16 @@ static void _params_transform_param(_ptrans_t * c) {
     c->param = param;
     c->cur = expr->left;
     _params_transform_param(c);
+
     c->cur = expr->right;
     _params_transform_param(c);
+
+    if (*(param-NEART_PARAM_SIZE) == type_func) {
+        // the param count is the param count minus the ones in between!
+        uint8_t count = (uint8_t)(c->param - param)/NEART_PARAM_SIZE;
+        *(param-1) = count - c->sub_param_count;
+        c->sub_param_count = count;
+    }
 }
 
 static void _params_transform(_ptrans_t * c) {
@@ -234,6 +231,7 @@ static void _params_transform(_ptrans_t * c) {
         next->next = NULL; 
 
         c->cur = next;
+        c->sub_param_count = 0;
         _params_transform_param(c);
 
         *c->param++ = ',';
@@ -259,7 +257,8 @@ params_t * neart_params_transform(module_t * module, expr_t * param_expr, int * 
     int colons = *param_count;
     params = malloc( sizeof(params_t) /* count */ 
                    + sizeof(param_offset_t) * *param_count /* offsets to parameters */
-                   + sizeof(param_t) * (nodes + colons) * 2 ) /* bytes describing the types. 1 byte char, 2 byte id */;
+                   + sizeof(param_t) * (nodes + colons) * 2 /* bytes describing the types. 1 byte char, 1 byte id */
+                   );
 
     *params = *param_count;
 
@@ -279,31 +278,80 @@ params_t * neart_params_transform(module_t * module, expr_t * param_expr, int * 
 
     kl_destroy(string, trans.generic_params);
 
-
-    {
-        int i;
-
-        NEART_LOG_DEBUG("parameter trans to: %d|", *params);
-        param_offset_t * ptr = (param_offset_t*) (params+1);
-        for (i = 0; i < *params; i++ ) {
-            NEART_LOG_DEBUG("%d|", *ptr);
-            ptr++;
-        }
-        param_t * par = (param_t*)ptr;
-        for (i = 0; i < *params;) {
-            NEART_LOG_DEBUG("%c%d ", *par, *(par+1));
-            if (*par == ',') {
-                i++;
-            }
-            par+=2;
-        }
-        NEART_LOG_DEBUG("\n");
-    }
+    neart_params_debug_print(params);
 
     return params;
 }
 
+params_t * neart_params_anon_func(param_t * old) {
+    params_t * params;
+    int nodes = 0;
 
+    // jump over the first parens (
+    param_t * it = neart_param_next(old);
+    int param_count = 0;
+
+    while (!neart_param_end(it)) {
+        param_count++;
+        nodes++;
+        while (neart_param_type(it) == type_func) {
+            nodes += neart_param_idx(it);
+            it += neart_param_idx(it) * NEART_PARAM_SIZE;
+        }
+        if (it != NULL) {
+            it = neart_param_next(it);
+        }
+    }
+
+    // param count is at least 1
+    int colons = param_count;
+    params = malloc( sizeof(params_t) /* count */ 
+                   + sizeof(param_offset_t) * param_count /* offsets to parameters */
+                   + sizeof(param_t) * (nodes + colons) * 2 /* bytes describing the types. 1 byte char, 2 byte id */
+                   );
+
+
+    *params = param_count;
+
+    param_offset_t * off = (param_offset_t*) (params+1);
+
+    param_t * copy = (param_t*) off + param_count * sizeof(param_offset_t);
+
+    it = old;
+
+    // copy the entry
+    while (!neart_param_end(it)) {
+        // write the offset and copy until a ','
+        *off++ = (param_offset_t)(((void*)copy) - ((void*)params));
+        *copy++ = *(it);
+        *copy++ = *(it+1);
+
+        // when encountering a function
+        // copy until all params are copied
+        // (2 g0 (2 g1 g2 will write 6 symbols
+        if (neart_param_type(it) == type_func) {
+            int to_cpy = neart_param_idx(it);
+            it = neart_param_next(it);
+            while (to_cpy > 0) {
+                if (neart_param_type(it) == type_func) {
+                    to_cpy += neart_param_idx(it);
+                }
+
+                *copy++ = *it++;
+                *copy++ = *it++;
+
+                to_cpy--;
+            }
+        } else {
+            it = neart_param_next(it);
+        }
+        // terminate parameter
+        *copy++ = ',';
+        *copy++ = 0;
+    }
+
+    return params;
+}
 
 param_t * neart_param_at(params_t * params, int idx, int nesting) {
 
@@ -326,3 +374,25 @@ param_t * neart_param_at(params_t * params, int idx, int nesting) {
 
     return NULL;
 }
+
+
+void neart_params_debug_print(params_t * params) {
+
+    int i;
+
+    NEART_LOG_DEBUG("params: %d|", *params);
+    param_offset_t * ptr = (param_offset_t*) (params+1);
+    for (i = 0; i < *params; i++ ) {
+        NEART_LOG_DEBUG("%d|", *ptr);
+        ptr++;
+    }
+    param_t * par = (param_t*)ptr;
+    for (i = 0; i < *params;) {
+        NEART_LOG_DEBUG("%c%d ", *par, *(par+1));
+        if (*par == ',') { i++; }
+        par+=2;
+    }
+    NEART_LOG_DEBUG("\n");
+
+}
+        

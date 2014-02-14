@@ -2,7 +2,6 @@
 #include "symt.h"
 
 #include <errno.h>
-#include "error.h"
 #include "logging.h"
 #include "utils.h"
 #include "ast.h"
@@ -17,35 +16,23 @@ sym_table_t * neart_sym_table_alloc() {
 }
 
 void neart_sym_table_free(sym_table_t * table) {
-
-    khiter_t k;
-    sym_table_t * t = table;
-    sym_table_t * next = table->next;
-
-    while (t != NULL) {
-        kh_destroy(str_sym_entry_t, t->symbols); 
-
-        free(t);
-
-        t = next;
-        if (t != NULL) {
-            next = next->next;
-        }
-    }
+    kh_destroy(str_sym_entry_t, table->symbols); 
+    free(table);
 }
 
-void neart_sym_table_insert(sym_table_t * table, const char * name, sym_entry_t entry) {
+semantic_error_t neart_sym_table_insert(sym_table_t * table, const char * name, sym_entry_t entry) {
 
     int ret;
     khint_t k;
 
     k = kh_put(str_sym_entry_t, table->symbols, name, &ret);
     if (!ret) {
-        errno = ERR_SYM_ALREADY_DEF;
-        NEART_LOG(LOG_FATAL, "symbol %s is already defined\n", name);
+        NEART_LOG_FATAL("symbol %s is already defined\n", name);
+        return ERR_SYM_ALREADY_DEF;
     } else {
         kh_value(table->symbols, k) = entry;
     }
+    return NO_ERROR;
 }
 
 sym_entry_t * neart_sym_table_lookup(sym_table_t * sym, const char * name) {
@@ -75,4 +62,17 @@ sym_table_t * neart_sym_table_pop(sym_table_t * sym, int free) {
     sym_table_t * table = sym->parent;
     if (free) { neart_sym_table_free(sym); }
     return table;
+}
+
+int neart_sym_table_func_param_count(sym_entry_t * e) {
+
+    if (e->type == SYM_FUNC) {
+        func_t * func = e->func;
+        return neart_params_count(func->params);
+    } else if (e->type == SYM_ANON_FUNC) {
+        param_t * param = e->param;
+        return neart_param_idx(param) - 1;
+    }
+
+    return -1;
 }

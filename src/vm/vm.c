@@ -3,6 +3,7 @@
 
 #include <stdlib.h>
 #include <inttypes.h>
+#include <alloca.h>
 
 NEART_INSTR_FORECH(INSTR_DEFINES_SHORT)
 

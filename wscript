@@ -18,6 +18,8 @@ def configure(c):
 
     c.env.STLIB += ['fl']
 
+    c.env.CFLAGS += ['-std=c99']
+
     if c.options.debug:
         c.env.CFLAGS += ['-g']
     if c.options.wall:
