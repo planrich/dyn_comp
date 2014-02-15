@@ -2,6 +2,13 @@
 #include "ast.h"
 #include "neart.tab.h"
 #include <string.h>
+
+/* handle locations */
+int yycolumn = 1;
+
+#define YY_USER_ACTION yylloc->first_line = yylloc->last_line = yylineno; \
+    yylloc->first_column = yycolumn; yylloc->last_column = yycolumn+yyleng-1; \
+    yycolumn += yyleng;
 %}
 
 ID  [a-zA-Z_][a-zA-Z0-9_]*
@@ -55,6 +62,6 @@ STRING \"[^\"]\";
 ";" { return T_SEMI_COLON; }
 
 {WS} { }
-{NL} { }
+{NL} { yycolumn = 1; }
 
 . { printf("unexpected input %s\n", yytext); exit(-1); }

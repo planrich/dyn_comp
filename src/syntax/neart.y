@@ -108,6 +108,7 @@ func:
 
 patterns:
     T_EQUAL bindings T_SEMI_COLON expr patterns[patterns_p] {
+        printf("::::: %d %d %d %d\n", @1.first_line, @4.last_line, @1.first_column, @4.last_column);
         expr_t * pattern = neart_expr_alloc(ET_PATTERN);
         expr_t * bindings = neart_expr_alloc(ET_BINDINGS);
         pattern->next = $<expr>patterns_p;
