@@ -8,6 +8,12 @@ int yylex ( YYSTYPE * lvalp, YYLTYPE * llocp );
 
 int yyerror (YYLTYPE *locp, expr_t * root, char const * msg);
 
+#define CPY_LOC(obj, l1, l2) \
+    obj->first_line = l1.first_line; \
+    obj->last_line = l2.last_line; \
+    obj->first_column = l1.first_column; \
+    obj->last_column = l2.last_column;
+
 %}
 
 %locations 
@@ -96,6 +102,8 @@ func:
     T_FUNC T_ID[name] T_COLON params patterns {
         expr_t * func = neart_expr_alloc(ET_FUNC);
         expr_t * params = neart_expr_alloc(ET_PARAMS);
+        CPY_LOC(func, @$, @$);
+        CPY_LOC(params, @4, @4);
 
         func->data = $<text>name;
         func->detail = params;
@@ -108,9 +116,10 @@ func:
 
 patterns:
     T_EQUAL bindings T_SEMI_COLON expr patterns[patterns_p] {
-        printf("::::: %d %d %d %d\n", @1.first_line, @4.last_line, @1.first_column, @4.last_column);
         expr_t * pattern = neart_expr_alloc(ET_PATTERN);
+        CPY_LOC(pattern, @1, @4);
         expr_t * bindings = neart_expr_alloc(ET_BINDINGS);
+        CPY_LOC(bindings, @2, @2);
         pattern->next = $<expr>patterns_p;
         pattern->detail = bindings;
         bindings->detail = $<expr>bindings;
@@ -123,6 +132,7 @@ patterns:
 bindings:
     binding bindings { 
         expr_t * binding = neart_expr_alloc(ET_BINDING);
+        CPY_LOC(binding, @1, @1);
         binding->detail = $<expr>1;
         binding->next = $<expr>2;
         $<expr>$ = binding; 
@@ -133,6 +143,7 @@ bindings:
 var:
     T_ID[variable] {
         expr_t * var = neart_expr_alloc(ET_VARIABLE);
+        CPY_LOC(var, @1, @1);
         var->data = $<text>variable;
         $<expr>$ = var;
     }
@@ -145,27 +156,39 @@ binding:
   | var { $<expr>$ = $<expr>var; } 
   | T_INT[num] {
         expr_t * binding = neart_expr_alloc(ET_INTEGER);
+        CPY_LOC(binding, @1, @1);
         binding->data = $<text>num;
         $<expr>$ = binding;
     }
   | binding[left] T_COLON binding[right]  { 
         expr_t * binding = neart_expr_alloc(ET_CONS);
+        CPY_LOC(binding, @1, @1);
         binding->left = $<expr>left;
         binding->right = $<expr>right;
         $<expr>$ = binding;
     }
-  | T_UNDERSCORE { $<expr>$ = neart_expr_alloc(ET_MATCH_ANY); }
+  | T_UNDERSCORE { 
+        expr_t * expr = neart_expr_alloc(ET_MATCH_ANY); 
+        CPY_LOC(expr, @1, @1);
+        $<expr>$ = expr;
+    }
   | T_OBRACKET binding T_CBRACKET {
         expr_t * binding = neart_expr_alloc(ET_LIST);
+        CPY_LOC(binding, @2, @2);
         binding->detail = $<expr>2;
         $<expr>$ = binding;
     }
-  | nil { $<expr>$ = neart_expr_alloc(ET_NIL); }
+  | nil { 
+        expr_t * expr = neart_expr_alloc(ET_NIL); 
+        CPY_LOC(expr, @1, @1);
+        $<expr>$ = expr;
+    }
   ;
 
 expr:
     T_OPARENS expr T_CPARENS flist {
         expr_t * parens = neart_expr_alloc(ET_PARENS);
+        CPY_LOC(parens, @1, @3);
         expr_t * expr = $<expr>2;
         parens->detail = expr;
         parens->next = $<expr>4;
@@ -173,54 +196,67 @@ expr:
     }
   | expr T_PLUS expr {
         expr_t * expr = neart_expr_alloc(ET_OP_IADD);
+        CPY_LOC(expr, @1, @3);
         expr->left = $<expr>1;
         expr->right = $<expr>3;
         $<expr>$ = expr; 
     }
   | expr T_STAR expr {
         expr_t * expr = neart_expr_alloc(ET_OP_IMUL);
+        CPY_LOC(expr, @1, @3);
         expr->left = $<expr>1;
         expr->right = $<expr>3;
         $<expr>$ = expr; 
     }
   | expr T_FSLASH expr {
         expr_t * expr = neart_expr_alloc(ET_OP_IDIV);
+        CPY_LOC(expr, @1, @3);
         expr->left = $<expr>1;
         expr->right = $<expr>3;
         $<expr>$ = expr; 
     }
   | expr T_MINUS expr {
         expr_t * expr = neart_expr_alloc(ET_OP_ISUB);
+        CPY_LOC(expr, @1, @3);
         expr->left = $<expr>1;
         expr->right = $<expr>3;
         $<expr>$ = expr; 
     }
   | expr T_COLON expr {
         expr_t * expr = neart_expr_alloc(ET_OP_CONS);
+        CPY_LOC(expr, @1, @3);
         expr->left = $<expr>1;
         expr->right = $<expr>3;
         $<expr>$ = expr; 
     }
   | T_MINUS expr %prec UNARY_MINUS {
         expr_t * expr = neart_expr_alloc(ET_NEGATIVE);
+        CPY_LOC(expr, @1, @2);
         expr->detail= $<expr>2;
         $<expr>$ = expr; 
     }
   | T_ID flist  { 
         expr_t * expr = neart_expr_alloc(ET_VARIABLE);
+        CPY_LOC(expr, @1, @1);
         expr->data = $<text>1;
         expr->next = $<expr>2;
         $<expr>$ = expr; 
     }
-  | nil { $<expr>$ = neart_expr_alloc(ET_NIL); }
+  | nil { 
+        expr_t * expr = neart_expr_alloc(ET_NIL); 
+        CPY_LOC(expr, @1, @1);
+        $<expr>$ = expr;
+    }
   | T_INT { 
         expr_t * expr = neart_expr_alloc(ET_INTEGER);
+        CPY_LOC(expr, @1, @1);
         expr->data = $<text>1;
         //expr->next = $<expr>2;
         $<expr>$ = expr; 
     }
   | T_STR { 
         expr_t * expr = neart_expr_alloc(ET_STRING);
+        CPY_LOC(expr, @1, @1);
         expr->data = $<text>1;
         $<expr>$ = expr; 
     }
@@ -253,11 +289,13 @@ nil:
 param:
     T_OBRACKET param T_CBRACKET {
         expr_t * param = neart_expr_alloc(ET_LIST);
+        CPY_LOC(param, @1, @3);
         param->detail = $<expr>2;
         $<expr>$ = param;
     }
   | T_OPARENS params T_CPARENS {
         expr_t * param = neart_expr_alloc(ET_PARENS);
+        CPY_LOC(param, @1, @3);
         param->detail = $<expr>params;
         $<expr>$ = param;
     }

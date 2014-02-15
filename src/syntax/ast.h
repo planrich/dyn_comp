@@ -50,6 +50,12 @@ struct __expr_t {
     };
     expr_type_t type;
     char * data;
+
+    // location data
+    int first_line;
+    int last_line;
+    int first_column;
+    int last_column;
 };
 typedef struct __expr_t expr_t;
 
