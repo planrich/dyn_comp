@@ -1,7 +1,9 @@
 
 #include "binding.h"
 
+#include <errno.h>
 #include "logging.h"
+#include "typecheck.h"
 
 const char * BINDING_WILDCARD_STR = "_";
 
@@ -11,16 +13,16 @@ static int _declare_bindings(compile_context_t * cc, params_t * params, expr_t *
         return 0;
     }
 
+    param_t * param = neart_param_at(params, param_index, depth);
+    if (param == NULL) {
+        NEART_LOG_FATAL("parameter %d at nesting %d not available\n", param_index, depth);
+        return ERR_TYPE_TO_FEW_PARAMETER;
+    }
+
     const char * name = binding->data;
     if (binding->type == ET_VARIABLE) {
         if (strcmp(name, BINDING_WILDCARD_STR) == 0) {
             return 0;
-        }
-
-        param_t * param = neart_param_at(params, param_index, depth);
-        if (param == NULL) {
-            NEART_LOG_FATAL("parameter %d at nesting %d not available\n", param_index, depth);
-            return ERR_TYPE_TO_FEW_PARAMETER;
         }
 
         type_t type = neart_param_type(param);
@@ -58,6 +60,7 @@ static int _declare_bindings(compile_context_t * cc, params_t * params, expr_t *
 semantic_error_t neart_declare_all_bindings(compile_context_t * cc, params_t * params, 
         expr_t * binding, int * binding_count) {
     int param_index = 0;
+    int param_count = neart_params_count(params);
     expr_t * next = binding;
     expr_t * tmp;
     semantic_error_t err;
@@ -66,7 +69,12 @@ semantic_error_t neart_declare_all_bindings(compile_context_t * cc, params_t * p
         tmp = next->next;
         next->next = NULL; // unhinge to not recurse in _declare_bindings
 
-        err = _declare_bindings(cc, params, next, param_index++, 0);
+        if (param_index >= (param_count)) {
+            neart_fatal_error(ERR_TYPE_TOO_MANY_ARGUMENTS, binding, 
+                    "function needs %d parameters but %d are specified\n", (param_count), param_index+1);
+            return ERR_TYPE_TOO_MANY_ARGUMENTS;
+        }
+        err = _declare_bindings(cc, params, next->detail, param_index++, 0);
         if (err) { return err; }
 
         next->next = tmp;

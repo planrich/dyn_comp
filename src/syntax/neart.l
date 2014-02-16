@@ -1,7 +1,10 @@
 %{
 #include "ast.h"
 #include "neart.tab.h"
-#include <string.h>
+
+
+char * strdup(const char * s);
+int fileno(FILE * name);
 
 /* handle locations */
 int yycolumn = 1;
@@ -20,6 +23,7 @@ STRING \"[^\"]\";
 
 %option bison-bridge
 %option bison-locations
+%option ansi-definitions
 %option yylineno
 
 %%

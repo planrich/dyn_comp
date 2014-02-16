@@ -21,8 +21,11 @@ typedef enum __semantic_error_t {
 int neart_error;
 
 #define neart_fatal_error(symbol, expr, fmt, ...) \
-    neart_fatal_error_loc(symbol, expr->first_line, expr->last_line,\
+        neart_fatal_error_loc(symbol, expr->first_line, expr->last_line,\
             expr->first_column, expr->last_column, fmt, ##__VA_ARGS__ )
+
+#define neart_fatal_error_no_loc(symbol, fmt, ...) \
+        neart_fatal_error_loc(symbol, 0, 0, 0, 0, fmt, ##__VA_ARGS__ ) \
 
 #define neart_fatal_error_loc(symbol, ls, le, cs, ce, fmt, ...) \
     errno = symbol; \

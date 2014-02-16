@@ -50,6 +50,7 @@ func_t * neart_builtin_func_lookup(expr_type_t type) {
 
     switch (type) {
         FOREACH_BUILTIN_FUNC(PULL_LOOKUP)
+        default: return NULL;
     }
     return NULL;
 }

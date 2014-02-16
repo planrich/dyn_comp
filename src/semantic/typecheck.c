@@ -54,21 +54,28 @@ static klist_t(expr_t) * _next_n_parameter(expr_t * expr, int n, int * has_next)
 
 static int neart_type_match(expr_t * expr, param_t * expected, param_t * actual) {
 
+    param_t * e = expected;
+    param_t * a = actual;
+
+    if (a == NULL || e == NULL) {
+        return 0;
+    }
+
     while (1) {
 
-        if (neart_param_type(expected) != neart_param_type(actual)) {
+        if (neart_param_type(e) != neart_param_type(a)) {
             errno = ERR_TYPE_MISMATCH;
             neart_fatal_error(ERR_TYPE_MISMATCH, expr, 
-                    "exected type '%s' but got '%s'\n", neart_type_name(*expected), neart_type_name(*actual) );
+                    "exected type '%s' but got '%s'\n", neart_type_name(*e), neart_type_name(*a) );
             return 0;
         }
 
-        if (neart_param_type(expected) == ',') {
+        if (neart_param_type(e) == ',') {
             break;
         }
 
-        expected = neart_param_next(expected);
-        actual = neart_param_next(actual);
+        e = neart_param_next(e);
+        a = neart_param_next(a);
     }
 
     return 1;
@@ -172,11 +179,7 @@ sem_post_expr_t * _neart_type_check(_pf_trans_t * ctx) {
         return func_apply;
     }
 
-    return spe;
-
 bail_out_type_check:
-
-    printf("TYPE MATCH FAILED\n");
 
     return NULL;
 
@@ -188,6 +191,8 @@ sem_post_expr_t * neart_type_check(compile_context_t * cc, expr_t * expr, param_
     pf.cc = cc;
     pf.expr = expr;
     pf.expected_param = expected_result;
+
+    // TODO check binding types
 
     return _neart_type_check(&pf);
 }

@@ -6,5 +6,4 @@
 
 void neart_generate_register_code(module_t * module, FILE * out);
 
-
 #endif /* _CODE_H_ */

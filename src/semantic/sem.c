@@ -96,7 +96,6 @@ static void _check_func_semantics(compile_context_t * cc,
         func_t * func,
         expr_t * expr) {
 
-    const char * func_name = func->name;
     expr_t * patterns = expr->detail->next;
 
     int param_count = *func->params;
@@ -129,7 +128,9 @@ static void _check_pattern_semantics(compile_context_t * cc,
     // bindings
     int binding_count = 0;
     if (bindings != NULL) {
-        neart_declare_all_bindings(cc, func->params, bindings->detail, &binding_count);
+        if (neart_declare_all_bindings(cc, func->params, bindings->detail, &binding_count)) {
+            goto bail_out_pat;
+        }
     }
 
     // type check the expression

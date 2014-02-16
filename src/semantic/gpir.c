@@ -1,14 +1,15 @@
 
 #include "gpir.h"
 
-#include <errno.h>
 #include "utils.h"
 #include "kstring.h"
 #include "klist.h"
 #include "sem.h"
 #include "logging.h"
 #include "ast.h"
+#include <errno.h>
 
+char * strdup(const char * s);
 
 //////////////////////////////////////// module
 
@@ -20,7 +21,6 @@ module_t * neart_module_alloc(const char * name) {
 }
 
 void neart_module_free(module_t * mod) {
-    NEART_LOG_TRACE();
     if (mod->symbols != NULL) {
         neart_sym_table_free(mod->symbols);
     }
@@ -277,8 +277,6 @@ params_t * neart_params_transform(module_t * module, expr_t * param_expr, int * 
     _params_transform(&trans);
 
     kl_destroy(string, trans.generic_params);
-
-    neart_params_debug_print(params);
 
     return params;
 }

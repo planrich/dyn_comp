@@ -39,7 +39,7 @@ uint32_t neart_cpool_insert(cpool_t * pool, void * data, int offset, int size) {
     pool->offset_cursor++;
 
     if (pool_cur + size <= pool_end) {
-        uint32_t size = (pool->pool_end - pool->pool_start) + size + 256;
+        //uint32_t size = (pool->pool_end - pool->pool_start) + size + 256;
         pool->pool_start = realloc(pool->pool_start, size);
         pool->pool_end = pool->pool_start + size;
     }
