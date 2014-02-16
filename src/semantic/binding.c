@@ -24,7 +24,6 @@ static int _declare_bindings(compile_context_t * cc, params_t * params, expr_t *
         }
 
         type_t type = neart_param_type(param);
-        NEART_LOG_DEBUG("binding defining %s as %c\n", name, type);
 
         // consider this? can one unpack a function (a -> (b -> c)) unpack (a:bc)?
         param_t * top_param = neart_param_at(params, param_index, 0);

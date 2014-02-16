@@ -126,13 +126,10 @@ static void _check_pattern_semantics(compile_context_t * cc,
     sym_table_t * table = neart_sym_table_push(cc->symbols);
     cc->symbols = table;
 
-    NEART_LOG_DEBUG("pattern %s(%d):\n", func->name, pattern_idx);
     // bindings
     int binding_count = 0;
     if (bindings != NULL) {
         neart_declare_all_bindings(cc, func->params, bindings->detail, &binding_count);
-
-        NEART_LOG_DEBUG("func %s pattern has %d binding(s)\n", func->name, binding_count);
     }
 
     // type check the expression
@@ -140,9 +137,12 @@ static void _check_pattern_semantics(compile_context_t * cc,
     sem_post_expr_t * spe = neart_type_check(cc, expr, neart_params_last(func->params));
     if (errno) { goto bail_out_pat; }
 
-    pattern_t * pat = neart_pattern_alloc(spe);
+    sem_post_expr_t * cur = spe;
+    while (cur != NULL) { cur = cur->prev; }
+
+    pattern_t * pat = neart_pattern_alloc(cur);
     pat->bindings = bindings->detail;
-    bindings->detail = NULL; // unhinge to prevent free of ast
+    bindings->detail = NULL; // unhinge to prevent deletion
 
     neart_func_add_pattern(func,pat);
     pat->symbols = cc->symbols;

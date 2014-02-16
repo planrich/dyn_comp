@@ -359,7 +359,7 @@ param_t * neart_param_at(params_t * params, int idx, int nesting) {
         return NULL;
     }
 
-    param_offset_t * off = (param_offset_t*)(params+1); // note: cast binds stronge than +1
+    param_offset_t * off = (param_offset_t*)(params+1); // note: cast binds stronger than +1
     off += idx;
 
     param_t * param = ((param_t*)params) + *off;
@@ -379,6 +379,7 @@ param_t * neart_param_at(params_t * params, int idx, int nesting) {
 void neart_params_debug_print(params_t * params) {
 
     int i;
+    int j;
 
     NEART_LOG_DEBUG("params: %d|", *params);
     param_offset_t * ptr = (param_offset_t*) (params+1);
@@ -386,13 +387,14 @@ void neart_params_debug_print(params_t * params) {
         NEART_LOG_DEBUG("%d|", *ptr);
         ptr++;
     }
-    param_t * par = (param_t*)ptr;
-    for (i = 0; i < *params;) {
-        NEART_LOG_DEBUG("%c%d ", *par, *(par+1));
-        if (*par == ',') { i++; }
-        par+=2;
+    for (i = 0; i < *params; i++) {
+        param_t * par = neart_param_at(params, i, 0);
+        while (!neart_param_end(par)) { 
+            NEART_LOG_DEBUG(" %c%d", *par, *(par+1));
+            par = neart_param_next(par);
+        }
+        NEART_LOG_DEBUG("%c", *par);
     }
     NEART_LOG_DEBUG("\n");
 
 }
-        
