@@ -45,6 +45,8 @@ static int _declare_bindings(compile_context_t * cc, params_t * params, expr_t *
             entry.entry_type = SYM_VAR;
             entry.var = binding;
         }
+        entry.entry_type |= SYM_ARG;
+        entry.argument_index = param_index;
         entry.param = param;
 
         neart_sym_table_insert(table, name, entry);

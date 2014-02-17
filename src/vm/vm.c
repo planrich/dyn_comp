@@ -7,21 +7,21 @@
 
 NEART_INSTR_FORECH(INSTR_DEFINES_SHORT)
 
-int neart_exec(code_t * code) {
+int neart_exec(ncode_t * code) {
 
     static void ** labels[] = { 
         NEART_INSTR_FORECH(INSTR_JMP_TABLE)
     };
 
     register_t registers[128];
-    stack_t * stack = alloca(2^10);
+    stack_cell_t * stack = alloca(2^10);
     char p1,p2,p3,p4;
 
-    stack_t * sp = stack;
-    stack_t * bp = stack;
-    register code_t * ip = code;
+    stack_cell_t * sp = stack;
+    stack_cell_t * bp = stack;
+    register rcode_t * ip = NULL;//code;
 
-    code_t instr;
+    rcode_t instr;
 
 vm_dispatch:
     instr = *ip++;

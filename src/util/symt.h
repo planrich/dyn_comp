@@ -4,14 +4,16 @@
 #include "khash.h"
 #include "types.h"
 #include "error.h"
+#include <inttypes.h>
 
 struct __expr_t;
 struct __func_t;
 
 enum __sym_entry_type_t {
-    SYM_FUNC,
-    SYM_ANON_FUNC,
-    SYM_VAR,
+    SYM_FUNC = 1,
+    SYM_ANON_FUNC = 2,
+    SYM_VAR = 4,
+    SYM_ARG = 8,
 };
 typedef enum __sym_entry_type_t sym_entry_type_t;
 
@@ -22,6 +24,7 @@ struct __sym_entry_t {
         struct __expr_t * var;
         struct __func_t * func;
     };
+    uint8_t argument_index;
     char * param;
 };
 typedef struct __sym_entry_t sym_entry_t;
@@ -34,6 +37,8 @@ struct __sym_table_t {
     struct __sym_table_t * next;
 };
 typedef struct __sym_table_t sym_table_t;
+
+#define sym_entry_is(entry, symbol) ((entry->entry_type & symbol) != 0) 
 
 sym_table_t * neart_sym_table_alloc();
 

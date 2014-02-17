@@ -96,9 +96,12 @@ int main(int argc, char *argv[])
     neart_expr_free_r(root);
 
     if (errno) {
-        NEART_LOG(LOG_FATAL, "semantics error found. analysis returned %d\n", errno);
+        NEART_LOG(LOG_FATAL, "semantic error found. analysis returned %d\n", errno);
     } else {
-        neart_generate_register_code(module, stdout);
+        ncode_t * code = neart_generate_register_code(module);
+        if (code) {
+
+        }
     }
 
     if (module != NULL) {

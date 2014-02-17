@@ -112,6 +112,12 @@ void neart_module_add_function(compile_context_t * cc, module_t * mod, func_t * 
         errno = ERR_FUNC_ALREADY_DEF;
         NEART_LOG_FATAL("function %s is already defined in module %s\n", func->name, mod->name);
     }
+
+    // also define in the module
+    if (neart_sym_table_insert(mod->symbols, func->name, entry)) {
+        errno = ERR_FUNC_ALREADY_DEF;
+        NEART_LOG_FATAL("function %s is already defined in module %s\n", func->name, mod->name);
+    }
 }
 
 //////////////////////////////////////// param

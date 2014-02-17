@@ -32,7 +32,7 @@ int main(int argc, char ** argv) {
 
     NEART_LOG_INFO("nvm %s-%s\n", NEART_VERSION, NEART_SCM_HASH);
 
-    code_t code[] = {
+    /*code_t code[] = {
         NI_SPI, 0x1, 0x0, 0x0, 0x0,
         NI_SPI, 0x2, 0x0, 0x0, 0x0,
         NI_LSI, 0x0,
@@ -41,11 +41,11 @@ int main(int argc, char ** argv) {
         NR_SUB, 0x3, 0x0, 0x0,
         NR_PUT, 0x0,
         N_END
-    };
+    };*/
 
-    if (neart_exec(code)) {
-        return 0;
-    }
+    //if (neart_exec(code)) {
+    //    return 0;
+    //}
 
     return 1;
 }

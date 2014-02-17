@@ -139,7 +139,7 @@ static void _check_pattern_semantics(compile_context_t * cc,
     if (errno) { goto bail_out_pat; }
 
     sem_post_expr_t * cur = spe;
-    while (cur != NULL) { cur = cur->prev; }
+    while (cur != NULL && cur->prev != NULL) { cur = cur->prev; }
 
     pattern_t * pat = neart_pattern_alloc(cur);
     pat->bindings = bindings->detail;

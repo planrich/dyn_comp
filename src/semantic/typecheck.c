@@ -12,12 +12,14 @@ typedef struct __pf_trans {
     param_t * expected_param;
 } _pf_trans_t;
 
-inline static sem_post_expr_t * _alloc_sem_post_expr(type_t type, expr_t * expr, sym_entry_t * entry) {
+inline static sem_post_expr_t * _alloc_sem_post_expr(type_t type, expr_t * expr) {
     ALLOC_STRUCT(sem_post_expr_t, spe);
     spe->next = spe->prev = NULL;
     spe->type = type;
+    spe->func = NULL;
     spe->expr = expr;
-    spe->entry = entry;
+    spe->symbol_type = -1;
+    spe->argument_index = -1;
     return spe;
 }
 
@@ -133,7 +135,8 @@ sem_post_expr_t * _neart_type_check(_pf_trans_t * ctx) {
         if (expr->left != NULL) { goto bail_out_type_check; }
         if (expr->right != NULL) { goto bail_out_type_check; }
 
-        return _alloc_sem_post_expr(type_int, expr, NULL);
+        spe = _alloc_sem_post_expr(type_int, expr);
+        return spe;
     }
 
     if (expr->type == ET_VARIABLE) {
@@ -145,7 +148,7 @@ sem_post_expr_t * _neart_type_check(_pf_trans_t * ctx) {
             goto bail_out_type_check;
         }
 
-        if (symbol->entry_type == SYM_VAR) {
+        if (sym_entry_is(symbol, SYM_VAR)) {
             param_t * param = symbol->param;
             if (!neart_type_match(expr, expected_result, param)) {
                 goto bail_out_type_check;
@@ -153,7 +156,10 @@ sem_post_expr_t * _neart_type_check(_pf_trans_t * ctx) {
             if (expr->left != NULL) { goto bail_out_type_check; }
             if (expr->right != NULL) { goto bail_out_type_check; }
 
-            return _alloc_sem_post_expr(type_generic, expr, symbol);
+            spe = _alloc_sem_post_expr(symbol->type, expr);
+            spe->symbol_type = symbol->entry_type;
+            spe->argument_index = symbol->argument_index;
+            return spe;
         } else {
             printf("XXX unkown symbol entry type\n");
             goto bail_out_type_check;
@@ -173,7 +179,8 @@ sem_post_expr_t * _neart_type_check(_pf_trans_t * ctx) {
         if (spe == NULL) {
             goto bail_out_type_check;
         }
-        sem_post_expr_t * func_apply = _alloc_sem_post_expr('$', expr, NULL);
+        sem_post_expr_t * func_apply = _alloc_sem_post_expr('$', expr);
+        func_apply->func = builtin;
         func_apply->prev = spe;
         spe->next = func_apply;
         return func_apply;
@@ -181,6 +188,7 @@ sem_post_expr_t * _neart_type_check(_pf_trans_t * ctx) {
 
 bail_out_type_check:
 
+    printf("BAIL OUT\n");
     return NULL;
 
 }

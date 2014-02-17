@@ -10,17 +10,22 @@
 
 #include "ast.h"
 #include "symt.h"
+#include "gpir.h"
 #include "types.h"
 #include <inttypes.h>
 
 //////////////////////////////////////// semantic post expr
+
+struct __func_t;
 
 struct __sem_post_expr_t {
     struct __sem_post_expr_t * next;
     struct __sem_post_expr_t * prev;
     type_t type;
     expr_t * expr;
-    sym_entry_t * entry;
+    struct __func_t * func;
+    int symbol_type;
+    uint8_t argument_index;
 };
 typedef struct __sem_post_expr_t sem_post_expr_t;
 

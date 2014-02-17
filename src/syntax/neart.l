@@ -2,7 +2,6 @@
 #include "ast.h"
 #include "neart.tab.h"
 
-
 char * strdup(const char * s);
 int fileno(FILE * name);
 

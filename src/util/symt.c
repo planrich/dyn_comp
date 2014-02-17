@@ -66,10 +66,10 @@ sym_table_t * neart_sym_table_pop(sym_table_t * sym, int free) {
 
 int neart_sym_table_func_param_count(sym_entry_t * e) {
 
-    if (e->type == SYM_FUNC) {
+    if (sym_entry_is(e, SYM_FUNC)) {
         func_t * func = e->func;
         return neart_params_count(func->params);
-    } else if (e->type == SYM_ANON_FUNC) {
+    } else if (sym_entry_is(e, SYM_ANON_FUNC)) {
         param_t * param = e->param;
         return neart_param_idx(param) - 1;
     }
