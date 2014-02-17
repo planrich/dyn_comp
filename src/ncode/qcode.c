@@ -33,6 +33,9 @@ struct __qinstr_t {
 };
 typedef struct __qinstr_t qinstr_t;
 
+static const qinstr_t ret_instr = { .instruction = QC_INSTR_RET, .target = 0, .param1 = 0, .param1_type = 0, 
+ .param2 = 0, .param2_type = 0 };
+
 struct __qcode_t {
     uint32_t instr_count;
     uint32_t instr_cursor;
@@ -220,7 +223,7 @@ static int _generate_func(_ncode_gen_t * gen, func_t * func) {
         _generate_pattern(gen, func, pattern, i++);
     }
 
-    _qcode_append(gen->code, &ret_instr);
+    _qcode_append(gen->code, ret_instr);
 
     return 0;
 }
