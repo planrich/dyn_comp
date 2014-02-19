@@ -20,6 +20,4 @@ typedef struct __ncode_t {
     code_t * code;
 } ncode_t;
 
-ncode_t * neart_generate_register_code(module_t * module);
-
 #endif /* _CODE_H_ */

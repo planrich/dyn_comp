@@ -3,7 +3,7 @@
 
 typedef char type_t;
 
-#define BUILTIN_TYPE_COUNT (11)
+#define BUILTIN_TYPE_COUNT (12)
 #define BUILTIN_NAME_MIN_LEN (3)
 // do not add ',' and '$' as char! colon is a separator
 // NOTE: order by 3 parameter -> need to find type efficient

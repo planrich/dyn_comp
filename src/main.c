@@ -7,7 +7,7 @@
 #include "logging.h"
 #include "config.h"
 #include "gpir.h"
-#include "code.h"
+#include "qcode.h"
 #include "sem.h"
 
 #ifdef NEART_VISUAL
@@ -98,7 +98,7 @@ int main(int argc, char *argv[])
     if (errno) {
         NEART_LOG(LOG_FATAL, "semantic error found. analysis returned %d\n", errno);
     } else {
-        ncode_t * code = neart_generate_register_code(module);
+        qcode_t * code = neart_generate_register_code(module);
         if (code) {
 
         }

@@ -247,11 +247,11 @@ expr:
         CPY_LOC(expr, @1, @1);
         $<expr>$ = expr;
     }
-  | T_INT { 
+  | T_INT flist { 
         expr_t * expr = neart_expr_alloc(ET_INTEGER);
         CPY_LOC(expr, @1, @1);
         expr->data = $<text>1;
-        //expr->next = $<expr>2;
+        expr->next = $<expr>2;
         $<expr>$ = expr; 
     }
   | T_STR { 

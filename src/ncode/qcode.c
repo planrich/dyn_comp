@@ -8,40 +8,15 @@
 #include "gpir.h"
 #include "vm.h"
 
-#define QC_INSTR_STACK_LOAD (0)
-#define QC_INSTR_ADD (1)
-#define QC_INSTR_RET (2)
-
 #define PT_REG (0)
 
 #define UNUSED (-1)
 
-const char hash_str_buffer[11];
+static const char hash_str_buffer[11];
 
-KHASH_MAP_INIT_STR(str_int, uint32_t);
-
-#define __free(x)
-KLIST_INIT(32, uint32_t, __free);
-
-struct __qinstr_t {
-    uint32_t instruction;
-    uint32_t target;
-    uint32_t param1;
-    uint32_t param1_type;
-    uint32_t param2;
-    uint32_t param2_type;
-};
-typedef struct __qinstr_t qinstr_t;
-
-static const qinstr_t ret_instr = { .instruction = QC_INSTR_RET, .target = 0, .param1 = 0, .param1_type = 0, 
+static const qinstr_t ret_instr = { .instruction = N_END, .target = 0, .param1 = 0, .param1_type = 0, 
  .param2 = 0, .param2_type = 0 };
 
-struct __qcode_t {
-    uint32_t instr_count;
-    uint32_t instr_cursor;
-    qinstr_t * instr;
-};
-typedef struct __qcode_t qcode_t;
 
 static void _debug_print_qcode(qcode_t * code) {
 
@@ -49,7 +24,7 @@ static void _debug_print_qcode(qcode_t * code) {
     qinstr_t * instr = code->instr;
     while (i < code->instr_cursor) {
 
-        printf("%d r%d r%d r%d\n", instr->instruction, instr->param1, instr->param2, instr->target);
+        printf("(%d) r%d r%d r%d\n", instr->instruction, instr->param1, instr->param2, instr->target);
 
         instr++;
         i++;
@@ -98,7 +73,7 @@ static void _instr_apply(_ncode_gen_t * gen, sem_post_expr_t * spe, klist_t(32) 
 
     if (spe->type == type_builtin) {
         if (spe->expr->type == ET_OP_IADD) {
-            instr.instruction = QC_INSTR_ADD;
+            instr.instruction = NR_ADD;
             instr.param1_type = PT_REG;
             kl_shift(32, stack, &instr.param1);
             instr.param2_type = PT_REG;
@@ -158,7 +133,7 @@ static int _generate_pattern(_ncode_gen_t * gen, func_t * func, pattern_t * patt
     return 1;
 }
 
-ncode_t * neart_generate_register_code(module_t * module) {
+qcode_t * neart_generate_register_code(module_t * module) {
 
     NEART_LOG(LOG_INFO, "invoking register code generation\n");
 
@@ -179,6 +154,7 @@ ncode_t * neart_generate_register_code(module_t * module) {
         if (kh_exist(h, k)) {
             sym_entry_t * entry = &kh_val(h, k);
             if (sym_entry_is(entry, SYM_FUNC)) {
+                NEART_LOG_DEBUG("generating function %s\n", entry->func->name);
                 _generate_func(gen, entry->func);
             }
         }
