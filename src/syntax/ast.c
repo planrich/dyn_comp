@@ -38,3 +38,19 @@ void neart_expr_free_r(expr_t * tree) {
     neart_expr_free(tree);
 }
 
+#include "logging.h"
+
+int32_t neart_expr_to_int32(expr_t * expr) {
+
+    int32_t out;
+
+    char * end_ptr = NULL;
+    out = strtol(expr->data, &end_ptr, 10);
+
+    if (*end_ptr != '\0') {
+        NEART_LOG_FATAL("could not parse integer '%s'. returned -1\n", expr->data);
+        return -1;
+    }
+
+    return out;
+}

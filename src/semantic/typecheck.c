@@ -16,6 +16,7 @@ inline static sem_post_expr_t * _alloc_sem_post_expr(type_t type, expr_t * expr)
     ALLOC_STRUCT(sem_post_expr_t, spe);
     spe->next = spe->prev = NULL;
     spe->type = type;
+    spe->type_specific = 0;
     spe->func = NULL;
     spe->expr = expr;
     spe->symbol_type = -1;
@@ -100,10 +101,16 @@ static sem_post_expr_t * _type_check_func(_pf_trans_t * ctx, func_t * func) {
 
     if (has_next) {
         neart_fatal_error(ERR_TYPE_TOO_MANY_ARGUMENTS, expr, 
-                "the function '%s' has %d argument(s) but %d is/are given.\n", func->name, param_count, has_next + list->size);
+                "the function '%s' has %d argument(s) but %ld is/are given.\n", func->name, param_count, has_next + list->size);
         kl_destroy(expr_t, list);
         return NULL;
     }
+
+    sem_post_expr_t * ret_spe = _alloc_sem_post_expr(type_func, expr);
+    ret_spe->func = func;
+    ret_spe->apply = 1;
+
+    spe = ret_spe;
 
     int i = 0;
     kliter_t(expr_t) * it;
@@ -111,14 +118,19 @@ static sem_post_expr_t * _type_check_func(_pf_trans_t * ctx, func_t * func) {
         expr_t * cur = kl_val(it);
         param_t * param = neart_param_at(params, i, 0);
         sem_post_expr_t * expr = neart_type_check(cc, cur, param);
-        if (spe != NULL) {
-            spe->next = expr;
-            expr->prev = spe;
+        expr->argument_index = i;
+        if (expr == NULL) {
+            neart_sem_post_expr_free(spe);
+            kl_destroy(expr_t, list);
+            return NULL;
         }
+
+        spe->prev = expr;
+        expr->next = spe;
         spe = expr;
     }
 
-    return spe;
+    return ret_spe;
 }
 
 sem_post_expr_t * _neart_type_check(_pf_trans_t * ctx) {
@@ -132,8 +144,6 @@ sem_post_expr_t * _neart_type_check(_pf_trans_t * ctx) {
         if (!neart_type_match(expr, expected_result, integer_param)) {
             goto bail_out_type_check;
         }
-        if (expr->left != NULL) { goto bail_out_type_check; }
-        if (expr->right != NULL) { goto bail_out_type_check; }
 
         spe = _alloc_sem_post_expr(type_int, expr);
         return spe;
@@ -153,13 +163,14 @@ sem_post_expr_t * _neart_type_check(_pf_trans_t * ctx) {
             if (!neart_type_match(expr, expected_result, param)) {
                 goto bail_out_type_check;
             }
-            if (expr->left != NULL) { goto bail_out_type_check; }
-            if (expr->right != NULL) { goto bail_out_type_check; }
 
-            spe = _alloc_sem_post_expr(symbol->type, expr);
+            spe = _alloc_sem_post_expr(type_generic, expr);
+            spe->type_specific = symbol->type;
             spe->symbol_type = symbol->entry_type;
             spe->argument_index = symbol->argument_index;
             return spe;
+        } else if (sym_entry_is(symbol, SYM_FUNC)) {
+            return _type_check_func(ctx, symbol->func);
         } else {
             printf("XXX unkown symbol entry type\n");
             goto bail_out_type_check;
@@ -176,21 +187,17 @@ sem_post_expr_t * _neart_type_check(_pf_trans_t * ctx) {
         }
 
         sem_post_expr_t * spe = _type_check_func(ctx, builtin);
+        spe->type = type_func_builtin;
         if (spe == NULL) {
             goto bail_out_type_check;
         }
-        sem_post_expr_t * func_apply = _alloc_sem_post_expr('$', expr);
-        func_apply->func = builtin;
-        func_apply->prev = spe;
-        spe->next = func_apply;
-        return func_apply;
+        return spe;
     }
 
 bail_out_type_check:
 
     printf("BAIL OUT\n");
     return NULL;
-
 }
 
 sem_post_expr_t * neart_type_check(compile_context_t * cc, expr_t * expr, param_t * expected_result) {
@@ -217,4 +224,3 @@ void neart_sem_post_expr_free(sem_post_expr_t * expr) {
     }
 }
 
-    

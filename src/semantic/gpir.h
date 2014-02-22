@@ -21,7 +21,9 @@ struct __func_t;
 struct __sem_post_expr_t {
     struct __sem_post_expr_t * next;
     struct __sem_post_expr_t * prev;
+    uint8_t apply; // check if this should reduced in the code generation phase. (func can be arguments)
     type_t type;
+    type_t type_specific;
     expr_t * expr;
     struct __func_t * func;
     int symbol_type;
@@ -139,7 +141,7 @@ void neart_module_add_function(compile_context_t * cc, module_t * ctx, func_t * 
  *     return 0;
  * }
  */
-params_t * neart_params_transform(module_t * module, expr_t * param_expr, int * param_count);
+params_t * neart_params_transform(module_t * module, expr_t * param_expr);
 
 /**
  * (ggii,

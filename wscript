@@ -5,9 +5,9 @@ import subprocess
 def options(c):
     c.load('compiler_c')
     # we are in debug mode all the time
-    c.add_option('--debug', action='store_true', default=True, help='compile in debug mode')
     c.add_option('--test', action='store_true', default=False, help='build the test suit')
     c.add_option('--wall', action='store_true', default=False, help='show all warnings generated from cc')
+    c.add_option('--release', action='store_true', default=False, help='show all warnings generated from cc')
 
 
 def configure(c):
@@ -20,7 +20,7 @@ def configure(c):
 
     c.env.CFLAGS += ['-std=c99']
 
-    if c.options.debug:
+    if not c.options.release:
         c.env.CFLAGS += ['-g']
     if c.options.wall:
         c.env.CFLAGS += ['-Wall']
@@ -35,7 +35,7 @@ def configure(c):
 
     c.define('NEART_VERSION', "%d.%d.%d" % (major,minor,bug))
     c.define('NEART_SCM_HASH', scmhash)
-    if c.options.debug:
+    if not c.options.release:
         c.define('NEART_VISUAL', 1)
     c.write_config_header('src/config.h')
 

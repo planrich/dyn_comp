@@ -82,10 +82,9 @@ static void _func_context_add(compile_context_t * cc,
     func_t * function = neart_func_alloc(func_name);
     neart_module_add_function(cc, module, function);
 
-    int param_count = 0;
     if (params_expr != NULL) {
-        function->params = neart_params_transform(module, params_expr->detail, &param_count);
-        NEART_LOG_DEBUG("func: %s has %d param(s)\n", func_name, param_count);
+        function->params = neart_params_transform(module, params_expr->detail);
+        NEART_LOG_DEBUG("func: %s has %d param(s)\n", func_name, neart_params_count(function->params));
     }
 
     *kl_pushp(func_t, funcs) = function;

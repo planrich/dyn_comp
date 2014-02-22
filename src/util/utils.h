@@ -2,6 +2,8 @@
 #ifndef _UTILS_H_
 #define _UTILS_H_
 
+#include <stdio.h>
+#include <stdlib.h>
 
 #define ALLOC_STRUCT(S,V) \
    S * V = malloc(sizeof(S)); \

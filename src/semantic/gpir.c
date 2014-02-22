@@ -61,7 +61,6 @@ void neart_pattern_free(pattern_t * pattern) {
 func_t * neart_func_alloc(const char * name) {
 
     ALLOC_STRUCT(func_t, f);
-
     f->name = strdup(name);
     f->params = NULL;
     f->patterns = kl_init(pattern_t);
@@ -107,7 +106,7 @@ void neart_module_add_function(compile_context_t * cc, module_t * mod, func_t * 
     sym_entry_t entry;
     entry.func = func;
     entry.entry_type = SYM_FUNC;
-    entry.type = 0;
+    entry.type = type_func;
     if (neart_sym_table_insert(cc->symbols, func->name, entry)) {
         errno = ERR_FUNC_ALREADY_DEF;
         NEART_LOG_FATAL("function %s is already defined in module %s\n", func->name, mod->name);
@@ -249,28 +248,29 @@ static void _params_transform(_ptrans_t * c) {
     }
 }
 
-params_t * neart_params_transform(module_t * module, expr_t * param_expr, int * param_count) {
+params_t * neart_params_transform(module_t * module, expr_t * param_expr) {
 
     params_t * params;
     int nodes = 0;
+    int param_count = 0;
 
     ITER_EXPR_NEXT(param_expr, p, it)
-        (*param_count)++;
+        param_count++;
         nodes += _expr_node_count(p);
     ITER_EXPR_END(it)
 
     // param count is at least 1
-    int colons = *param_count;
+    int colons = param_count;
     params = malloc( sizeof(params_t) /* count */ 
-                   + sizeof(param_offset_t) * *param_count /* offsets to parameters */
+                   + sizeof(param_offset_t) * param_count /* offsets to parameters */
                    + sizeof(param_t) * (nodes + colons) * 2 /* bytes describing the types. 1 byte char, 1 byte id */
                    );
 
-    *params = *param_count;
+    *params = param_count;
 
     param_offset_t * off = (param_offset_t*) (params+1);
 
-    param_t * param = (param_t*) off + (*param_count) * sizeof(param_offset_t);
+    param_t * param = (param_t*) off + (param_count) * sizeof(param_offset_t);
 
     _ptrans_t trans;
     trans.first_param = param_expr;

@@ -7,8 +7,11 @@
 #include "symt.h"
 #include "gpir.h"
 #include "vm.h"
+#include "ast.h"
+#include "cpool_builder.h"
 
 #define PT_REG (0)
+#define PT_CPOOL_IDX (1)
 
 #define UNUSED (-1)
 
@@ -24,7 +27,7 @@ static void _debug_print_qcode(qcode_t * code) {
     qinstr_t * instr = code->instr;
     while (i < code->instr_cursor) {
 
-        printf("(%d) r%d r%d r%d\n", instr->instruction, instr->param1, instr->param2, instr->target);
+        printf("op(%d) p1: r%d p2: r%d t: r%d\n", instr->instruction, instr->param1, instr->param2, instr->target);
 
         instr++;
         i++;
@@ -33,7 +36,7 @@ static void _debug_print_qcode(qcode_t * code) {
 }
 
 typedef struct __ncode_gen_t {
-    cpool_t * cpool;
+    cpool_builder_t * cpool;
     qcode_t * code;
 
     uint8_t arguments[255];
@@ -71,7 +74,7 @@ static void _instr_apply(_ncode_gen_t * gen, sem_post_expr_t * spe, klist_t(32) 
 
     qinstr_t instr;
 
-    if (spe->type == type_builtin) {
+    if (spe->type == type_func_builtin) {
         if (spe->expr->type == ET_OP_IADD) {
             instr.instruction = NR_ADD;
             instr.param1_type = PT_REG;
@@ -82,6 +85,36 @@ static void _instr_apply(_ncode_gen_t * gen, sem_post_expr_t * spe, klist_t(32) 
             *kl_pushp(32, stack) = instr.target;
             _qcode_append(gen->code, instr);
         }
+    } else if (spe->type == type_func) {
+        int i = 0;
+
+        instr.target = 0;
+
+        if (neart_params_count(spe->func->params) > 5) {
+            NEART_LOG_FATAL("cannot handle more than 5 params ... yet\n");
+        }
+        // this is naive! what if the register is dirty?
+        for (i = 0; i < neart_params_count(spe->func->params); i++) {
+            instr.instruction = NR_L32;
+            instr.param1_type = PT_REG;
+            instr.param1 = i;
+            kl_shift(32, stack, &instr.param2);
+
+            _qcode_append(gen->code, instr);
+        }
+
+        instr.instruction = NR_CALL;
+        instr.param1_type = PT_CPOOL_IDX;
+        uint32_t idx = neart_cpool_builder_find_or_reserve_index(gen->cpool, spe->func->name);
+        instr.param1 = (int32_t)idx;
+        instr.param2 = 0;
+        instr.param2_type = 0;
+        instr.target = 0;
+
+        _qcode_append(gen->code, instr);
+
+    } else {
+        NEART_LOG_FATAL("incomplete impl of instr apply %c\n", spe->type);
     }
 }
 static void _instr_load(_ncode_gen_t * gen, sem_post_expr_t * spe, klist_t(32) * stack) {
@@ -90,19 +123,17 @@ static void _instr_load(_ncode_gen_t * gen, sem_post_expr_t * spe, klist_t(32) *
     int ret;
     khiter_t k;
 
-    // args are in specific registers (from 0-5). 6+ are on the stack
     if ((spe->symbol_type & SYM_ARG) != 0) {
-        if (spe->argument_index <= 5) {
-            //sprintf(hash_str_buffer, "a%d", spe->entry->index);
 
-            /*k = kh_put(str_int, gen->register_assoc, hash_str_buffer, &ret);
-            if (ret) {
-                kh_val(gen->register_assoc, k) = spe->entry->index;
-            }*/
+        if (spe->type == type_int) {
+            *kl_pushp(32, stack) = neart_expr_to_int32(spe->expr);
+        } else if (spe->type == type_generic && spe->argument_index <= 5) {
+            // args are in specific registers (from 0-5). 6+ are on the stack
             *kl_pushp(32, stack) = spe->argument_index;
-
+        } else if (spe->argument_index > 5) {
+            NEART_LOG_FATAL("cannot handle more than 5 arguments. yet...\n");
         } else {
-            NEART_LOG_FATAL("cannot handle more than 5 arguments. yet...");
+            NEART_LOG_FATAL("cannot handle load argument\n");
         }
     }
 }
@@ -117,11 +148,9 @@ static int _generate_pattern(_ncode_gen_t * gen, func_t * func, pattern_t * patt
 
     while (cursor != NULL) {
 
-        if (cursor->type == type_int) {
+        if (!cursor->apply) {
             _instr_load(gen, cursor, stack);
-        }
-
-        if (cursor->type == '$') {
+        } else {
             _instr_apply(gen, cursor, stack);
         }
 
@@ -139,11 +168,11 @@ qcode_t * neart_generate_register_code(module_t * module) {
 
     qcode_t * code = _qcode_alloc();
 
-    ALLOC_STRUCT(cpool_t, cpool);
+    ALLOC_STRUCT(cpool_builder_t, cpool);
 
     ALLOC_STRUCT(_ncode_gen_t, gen);
     gen->reg = 0;
-    gen->cpool = cpool;
+    gen->cpool = neart_cpool_builder_alloc();
     gen->code = code;
     gen->register_assoc = kh_init(str_int);
 
@@ -182,15 +211,7 @@ static int _generate_func(_ncode_gen_t * gen, func_t * func) {
 
     _gen_start_func(gen);
 
-    /*
-    int i;
-    for (i = 0; i < neart_params_count(params); ++i) {
-        param_t * param = neart_param_at(params, i, 0);
-        if (neart_param_type(param) == type_int) {
-            gen->arguments[i] = _gen_new_register(gen);
-            printf("arg %d must is in reg %d\n", i, gen->arguments[i]);
-        }
-    }*/
+    neart_cpool_builder_find_or_reserve_index(gen->cpool, func->name);
 
     kliter_t(pattern_t) * k;
     int i = 0;

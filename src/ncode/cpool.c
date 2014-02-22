@@ -20,6 +20,15 @@ cpool_t * neart_cpool_alloc() {
     return p;
 }
 
+void * neart_cpool_reserve(cpool_t * pool, int32_t size) {
+
+    void * off_cur = pool->offset_cursor;
+
+    neart_cpool_insert(pool, NULL, 0, size);
+
+    return off_cur;
+}
+
 uint32_t neart_cpool_insert(cpool_t * pool, void * data, int offset, int size) {
 
     uint32_t idx = pool->size++;
@@ -44,7 +53,9 @@ uint32_t neart_cpool_insert(cpool_t * pool, void * data, int offset, int size) {
         pool->pool_end = pool->pool_start + size;
     }
 
-    memcpy(pool_cur, data + offset, size);
+    if (data != NULL) {
+        memcpy(pool_cur, data + offset, size);
+    }
     pool->pool_cursor += size;
 
     return *off_cur;

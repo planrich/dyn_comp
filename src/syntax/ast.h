@@ -2,6 +2,7 @@
 #ifndef _AST_H_
 #define _AST_H_
 
+#include <inttypes.h>
 #include "khash.h"
 #include "klist.h"
 
@@ -77,6 +78,9 @@ void neart_expr_free_r(expr_t * tree);
  */
 void neart_expr_free(expr_t * tree);
 
-
+/**
+ * convert the data of that expression to an 32 bit integer
+ */
+int32_t neart_expr_to_int32(expr_t * expr);
 
 #endif

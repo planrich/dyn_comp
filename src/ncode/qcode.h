@@ -3,19 +3,18 @@
 
 #include "code.h"
 
-
 KHASH_MAP_INIT_STR(str_int, uint32_t);
 
 #define __free(x)
-KLIST_INIT(32, uint32_t, __free);
+KLIST_INIT(32, int32_t, __free);
 
 struct __qinstr_t {
     rcode_t instruction;
-    uint32_t target;
-    uint32_t param1;
-    uint32_t param1_type;
-    uint32_t param2;
-    uint32_t param2_type;
+    int32_t target;
+    int32_t param1;
+    int32_t param1_type;
+    int32_t param2;
+    int32_t param2_type;
 };
 typedef struct __qinstr_t qinstr_t;
 

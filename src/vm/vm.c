@@ -52,7 +52,14 @@ instr_int_load_stack:
 
 instr_reg_print:
     p1 = *ip++;
-    printf("reg %d %ld 0x%x\n", p1, registers[p1], registers[p1]);
+    printf("reg %d %lld 0x%llx\n", p1, registers[p1], registers[p1]);
+    goto vm_dispatch;
+instr_register_load_int32:
+
+    goto vm_dispatch;
+instr_call:
+
+
     goto vm_dispatch;
 instr_end:
     return 1;
