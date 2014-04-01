@@ -36,7 +36,7 @@ def configure(c):
     c.define('NEART_VERSION', "%d.%d.%d" % (major,minor,bug))
     c.define('NEART_SCM_HASH', scmhash)
     if not c.options.release:
-        c.define('NEART_VISUAL', 1)
+        c.define('NEART_DEBUG', 1)
     c.write_config_header('src/config.h')
 
     c.recurse('src')

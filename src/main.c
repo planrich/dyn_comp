@@ -9,8 +9,9 @@
 #include "gpir.h"
 #include "qcode.h"
 #include "sem.h"
+#include "cpool_builder.h"
 
-#ifdef NEART_VISUAL
+#ifdef NEART_DEBUG
   #include "dot_syntax_tree.h"
 #endif
 
@@ -35,7 +36,7 @@ int main(int argc, char *argv[])
     while (1) {
         int option_index = 0;
         static struct option long_options[] = {
-#ifdef NEART_VISUAL
+#ifdef NEART_DEBUG
             {"syntax",  required_argument, 0,  0 },
             {"filter",  required_argument, 0,  1 },
 #endif
@@ -49,7 +50,7 @@ int main(int argc, char *argv[])
             break;
 
         switch (c) {
-#ifdef NEART_VISUAL
+#ifdef NEART_DEBUG
             case 0:
                 if (optarg) {
                     dot_file = optarg;
@@ -81,7 +82,7 @@ int main(int argc, char *argv[])
         return 1;
     } else {
         NEART_LOG(LOG_INFO, "parsing '%s' succeded\n", file);
-#ifdef NEART_VISUAL
+#ifdef NEART_DEBUG
         if (dot_syntax_tree) {
             NEART_LOG(LOG_INFO, "writing syntax tree to file '%s'\n", dot_file);
             neart_write_syntax_tree_to_file(dot_file, root, dot_filter_func);
@@ -98,10 +99,14 @@ int main(int argc, char *argv[])
     if (errno) {
         NEART_LOG(LOG_FATAL, "semantic error found. analysis returned %d\n", errno);
     } else {
-        qcode_t * code = neart_generate_register_code(module);
-        if (code) {
 
+        cpool_builder_t * builder = neart_cpool_builder_alloc();
+        qcode_t * code = neart_generate_register_code(module, builder);
+        if (code) {
+            neart_write_to_file(builder, code, "code.nc");
         }
+
+        neart_cpool_builder_free(builder);
     }
 
     if (module != NULL) {

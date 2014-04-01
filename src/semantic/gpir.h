@@ -183,7 +183,7 @@ param_t * neart_param_at(params_t * params, int idx, int nesting);
 
 #define neart_param_type(param) (*param)
 #define neart_param_idx(param) ((uint8_t)*(param+1))
-#define neart_param_next(param) (param+=2)
+#define neart_param_next(param) (param+2)
 #define neart_param_end(param) (neart_param_type(param) == ',')
 
 #endif

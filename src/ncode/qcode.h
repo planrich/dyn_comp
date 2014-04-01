@@ -2,6 +2,13 @@
 #define _QCODE_H_
 
 #include "code.h"
+#include "cpool_builder.h"
+
+#define PT_REG (0)
+#define PT_CPOOL_IDX (1)
+#define PT_CONSTANT (2)
+
+#define UNUSED (-1)
 
 KHASH_MAP_INIT_STR(str_int, uint32_t);
 
@@ -25,6 +32,8 @@ struct __qcode_t {
 };
 typedef struct __qcode_t qcode_t;
 
-qcode_t * neart_generate_register_code(module_t * module);
+qcode_t * neart_generate_register_code(module_t * module, cpool_builder_t * builder);
+
+void neart_write_to_file(cpool_builder_t * builder, qcode_t * code, const char * name);
 
 #endif /* _QCODE_H_ */

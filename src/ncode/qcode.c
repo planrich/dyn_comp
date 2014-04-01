@@ -3,37 +3,19 @@
 #include "qcode.h"
 
 #include "logging.h"
+#include "config.h"
 #include "utils.h"
 #include "symt.h"
 #include "gpir.h"
 #include "vm.h"
 #include "ast.h"
 #include "cpool_builder.h"
-
-#define PT_REG (0)
-#define PT_CPOOL_IDX (1)
-
-#define UNUSED (-1)
+#include "rcode_debug.h"
 
 static const char hash_str_buffer[11];
 
-static const qinstr_t ret_instr = { .instruction = N_END, .target = 0, .param1 = 0, .param1_type = 0, 
- .param2 = 0, .param2_type = 0 };
-
-
-static void _debug_print_qcode(qcode_t * code) {
-
-    int i = 0;
-    qinstr_t * instr = code->instr;
-    while (i < code->instr_cursor) {
-
-        printf("op(%d) p1: r%d p2: r%d t: r%d\n", instr->instruction, instr->param1, instr->param2, instr->target);
-
-        instr++;
-        i++;
-    }
-
-}
+static const qinstr_t ret_instr = { .instruction = N_END, .target = 0, .param1 = 0, .param1_type = UNUSED, 
+ .param2 = 0, .param2_type = UNUSED };
 
 typedef struct __ncode_gen_t {
     cpool_builder_t * cpool;
@@ -96,9 +78,12 @@ static void _instr_apply(_ncode_gen_t * gen, sem_post_expr_t * spe, klist_t(32) 
         // this is naive! what if the register is dirty?
         for (i = 0; i < neart_params_count(spe->func->params); i++) {
             instr.instruction = NR_L32;
+            // load in register number i
             instr.param1_type = PT_REG;
             instr.param1 = i;
+            // on the stack the actual variable is stored
             kl_shift(32, stack, &instr.param2);
+            instr.param2_type = PT_CONSTANT;
 
             _qcode_append(gen->code, instr);
         }
@@ -106,9 +91,10 @@ static void _instr_apply(_ncode_gen_t * gen, sem_post_expr_t * spe, klist_t(32) 
         instr.instruction = NR_CALL;
         instr.param1_type = PT_CPOOL_IDX;
         uint32_t idx = neart_cpool_builder_find_or_reserve_index(gen->cpool, spe->func->name);
-        instr.param1 = (int32_t)idx;
+        instr.param1 = (int32_t)idx; // index in the func
+        instr.param1_type = PT_CPOOL_IDX;
         instr.param2 = 0;
-        instr.param2_type = 0;
+        instr.param2_type = UNUSED;
         instr.target = 0;
 
         _qcode_append(gen->code, instr);
@@ -162,17 +148,15 @@ static int _generate_pattern(_ncode_gen_t * gen, func_t * func, pattern_t * patt
     return 1;
 }
 
-qcode_t * neart_generate_register_code(module_t * module) {
+qcode_t * neart_generate_register_code(module_t * module, cpool_builder_t * builder) {
 
     NEART_LOG(LOG_INFO, "invoking register code generation\n");
 
     qcode_t * code = _qcode_alloc();
 
-    ALLOC_STRUCT(cpool_builder_t, cpool);
-
     ALLOC_STRUCT(_ncode_gen_t, gen);
     gen->reg = 0;
-    gen->cpool = neart_cpool_builder_alloc();
+    gen->cpool = builder; // neart_cpool_builder_alloc();
     gen->code = code;
     gen->register_assoc = kh_init(str_int);
 
@@ -189,11 +173,13 @@ qcode_t * neart_generate_register_code(module_t * module) {
         }
     }
 
-    _debug_print_qcode(code);
+#ifdef NEART_DEBUG
+    neart_debug_print_rcode(code);
+#endif
 
     kh_destroy(str_int, gen->register_assoc);
 
-    return NULL;
+    return code;
 }
 
 static void _gen_start_func(_ncode_gen_t * gen) {
@@ -205,7 +191,6 @@ static void _gen_start_func(_ncode_gen_t * gen) {
 
 static int _generate_func(_ncode_gen_t * gen, func_t * func) {
 
-    printf("generating %s\n", func->name);
     klist_t(pattern_t) * l = func->patterns;
     params_t * params = func->params;
 
