@@ -1,7 +1,7 @@
 #ifndef _QCODE_H_
 #define _QCODE_H_
 
-#include "code.h"
+#include "rcode.h"
 #include "cpool_builder.h"
 
 #define PT_REG (0)

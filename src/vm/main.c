@@ -6,6 +6,7 @@
 #include "logging.h"
 #include "config.h"
 #include "vm.h"
+#include "loader.h"
 
 int main(int argc, char ** argv) {
     int c;
@@ -24,28 +25,22 @@ int main(int argc, char ** argv) {
 
         switch (c) {
             case 'v':
-                //neart_log_level = 0xff; // log everything
+                neart_log_level = 0xff; // log everything
                 break;
         }
     }
 
-
     NEART_LOG_INFO("nvm %s-%s\n", NEART_VERSION, NEART_SCM_HASH);
+    if (optind >= argc) {
+        NEART_LOG_FATAL("usage: nvm [-v] <rcode_file>\n");
+        return EXIT_FAILURE;
+    }
 
-    /*code_t code[] = {
-        NI_SPI, 0x1, 0x0, 0x0, 0x0,
-        NI_SPI, 0x2, 0x0, 0x0, 0x0,
-        NI_LSI, 0x0,
-        NI_LSI, 0x1,
-        NR_ADD, 0x0, 0x1, 0x3,
-        NR_SUB, 0x3, 0x0, 0x0,
-        NR_PUT, 0x0,
-        N_END
-    };*/
+    // use the loader to load the code and the cpool
+    vmctx_t * ctx = neart_load_rcode_file(argv[optind]);
 
-    //if (neart_exec(code)) {
-    //    return 0;
-    //}
+    int ret = neart_exec(ctx);
+    neart_vmctx_free(ctx);
 
-    return 1;
+    return ret;
 }

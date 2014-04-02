@@ -19,13 +19,14 @@
  *         +--------------------------+
  */
 typedef struct __cpool_t {
-    uint32_t size; // the actual size
-    uint32_t offset; // the offset. mainly for book keeping (could be calc out of offset_start and offset_cursor
     uint32_t * offset_start;
     uint32_t * offset_end;
-    uint32_t * offset_cursor;
     void * pool_start;
     void * pool_end;
+
+    uint32_t size; // the actual size
+    uint32_t offset; // the offset. mainly for book keeping (could be calc out of offset_start and offset_cursor
+    uint32_t * offset_cursor;
     void * pool_cursor;
 } cpool_t;
 

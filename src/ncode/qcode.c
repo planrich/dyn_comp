@@ -10,12 +10,27 @@
 #include "vm.h"
 #include "ast.h"
 #include "cpool_builder.h"
-#include "rcode_debug.h"
+#include "qcode_debug.h"
 
 static const char hash_str_buffer[11];
 
-static const qinstr_t ret_instr = { .instruction = N_END, .target = 0, .param1 = 0, .param1_type = UNUSED, 
- .param2 = 0, .param2_type = UNUSED };
+static const qinstr_t ret_instr = { 
+    .instruction = N_END, 
+    .target = 0, 
+    .param1 = 0, 
+    .param1_type = UNUSED, 
+    .param2 = 0, 
+    .param2_type = UNUSED 
+};
+
+static const qinstr_t ENTER_INSTR = { 
+    .instruction = N_ENTER, 
+    .target = 0, 
+    .param1 = 0, 
+    .param1_type = PT_CPOOL_IDX, 
+    .param2 = 0, 
+    .param2_type = UNUSED 
+};
 
 typedef struct __ncode_gen_t {
     cpool_builder_t * cpool;
@@ -88,8 +103,7 @@ static void _instr_apply(_ncode_gen_t * gen, sem_post_expr_t * spe, klist_t(32) 
             _qcode_append(gen->code, instr);
         }
 
-        instr.instruction = NR_CALL;
-        instr.param1_type = PT_CPOOL_IDX;
+        instr.instruction = N_CALL;
         uint32_t idx = neart_cpool_builder_find_or_reserve_index(gen->cpool, spe->func->name);
         instr.param1 = (int32_t)idx; // index in the func
         instr.param1_type = PT_CPOOL_IDX;
@@ -194,9 +208,13 @@ static int _generate_func(_ncode_gen_t * gen, func_t * func) {
     klist_t(pattern_t) * l = func->patterns;
     params_t * params = func->params;
 
+    qinstr_t instr = ENTER_INSTR;
     _gen_start_func(gen);
 
-    neart_cpool_builder_find_or_reserve_index(gen->cpool, func->name);
+    uint32_t idx = neart_cpool_builder_find_or_reserve_index(gen->cpool, func->name);
+
+    instr.param1 = (int32_t)idx;
+    _qcode_append(gen->code, instr);
 
     kliter_t(pattern_t) * k;
     int i = 0;
