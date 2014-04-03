@@ -3,7 +3,6 @@
 
 #include <stdlib.h>
 #include <inttypes.h>
-#include <alloca.h>
 #include "loader.h"
 #include "logging.h"
 #include "config.h"
@@ -15,6 +14,9 @@
 #else
     #define VM_LOG(string, ...)
 #endif
+
+#define stack_push_64(var) *((int64_t*)sp) = var; sp -= 2
+#define stack_push_32(var) *((int32_t*)sp) = var; sp -= 1
 
 int neart_exec(vmctx_t * ctx) {
 
@@ -32,6 +34,15 @@ int neart_exec(vmctx_t * ctx) {
     rcode_t * code_base = ctx->code;
     register rcode_t * ip = ctx->code;
     rcode_t instr;
+
+    // TODO stack not with alloca
+
+    stack_push_64(bp);
+    bp = sp + 2;
+
+    // push the return address
+    stack_push_32(code_base);
+    VM_LOG("push return address %p\n", ip - code_base);
 
 vm_dispatch:
     VM_LOG("dispatch opcode 0x%x %p\n", *ip, ip);
@@ -76,35 +87,40 @@ instr_reg_load_int32: // 0x7
 
     goto vm_dispatch;
 instr_call: // 0x6
+    VM_LOG("call ip is %p\n", ip);
+
     i1 = *((int32_t*)ip);
     ip += 4;
 
     // push the base pointer
-    *sp = (stack_cell_t)bp;
-    //
-    bp = sp;
-    sp -= 1;
+    stack_push_64(bp);
+    bp = sp + 2;
 
     // push the return address
-    *sp = (stack_cell_t)ip;
-    sp -= 1;
+    stack_push_32(ip - code_base);
+    VM_LOG("push return address %p\n", ip - code_base);
 
     // TODO local variables -> reserve on the stack
 
     ip = code_base + i1;
+    VM_LOG("call ip now is is %p ant points to %x\n", ip, *ip);
+    VM_LOG("bp is %p sp is %p\n", bp, sp);
     goto vm_dispatch;
 instr_enter: // 0x8
     // first parameter points into cpool
     ip += 4;
     goto vm_dispatch;
 instr_ret:
-    sp = bp - 1;
-    ip = (rcode_t*)*sp;
+    sp = bp - 2;
+    ip = code_base + *sp;
+    VM_LOG("call ip now is is %p ant points to %x %p\n", ip, *ip, sp);
+    return 0;
 
-    sp += 1;
-    bp = (stack_cell_t*)*sp;
+    sp = bp;
+    bp = *((uint64_t*)sp);
 
-    if (bp == stack) {
+    printf("stack %p bp %p sp %p\n", stack, bp, sp);
+    if (sp == stack) {
         return 0;
     }
 

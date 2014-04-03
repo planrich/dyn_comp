@@ -1,5 +1,6 @@
 #include "cpool_builder.h"
 
+
 #include "utils.h"
 #include <string.h>
 #include "logging.h"
@@ -8,6 +9,7 @@ int32_t neart_cpool_lookup_symbol(cpool_t * pool, const char * name) {
     uint32_t * wptr = pool->offset_start;
     uint32_t * wptr_end = pool->offset_cursor;
     int32_t index = -1;
+    int32_t i = 0;
 
     //printf("wptr: %lx, wptr_end: %lx, diff: %d\n", wptr, wptr_end, wptr_end - wptr);
 
@@ -20,10 +22,11 @@ int32_t neart_cpool_lookup_symbol(cpool_t * pool, const char * name) {
 
         if (strcmp(name, sym_name) == 0) {
             //printf("lookup at name: %s func: %d\n", name, index);
-            return index;
+            return i;
         }
 
         wptr++;
+        i++;
     }
 
     return -1;
@@ -50,7 +53,7 @@ int32_t neart_cpool_builder_find_or_reserve_index(cpool_builder_t * cpool, const
         memcpy(sym_block, &func_index, 4);
         strcpy(sym_block+4, name);
 
-        printf("inserted at name: %s func: %d sym: %d at addr: 0x%p\n", sym_block+4, func_index, sym_index, sym_block);
+        printf("inserted at name: %s func: %d sym: %d at addr: %p\n", sym_block+4, func_index, sym_index, sym_block);
     }
 
 

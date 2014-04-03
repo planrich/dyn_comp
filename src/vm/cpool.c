@@ -20,6 +20,11 @@ cpool_t * neart_cpool_alloc() {
     return p;
 }
 
+void * neart_cpool_lookup(cpool_t * pool, int32_t index) {
+    uint32_t idx = *(pool->offset_start + (uint32_t)index);
+    return pool->pool_start + idx;
+}
+
 void * neart_cpool_reserve(cpool_t * pool, int32_t size, int32_t * index) {
 
     void * off_cur = pool->pool_cursor;

@@ -42,6 +42,8 @@ void neart_cpool_free(cpool_t * pool);
  */
 void * neart_cpool_reserve(cpool_t * pool, int32_t size, int32_t * index);
 
+void * neart_cpool_lookup(cpool_t * pool, int32_t index);
+
 #define neart_cpool_insert_int(pool, integer) neart_cpool_insert(pool, &integer, 0, 4)
 #define neart_cpool_insert_str(pool, str) neart_cpool_insert(pool, &str, 0, strlen(str))
 
