@@ -18,7 +18,7 @@ def configure(c):
 
     c.env.STLIB += ['fl']
 
-    c.env.CFLAGS += ['-std=gnu99']
+    c.env.CFLAGS += ['-std=c99']
 
     if not c.options.release:
         c.env.CFLAGS += ['-g']

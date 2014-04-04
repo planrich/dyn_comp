@@ -20,7 +20,7 @@
 
 void * get_sp() {
     void * ptr;
-    asm( "movq %%rsp, %0" : "=r"(ptr));
+    __asm__( "movq %%rsp, %0" : "=r"(ptr));
     return ptr;
 }
 
