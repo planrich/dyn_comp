@@ -49,7 +49,7 @@ static uint32_t fwrite_rcode(IO * io, qcode_t * code, cpool_t * pool) {
             *kl_pushp(32, addresses) = ftell(io); 
             *kl_pushp(32, addresses) = p1;
 
-            printf("enter at %d p1: %d\n", ftell(io), p1);
+            printf("enter at %ld p1: %d\n", ftell(io), p1);
         }
 
         offset += 1;

@@ -4,11 +4,9 @@
 #include "io.h"
 #include "logging.h"
 #include <stdio.h>
-#include <alloca.h>
 
 vmctx_t * neart_vmctx_alloc(void) {
     ALLOC_STRUCT(vmctx_t, ctx);
-    ctx->stack = alloca(2^10);
     ctx->code = NULL;
     ctx->symbols = NULL;
 
