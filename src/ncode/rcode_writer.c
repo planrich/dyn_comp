@@ -11,7 +11,6 @@ int neart_parameter_usage(rcode_t instr);
 
 static void fwrite_cpool(FILE * out, cpool_t * pool) {
     uint32_t size = neart_cpool_total_size(pool);
-    NEART_LOG_DEBUG("writing pool of size %d\n", size);
 
     size = neart_cpool_offset_size(pool);
     fwrite(pool->offset_start, size, 1, out);
@@ -20,13 +19,13 @@ static void fwrite_cpool(FILE * out, cpool_t * pool) {
     fwrite(pool->pool_start, size, 1, out);
 }
 
-static uint32_t fwrite_rcode(IO * io, qcode_t * code, cpool_t * pool) {
+static int32_t fwrite_rcode(IO * io, qcode_t * code, cpool_t * pool) {
 
     klist_t(32) * addresses = kl_init(32);
 
     uint32_t code_base = (uint32_t)ftell(io);
 
-    uint32_t offset;
+    int32_t offset = 0;
     int i = 0;
     char type = '\0';
     qinstr_t * instr = code->instr;
@@ -41,15 +40,11 @@ static uint32_t fwrite_rcode(IO * io, qcode_t * code, cpool_t * pool) {
             // since opcode is already written substract 1
             uint32_t current = ftell(io);
             *((uint32_t*)data) = (current - code_base) - 1; 
-            printf("enter: %s %d => %d,,, %d\n" , data+4, current, code_base, *((uint32_t*)data));
-            printf("pos %p\n", data);
         }
 
         if (instr->instruction == N_CALL) {
             *kl_pushp(32, addresses) = ftell(io); 
             *kl_pushp(32, addresses) = p1;
-
-            printf("enter at %ld p1: %d\n", ftell(io), p1);
         }
 
         offset += 1;
@@ -96,10 +91,8 @@ static uint32_t fwrite_rcode(IO * io, qcode_t * code, cpool_t * pool) {
         // lookup the data in the constant pool an entry looks like <int><funcname>
         // the first is the relative address from the code_base
         uint32_t * data = neart_cpool_lookup(pool, idx);
-            printf("ipos %p, idx %d\n", data, idx);
         fseek(io, addr, SEEK_SET);
         ioo_int_le(io, *data);
-        printf("%d -> %d\n", (uint32_t)addr, *data);
     }
 
     kl_destroy(32, addresses);
@@ -141,6 +134,7 @@ void neart_write_to_file(cpool_builder_t * builder, qcode_t * code, const char *
 
     fseek(io, header.cpool_offset, SEEK_SET);
     fwrite_cpool(io, builder->sym_pool);
+    NEART_LOG_DEBUG("file stats: pool %d bytes, code %d bytes\n", size, header.code_length);
 
     fclose(io);
 }
