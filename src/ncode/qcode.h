@@ -4,9 +4,9 @@
 #include "rcode.h"
 #include "cpool_builder.h"
 
-#define PT_REG (0)
-#define PT_CPOOL_IDX (1)
-#define PT_CONSTANT (2)
+#define PT_REG (1)
+#define PT_CPOOL_IDX (2)
+#define PT_CONSTANT (3)
 
 #define UNUSED (-1)
 

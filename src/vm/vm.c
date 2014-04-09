@@ -38,7 +38,7 @@ int neart_exec(vmctx_t * ctx) {
     stack_cell_t * sp; // = stack;
     stack_cell_t * bp; // = stack;
     rcode_t * code_base = ctx->code;
-    register rcode_t * ip = ctx->code;
+    register rcode_t * ip = code_base + ctx->main_offset;
     rcode_t instr;
 
 
@@ -55,7 +55,7 @@ int neart_exec(vmctx_t * ctx) {
     stack_push_32(0);
 
 vm_dispatch:
-    VM_LOG("dispatch opcode 0x%x %p\n", *ip, ip);
+    VM_LOG("dispatch opcode 0x%x %p byteoffset: %d\n", *ip, ip, ip - code_base);
     instr = *ip++;
     goto *labels[instr];
 
@@ -86,14 +86,14 @@ instr_int_load_stack:
 
 instr_reg_print:
     p1 = *ip++;
-    printf("reg %d %lld 0x%llx\n", p1, registers[p1], registers[p1]);
     goto vm_dispatch;
 instr_reg_load_int32: // 0x7
 
-    p1 = *ip++;
+    p1 = *(ip+4);
 
     registers[p1] = *((int32_t*)ip);
-    ip += 4;
+    ip += 5;
+
 
     goto vm_dispatch;
 instr_call: // 0x6
@@ -115,7 +115,7 @@ instr_enter: // 0x8
     // first parameter points into cpool
     ip += 4;
     goto vm_dispatch;
-instr_ret:
+instr_ret: //0x0
     sp = bp - 2;
     ip = code_base + *sp;
 
@@ -124,9 +124,16 @@ instr_ret:
 
     if (sp == stack) {
         VM_LOG("reached end of program. ret sp = stack\n");
+        for (int i = 0; i < 10; i++) {
+            VM_LOG("REG %d: value %d (0x%x)\n", i, registers[i], registers[i]);
+        }
         return 0;
     }
 
     goto vm_dispatch;
-
+instr_reg_mov: // 0x9
+    p1 = *ip++;
+    p2 = *ip++;
+    registers[p2] = registers[p1];
+    goto vm_dispatch;
 }

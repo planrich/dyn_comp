@@ -84,7 +84,7 @@ static void _func_context_add(compile_context_t * cc,
 
     if (params_expr != NULL) {
         function->params = neart_params_transform(module, params_expr->detail);
-        NEART_LOG_DEBUG("func: %s has %d param(s)\n", func_name, neart_params_count(function->params));
+        //NEART_LOG_DEBUG("func: %s has %d param(s)\n", func_name, neart_params_count(function->params));
     }
 
     *kl_pushp(func_t, funcs) = function;
@@ -134,10 +134,10 @@ static void _check_pattern_semantics(compile_context_t * cc,
 
     // type check the expression
     errno = 0;
-    sem_post_expr_t * spe = neart_type_check(cc, expr, neart_params_last(func->params));
+    sem_expr_t * spe = neart_type_check(cc, expr, neart_params_last(func->params));
     if (errno) { goto bail_out_pat; }
 
-    sem_post_expr_t * cur = spe;
+    sem_expr_t * cur = spe;
     while (cur != NULL && cur->prev != NULL) { cur = cur->prev; }
 
     pattern_t * pat = neart_pattern_alloc(cur);

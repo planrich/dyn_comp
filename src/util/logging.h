@@ -29,5 +29,7 @@ int neart_log_level;
 
 #define NEART_MSG(msg, ...) printf(msg, ##__VA_ARGS__);
 
+#define IMPL_ME() NEART_LOG_FATAL("(not impl.) func=%s line=%d  file=%s \n", __PRETTY_FUNCTION__, __LINE__, __FILE__)
+
 #endif
 

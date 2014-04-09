@@ -18,21 +18,23 @@
 
 struct __func_t;
 
-struct __sem_post_expr_t {
-    struct __sem_post_expr_t * next;
-    struct __sem_post_expr_t * prev;
+struct __sem_expr_t {
+    struct __sem_expr_t * next;
+    struct __sem_expr_t * prev;
     uint8_t apply; // check if this should reduced in the code generation phase. (func can be arguments)
-    type_t type;
+    type_t type; // the type it has. $ builtin, i interger, g generic
     type_t type_specific;
-    expr_t * expr;
-    struct __func_t * func;
-    int symbol_type;
-    uint8_t argument_index;
+    expr_t * expr; // the AST node
+    struct __func_t * func; // the function or NULL if it type != type_func, the function otherwise
+    int symbol_type; // the type of the entry in the symbol table.
+    int argument_index;
+
+    int assigned_register; // this is the register the allocator gave to this expression.
 };
-typedef struct __sem_post_expr_t sem_post_expr_t;
+typedef struct __sem_expr_t sem_expr_t;
 
 #define __sem_free(x)
-KLIST_INIT(sem_post_expr_t, sem_post_expr_t, __sem_free)
+KLIST_INIT(sem_expr_t, sem_expr_t, __sem_free)
 
 //////////////////////////////////////// params
 
@@ -44,7 +46,7 @@ typedef char param_t;
 
 
 struct __pattern_t {
-    sem_post_expr_t * expr;
+    sem_expr_t * expr;
     sym_table_t * symbols;
     expr_t * bindings;
 };
@@ -56,7 +58,7 @@ void neart_pattern_free(pattern_t * pattern);
 #define __pattern_free(x)
 KLIST_INIT(pattern_t, pattern_t*, __pattern_free);
 
-pattern_t * neart_pattern_alloc(sem_post_expr_t * expr);
+pattern_t * neart_pattern_alloc(sem_expr_t * expr);
 
 //////////////////////////////////////// func
 

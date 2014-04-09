@@ -30,7 +30,7 @@ void neart_module_free(module_t * mod) {
 
 //////////////////////////////////////// pattern
 
-pattern_t * neart_pattern_alloc(sem_post_expr_t * expr) {
+pattern_t * neart_pattern_alloc(sem_expr_t * expr) {
     ALLOC_STRUCT(pattern_t, pat);
     pat->expr = expr;
     pat->bindings = NULL;
@@ -40,8 +40,8 @@ pattern_t * neart_pattern_alloc(sem_post_expr_t * expr) {
 
 void neart_pattern_free(pattern_t * pattern) {
     {
-        sem_post_expr_t * it = pattern->expr;
-        sem_post_expr_t * tmp;
+        sem_expr_t * it = pattern->expr;
+        sem_expr_t * tmp;
 
         while (it != NULL) {
 

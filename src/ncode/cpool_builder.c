@@ -53,7 +53,7 @@ int32_t neart_cpool_builder_find_or_reserve_index(cpool_builder_t * cpool, const
         memcpy(sym_block, &func_index, 4);
         strcpy(sym_block+4, name);
 
-        printf("inserted at name: %s func: %d sym: %d at addr: %p\n", sym_block+4, func_index, sym_index, sym_block);
+        //printf("inserted at name: %s func: %d sym: %d at addr: %p\n", sym_block+4, func_index, sym_index, sym_block);
     }
 
 

@@ -69,6 +69,7 @@ vmctx_t * neart_load_rcode_file(const char * file) {
     ctx->symbols = _load_constant_pool(in, &header);
 
     ctx->code = _load_code(in, &header);
+    ctx->main_offset = header.main_offset;
 
     return ctx;
 }

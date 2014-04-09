@@ -12,8 +12,8 @@ typedef struct __pf_trans {
     param_t * expected_param;
 } _pf_trans_t;
 
-inline static sem_post_expr_t * _alloc_sem_post_expr(type_t type, expr_t * expr) {
-    ALLOC_STRUCT(sem_post_expr_t, spe);
+inline static sem_expr_t * _alloc_sem_post_expr(type_t type, expr_t * expr) {
+    ALLOC_STRUCT(sem_expr_t, spe);
     spe->next = spe->prev = NULL;
     spe->type = type;
     spe->type_specific = 0;
@@ -21,6 +21,7 @@ inline static sem_post_expr_t * _alloc_sem_post_expr(type_t type, expr_t * expr)
     spe->expr = expr;
     spe->symbol_type = -1;
     spe->argument_index = -1;
+    spe->assigned_register = -1;
     return spe;
 }
 
@@ -85,7 +86,7 @@ static int neart_type_match(expr_t * expr, param_t * expected, param_t * actual)
 }
 
 
-static sem_post_expr_t * _type_check_func(_pf_trans_t * ctx, func_t * func) {
+static sem_expr_t * _type_check_func(_pf_trans_t * ctx, func_t * func) {
 
     int param_count;
     int has_next = 0;
@@ -93,7 +94,7 @@ static sem_post_expr_t * _type_check_func(_pf_trans_t * ctx, func_t * func) {
     params_t * params;
     expr_t * expr = ctx->expr;
     compile_context_t * cc = ctx->cc;
-    sem_post_expr_t * spe = NULL;
+    sem_expr_t * spe = NULL;
 
     param_count = neart_params_count(func->params);
     params = func->params;
@@ -106,7 +107,8 @@ static sem_post_expr_t * _type_check_func(_pf_trans_t * ctx, func_t * func) {
         return NULL;
     }
 
-    sem_post_expr_t * ret_spe = _alloc_sem_post_expr(type_func, expr);
+
+    sem_expr_t * ret_spe = _alloc_sem_post_expr(type_func, expr);
     ret_spe->func = func;
     ret_spe->apply = 1;
 
@@ -117,24 +119,24 @@ static sem_post_expr_t * _type_check_func(_pf_trans_t * ctx, func_t * func) {
     for (it = kl_begin(list); it != kl_end(list); it = kl_next(it), i++) {
         expr_t * cur = kl_val(it);
         param_t * param = neart_param_at(params, i, 0);
-        sem_post_expr_t * expr = neart_type_check(cc, cur, param);
+        sem_expr_t * expr = neart_type_check(cc, cur, param);
         expr->argument_index = i;
         if (expr == NULL) {
-            neart_sem_post_expr_free(spe);
+            neart_sem_post_expr_free(ret_spe);
             kl_destroy(expr_t, list);
             return NULL;
         }
 
-        spe->prev = expr;
-        expr->next = spe;
+        spe->next = expr;
+        expr->prev = spe;
         spe = expr;
     }
 
     return ret_spe;
 }
 
-sem_post_expr_t * _neart_type_check(_pf_trans_t * ctx) {
-    sem_post_expr_t * spe = NULL;
+sem_expr_t * _neart_type_check(_pf_trans_t * ctx) {
+    sem_expr_t * spe = NULL;
     expr_t * expr = ctx->expr;
     compile_context_t * cc = ctx->cc;
     param_t * expected_result = ctx->expected_param;
@@ -186,7 +188,7 @@ sem_post_expr_t * _neart_type_check(_pf_trans_t * ctx) {
             goto bail_out_type_check;
         }
 
-        sem_post_expr_t * spe = _type_check_func(ctx, builtin);
+        sem_expr_t * spe = _type_check_func(ctx, builtin);
         spe->type = type_func_builtin;
         if (spe == NULL) {
             goto bail_out_type_check;
@@ -200,7 +202,7 @@ bail_out_type_check:
     return NULL;
 }
 
-sem_post_expr_t * neart_type_check(compile_context_t * cc, expr_t * expr, param_t * expected_result) {
+sem_expr_t * neart_type_check(compile_context_t * cc, expr_t * expr, param_t * expected_result) {
 
     _pf_trans_t pf;
     pf.cc = cc;
@@ -212,10 +214,10 @@ sem_post_expr_t * neart_type_check(compile_context_t * cc, expr_t * expr, param_
     return _neart_type_check(&pf);
 }
 
-void neart_sem_post_expr_free(sem_post_expr_t * expr) {
+void neart_sem_post_expr_free(sem_expr_t * expr) {
 
-    sem_post_expr_t * cur = expr;
-    sem_post_expr_t * next = cur->next;
+    sem_expr_t * cur = expr;
+    sem_expr_t * next = cur->next;
 
     while (next != NULL) {
         free(cur);

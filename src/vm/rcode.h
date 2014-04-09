@@ -30,6 +30,7 @@ typedef struct __rcode_header_t {
     uint32_t cpool_length;
     uint32_t code_offset;
     uint32_t code_length;
+    uint32_t main_offset;
 } rcode_header_t;
 
 

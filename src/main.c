@@ -81,7 +81,7 @@ int main(int argc, char *argv[])
         NEART_LOG(LOG_FATAL, "failed at line %d\n", yylineno);
         return 1;
     } else {
-        NEART_LOG(LOG_INFO, "parsing '%s' succeded\n", file);
+        //NEART_LOG(LOG_INFO, "parsing '%s' succeded\n", file);
 #ifdef NEART_DEBUG
         if (dot_syntax_tree) {
             NEART_LOG(LOG_INFO, "writing syntax tree to file '%s'\n", dot_file);

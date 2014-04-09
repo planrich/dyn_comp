@@ -128,6 +128,9 @@ void neart_write_to_file(cpool_builder_t * builder, qcode_t * code, const char *
     header.code_offset = ftell(io);
     header.code_length = fwrite_rcode(io, code, builder->sym_pool);
 
+    int32_t index = neart_cpool_builder_find_or_reserve_index(builder, "main");
+    header.main_offset = *((uint32_t*)neart_cpool_lookup(builder->sym_pool, index));
+
     // write the header after all data has been gathered
     fseek(io, 0, SEEK_SET);
     fwrite(&header, sizeof(rcode_header_t), 1, io);
