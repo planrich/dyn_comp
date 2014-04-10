@@ -7,6 +7,8 @@ syntax match Number /\d\+\.\?\d*/
 syntax match Number /0x[\da-fA-F]\+/
 syntax match Number /0b[01]\+/
 
+syntax match Comment /^#.*/
+
 syntax match Special /^=/
 syntax match Special /;/
 syntax match Special /->/

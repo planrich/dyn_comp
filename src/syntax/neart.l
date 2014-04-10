@@ -13,7 +13,7 @@ int yycolumn = 1;
     yycolumn += yyleng;
 %}
 
-ID  [a-zA-Z_][a-zA-Z0-9_]*
+ID  [a-zA-Z_][a-zA-Z0-9_!?]*
 DIGIT [0-9]
 
 WS  [ \t]+
@@ -70,5 +70,7 @@ STRING \"[^\"]\";
 
 {WS} { }
 {NL} { yycolumn = 1; }
+
+"#".* { }
 
 . { printf("unexpected input %s\n", yytext); exit(-1); }
