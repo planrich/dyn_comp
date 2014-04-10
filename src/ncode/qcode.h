@@ -36,4 +36,6 @@ qcode_t * neart_generate_register_code(module_t * module, cpool_builder_t * buil
 
 void neart_write_to_file(cpool_builder_t * builder, qcode_t * code, const char * name);
 
+uint32_t n_ncode_bytes(qcode_t * code);
+
 #endif /* _QCODE_H_ */

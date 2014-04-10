@@ -55,7 +55,7 @@ int neart_exec(vmctx_t * ctx) {
     stack_push_32(0);
 
 vm_dispatch:
-    VM_LOG("dispatch opcode 0x%x %p byteoffset: %d\n", *ip, ip, ip - code_base);
+    VM_LOG("dispatch opcode 0x%x %p byteoffset: %d\n", *ip, ip, (int)(ip - code_base));
     instr = *ip++;
     goto *labels[instr];
 
@@ -125,7 +125,7 @@ instr_ret: //0x0
     if (sp == stack) {
         VM_LOG("reached end of program. ret sp = stack\n");
         for (int i = 0; i < 10; i++) {
-            VM_LOG("REG %d: value %d (0x%x)\n", i, registers[i], registers[i]);
+            VM_LOG("REG %d: value %lld (0x%llx)\n", i, registers[i], registers[i]);
         }
         return 0;
     }

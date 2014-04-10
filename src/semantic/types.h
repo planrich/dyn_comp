@@ -39,13 +39,14 @@ int neart_is_builtin_type(const char * name, type_t * type);
 
 //////////////////////////////////////// funcs
 
-#define BUILTIN_FUNC_COUNT (4)
+#define BUILTIN_FUNC_COUNT (5)
 
 #define FOREACH_BUILTIN_FUNC(P) \
     P(BUILTIN_FUNC_ADD,     "+",    2, params_binary_int,   0,  ET_OP_IADD) \
     P(BUILTIN_FUNC_SUB,     "-",    2, params_binary_int,   1,  ET_OP_ISUB) \
     P(BUILTIN_FUNC_DIV,     "/",    2, params_binary_int,   2,  ET_OP_IDIV) \
     P(BUILTIN_FUNC_MUL,     "*",    2, params_binary_int,   3,  ET_OP_IMUL) \
+    P(BUILTIN_FUNC_EQ,     "==",    2, params_binary_int,   4,  ET_OP_EQUAL) \
 
 struct __func_t;
 

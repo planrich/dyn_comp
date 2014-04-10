@@ -6,10 +6,12 @@
 #include "khash.h"
 #include "klist.h"
 
-const char * expr_type_names[24];
+const char * expr_type_names[26];
 #define FOREACH_EXPR_TYPE(PPF) \
     PPF(ET_ROOT, "module"), \
     PPF(ET_FUNC, "func"), \
+    PPF(ET_IF, "if"), \
+    PPF(ET_IF_BODY, "if_body"), \
     PPF(ET_PARAMS, "params"), \
     PPF(ET_PARAM, "param"), \
     PPF(ET_PATTERNS, "patterns"), \
@@ -30,6 +32,7 @@ const char * expr_type_names[24];
     PPF(ET_OP_IDIV, "/"), \
     PPF(ET_NEGATIVE, "-"), \
     PPF(ET_OP_CONS, ":"), \
+    PPF(ET_OP_EQUAL, "=="), \
 
 #define ENUM_CNAME(cname, hname) cname
 #define ENUM_HNAME(cname, hname) hname

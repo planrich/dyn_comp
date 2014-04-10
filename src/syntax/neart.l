@@ -30,6 +30,9 @@ STRING \"[^\"]\";
 "unit" { return T_UNIT; }
 "version" { return T_VERSION; }
 "func" { return T_FUNC; }
+"if" { return T_IF; }
+"then" { return T_THEN; }
+"else" { return T_ELSE; }
 
 {ID} { 
     yylval->text = strdup(yytext);
@@ -61,6 +64,7 @@ STRING \"[^\"]\";
 "/" { return T_FSLASH; }
 ">" { return T_GT; }
 ":" { return T_COLON; }
+"==" { return T_DOUBLE_EQUAL; }
 "=" { return T_EQUAL; }
 ";" { return T_SEMI_COLON; }
 

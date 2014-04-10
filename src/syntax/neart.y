@@ -36,6 +36,9 @@ int yyerror (YYLTYPE *locp, expr_t * root, char const * msg);
 %token T_UNIT
 %token T_VERSION
 %token T_FUNC
+%token T_IF
+%token T_ELSE
+%token T_THEN
 
 // numeric
 %token<text> T_INT
@@ -47,8 +50,9 @@ int yyerror (YYLTYPE *locp, expr_t * root, char const * msg);
 // punctuation
 %token T_COLON
 %token T_EQUAL
+%token T_DOUBLE_EQUAL
 %token T_SEMI_COLON
-%token T_COMMA;
+%token T_COMMA
 %token T_UNDERSCORE
 
 %token T_OBRACKET
@@ -64,6 +68,8 @@ int yyerror (YYLTYPE *locp, expr_t * root, char const * msg);
 %token T_FSLASH
 %token T_GT
 
+%left DELSE
+%left T_DOUBLE_EQUAL
 %left T_COLON
 %left T_MINUS 
 %left T_PLUS 
@@ -227,6 +233,26 @@ expr:
         CPY_LOC(expr, @1, @3);
         expr->left = $<expr>1;
         expr->right = $<expr>3;
+        $<expr>$ = expr; 
+    }
+  | expr T_DOUBLE_EQUAL expr {
+        expr_t * expr = neart_expr_alloc(ET_OP_EQUAL);
+        CPY_LOC(expr, @1, @3);
+        expr->left = $<expr>1;
+        expr->right = $<expr>3;
+        $<expr>$ = expr; 
+    }
+  | T_IF expr T_THEN expr T_ELSE expr %prec DELSE {
+        expr_t * expr = neart_expr_alloc(ET_IF);
+        CPY_LOC(expr, @1, @6);
+        expr->left = $<expr>2;
+
+        expr_t * body = neart_expr_alloc(ET_IF_BODY);
+        expr->right = body;
+        CPY_LOC(body, @4, @6);
+        body->left = $<expr>4;
+        body->right = $<expr>6;
+
         $<expr>$ = expr; 
     }
   | T_MINUS expr %prec UNARY_MINUS {
