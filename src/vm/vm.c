@@ -136,4 +136,23 @@ instr_reg_mov: // 0x9
     p2 = *ip++;
     registers[p2] = registers[p1];
     goto vm_dispatch;
+
+instr_jmp: // 0xa  -> the short jump [-127,128]
+
+    p1 = *ip;
+
+    VM_LOG("jumping from %p to %p", ip, ip + p1 - 1);
+    // ip is on the parameter p1 -> move one back -1 and then change ip
+    ip = ip + p1 - 1;
+
+    goto vm_dispatch;
+instr_skip_equal: // 0xb
+    p1 = *ip++;
+    p2 = *ip++;
+    p3 = *ip++;
+    if (registers[p1] == registers[p2]) {
+        ip += p3;
+    }
+    goto vm_dispatch;
+
 }

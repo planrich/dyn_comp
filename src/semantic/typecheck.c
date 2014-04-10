@@ -135,11 +135,23 @@ static sem_expr_t * _type_check_func(_pf_trans_t * ctx, func_t * func) {
     return ret_spe;
 }
 
+/**
+ * Type checking returns a sem_expr_t if the type check succeeds.
+ *
+ */
 sem_expr_t * _neart_type_check(_pf_trans_t * ctx) {
     sem_expr_t * spe = NULL;
     expr_t * expr = ctx->expr;
     compile_context_t * cc = ctx->cc;
     param_t * expected_result = ctx->expected_param;
+
+    // don't be confused with parens. this only means that
+    // on the root level this one is nested
+    if (expr->type == ET_PARENS) {
+        expr = expr->left;
+        ctx->expr = expr;
+        printf("encountered parens -> taking left %d\n", expr->type);
+    }
 
     if (expr->type == ET_INTEGER) {
         param_t integer_param[] = { type_int, 0x0, ',', 0x0 };
@@ -202,6 +214,10 @@ bail_out_type_check:
     return NULL;
 }
 
+/**
+ * This function checks if the given syntax conform the static type system.
+ * There is an expected result.
+ */
 sem_expr_t * neart_type_check(compile_context_t * cc, expr_t * expr, param_t * expected_result) {
 
     _pf_trans_t pf;

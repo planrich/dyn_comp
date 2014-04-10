@@ -16,24 +16,24 @@
  * Respect the order of instructions. 
  */
 #define NEART_INSTR_FORECH(FOR_EACH) \
-    FOR_EACH(0x0, N_END,    0b00000, instr_ret,                 "return from this function. pops the stack frame") \
-    FOR_EACH(0x1, NI_LSI,   0b10101, instr_int_load_stack,      "load a 32 bit integer off the stack into the register x") \
-    FOR_EACH(0x2, NR_ADD,   0b11111, instr_reg_add,             "add to registers into a target register (32 bit)") \
-    FOR_EACH(0x3, NR_SUB,   0b11111, instr_reg_sub,             "sub to registers into a target register (32 bit)") \
-    FOR_EACH(0x4, NI_SPI,   0b00100, instr_int_stack_push,      "push a 32 bit integer onto the stack") \
-    FOR_EACH(0x5, NR_PUT,   0b10100, instr_reg_print,           "print the contents of a register") \
-    FOR_EACH(0x6, N_CALL,   0b00100, instr_call,                "call a function") \
-    FOR_EACH(0x7, NR_L32,   0b00101, instr_reg_load_int32,      "load an int32") \
-    FOR_EACH(0x8, N_ENTER,  0b00100, instr_enter,               "the beginning of a method") \
-    FOR_EACH(0x9, NR_MOV,   0b10101, instr_reg_mov,             "move the value of a register to another register") \
-  //FOR_EACH(0xa, N_TCALL,  0b00100, instr_tail_call,           "call a function again and override the stack frame") \
-
-/*                            +++++      
- *                            ||||+-> target
- *                            |||+--> param2
- *                            ||+---> param1
- *                            |+----> param2 is register
- *                            +-----> param1 is register
+    FOR_EACH(0x0,  N_END,     0b00000, instr_ret,                 "return from this function. pops the stack frame") \
+    FOR_EACH(0x1,  NI_LSI,    0b10101, instr_int_load_stack,      "load a 32 bit integer off the stack into the register x") \
+    FOR_EACH(0x2,  NR_ADD,    0b11111, instr_reg_add,             "add to registers into a target register (32 bit)") \
+    FOR_EACH(0x3,  NR_SUB,    0b11111, instr_reg_sub,             "sub to registers into a target register (32 bit)") \
+    FOR_EACH(0x4,  NI_SPI,    0b00100, instr_int_stack_push,      "push a 32 bit integer onto the stack") \
+    FOR_EACH(0x5,  NR_PUT,    0b10100, instr_reg_print,           "print the contents of a register") \
+    FOR_EACH(0x6,  N_CALL,    0b00100, instr_call,                "call a function") \
+    FOR_EACH(0x7,  NR_L32,    0b00101, instr_reg_load_int32,      "load an int32") \
+    FOR_EACH(0x8,  N_ENTER,   0b00100, instr_enter,               "the beginning of a method") \
+    FOR_EACH(0x9,  NR_MOV,    0b10101, instr_reg_mov,             "move the value of a register to another register") \
+    FOR_EACH(0xa,  N_JMP,     0b10100, instr_jmp,                 "move instr. pointer [-127,+128]") \
+    FOR_EACH(0xb,  N_SKIP_EQ, 0b11111, instr_skip_equal,          "if register p1 and register p2 equal skip t bytes") \
+/*                              +++++      
+ *                              ||||+-> target
+ *                              |||+--> param2
+ *                              ||+---> param1
+ *                              |+----> param2 is register
+ *                              +-----> param1 is register
  *
  * target type is always a register
  */
