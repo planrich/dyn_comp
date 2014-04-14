@@ -23,6 +23,7 @@ struct __func_t;
     P(construct_then) \
     P(construct_else) \
     P(construct_param) \
+    P(construct_nest) \
 
 #define P1_COLON(C, ...) C,
 typedef enum __lang_construct {

@@ -16,7 +16,7 @@ cpool_t * neart_cpool_alloc() {
     p->pool_start = GC_MALLOC(256);
     p->pool_end = p->pool_start + 256;
     p->pool_cursor = p->pool_start;
-
+    
     return p;
 }
 

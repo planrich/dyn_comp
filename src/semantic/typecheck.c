@@ -152,8 +152,12 @@ sem_expr_t * _neart_type_check(_pf_trans_t * ctx) {
     // don't be confused with parens. this only means that
     // on the root level this one is nested
     if (expr->type == ET_PARENS) {
-        expr = expr->left;
-        ctx->expr = expr;
+
+        sem_expr_t * se = neart_type_check(cc, expr->left, expected_result);
+        sem_expr_t * parens = _alloc_sem_expr(type_none, expr->left);
+        parens->detail = se;
+        parens->lang_construct = construct_nest;
+        return parens;
     }
 
     if (expr->type == ET_INTEGER) {

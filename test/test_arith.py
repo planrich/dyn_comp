@@ -7,7 +7,7 @@ class TestArith(test.CompileExecute):
             func main: int
             =; 1 + 2
         """)
-        assert self.register_value(6) == 3
+        self.assertEquals(self.register_value(6),3)
 
     def test_normal_arith_overflow(self):
         a = 2**32
@@ -16,4 +16,5 @@ class TestArith(test.CompileExecute):
             func main: int
             =; {0} + {1}
         """.format(a, b))
-        assert self.register_value(6) == 1
+        self.assertEquals(self.register_value(6),1)
+

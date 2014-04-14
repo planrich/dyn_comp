@@ -132,6 +132,11 @@ static qcode_t * _instructions(_ncode_gen_t * gen, sem_expr_t * se, int target) 
 
     _ncode_gen_t g = { .code = code, .reg = gen->reg, .cpool = gen->cpool };
 
+    // when nesting is encountered the data is in the detail branch
+    if (se->lang_construct == construct_nest) {
+        se = se->detail;
+    }
+
     if (se->lang_construct == construct_func && se->apply) {
         // a function call
         _instr_call(&g, se, target);
@@ -202,10 +207,6 @@ static void _instr_call(_ncode_gen_t * gen, sem_expr_t * se, int target) {
         sem_expr_t * cur = se->next;
         for (i = 0; i < param_count; i++) {
             _instr_call_param(gen, cur, i);
-            if (cur->assigned_register != i) {
-                NEART_LOG_FATAL("shouldn't come here\n");
-                _instr_move(gen->code, cur, i);
-            }
             cur = cur->next;
         }
 
@@ -218,11 +219,11 @@ static void _instr_call(_ncode_gen_t * gen, sem_expr_t * se, int target) {
         IMPL_ME();
     }
 
+
     if (se->assigned_register != target) {
         qinstr_t instr = _instr(NR_MOV, se->assigned_register, PT_REG, 0, UNUSED, target);
         _qcode_append(gen->code, instr);
     }
-
 }
 
 static qinstr_t * _qcode_last(qcode_t * code) {

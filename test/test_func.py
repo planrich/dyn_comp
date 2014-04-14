@@ -29,3 +29,16 @@ class TestArith(test.CompileExecute):
         """)
         assert self.register_value(6) == 10
 
+
+    def test_func_call_register_overlap(self):
+        self.compile_and_exec("""
+            func main: int
+            =; add (add 1 1) (seven)
+
+            func add: int -> int -> int
+            = a b ; a + b
+
+            func seven: int
+            =; 7
+        """)
+        self.assertEquals(self.register_value(6), 9)

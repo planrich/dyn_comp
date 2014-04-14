@@ -21,6 +21,3 @@ class CompileExecute(unittest.TestCase):
     def register_value(self, register):
         return int(re.search(r'register {} == (\d+)'.format(register), self.output).group(1))
 
-
-if __name__ == "__main__":
-    unittest.run()

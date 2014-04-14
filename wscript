@@ -1,6 +1,7 @@
 
 import sys
 import subprocess
+import os
 
 def options(c):
     c.load('compiler_c')
@@ -48,6 +49,3 @@ def build(c):
     c.recurse('src')
     if c.options.test:
         c.recurse('test')
-
-def test(c):
-    c.recurse('test')
