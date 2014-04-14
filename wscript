@@ -16,9 +16,9 @@ def configure(c):
     if sys.platform.startswith("darwin"):
         c.env.LIBPATH += ['/usr/local/Cellar/flex/2.5.37/lib/']
 
-    c.env.STLIB += ['fl']
+    c.env.STLIB += ['fl', 'gc']
 
-    c.env.CFLAGS += ['-std=c99']
+    c.env.CFLAGS += ['-std=c99', '-m64']
 
     if not c.options.release:
         c.env.CFLAGS += ['-g']
@@ -48,3 +48,6 @@ def build(c):
     c.recurse('src')
     if c.options.test:
         c.recurse('test')
+
+def test(c):
+    c.recurse('test')

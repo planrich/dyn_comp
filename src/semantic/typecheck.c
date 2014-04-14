@@ -5,6 +5,10 @@
 #include "error.h"
 #include "utils.h"
 #include "logging.h"
+#include "gc.h"
+
+param_t INTEGER_PARAM[] = { type_int, 0x0, ',', 0x0 };
+param_t BOOLEAN_PARAM[] = { type_bool, 0x0, ',', 0x0 };
 
 typedef struct __pf_trans {
     compile_context_t * cc;
@@ -12,10 +16,11 @@ typedef struct __pf_trans {
     param_t * expected_param;
 } _pf_trans_t;
 
-inline static sem_expr_t * _alloc_sem_post_expr(type_t type, expr_t * expr) {
-    ALLOC_STRUCT(sem_expr_t, spe);
+inline static sem_expr_t * _alloc_sem_expr(type_t type, expr_t * expr) {
+    GC_ALLOC_STRUCT(sem_expr_t, spe);
     spe->next = spe->prev = NULL;
     spe->type = type;
+    spe->lang_construct = construct_param;
     spe->type_specific = 0;
     spe->func = NULL;
     spe->expr = expr;
@@ -107,10 +112,10 @@ static sem_expr_t * _type_check_func(_pf_trans_t * ctx, func_t * func) {
         return NULL;
     }
 
-
-    sem_expr_t * ret_spe = _alloc_sem_post_expr(type_func, expr);
+    sem_expr_t * ret_spe = _alloc_sem_expr(type_func, expr);
     ret_spe->func = func;
     ret_spe->apply = 1;
+    ret_spe->lang_construct = construct_func;
 
     spe = ret_spe;
 
@@ -122,7 +127,6 @@ static sem_expr_t * _type_check_func(_pf_trans_t * ctx, func_t * func) {
         sem_expr_t * expr = neart_type_check(cc, cur, param);
         expr->argument_index = i;
         if (expr == NULL) {
-            neart_sem_post_expr_free(ret_spe);
             kl_destroy(expr_t, list);
             return NULL;
         }
@@ -150,19 +154,18 @@ sem_expr_t * _neart_type_check(_pf_trans_t * ctx) {
     if (expr->type == ET_PARENS) {
         expr = expr->left;
         ctx->expr = expr;
-        printf("encountered parens -> taking left %d\n", expr->type);
     }
 
     if (expr->type == ET_INTEGER) {
-        param_t integer_param[] = { type_int, 0x0, ',', 0x0 };
-        if (!neart_type_match(expr, expected_result, integer_param)) {
+        if (!neart_type_match(expr, expected_result, INTEGER_PARAM)) {
             goto bail_out_type_check;
         }
 
-        spe = _alloc_sem_post_expr(type_int, expr);
+        spe = _alloc_sem_expr(type_int, expr);
         return spe;
     }
 
+    // either a function or a variable
     if (expr->type == ET_VARIABLE) {
         const char * name = expr->data;
         sym_entry_t * symbol = neart_sym_table_lookup(cc->symbols, name);
@@ -178,7 +181,7 @@ sem_expr_t * _neart_type_check(_pf_trans_t * ctx) {
                 goto bail_out_type_check;
             }
 
-            spe = _alloc_sem_post_expr(type_generic, expr);
+            spe = _alloc_sem_expr(type_generic, expr);
             spe->type_specific = symbol->type;
             spe->symbol_type = symbol->entry_type;
             spe->argument_index = symbol->argument_index;
@@ -190,6 +193,63 @@ sem_expr_t * _neart_type_check(_pf_trans_t * ctx) {
             goto bail_out_type_check;
         }
     }
+
+
+    // look at the layout in ast.h
+    if (expr->type == ET_IF) {
+        sem_expr_t * cond_expr = neart_type_check(cc, expr->left, BOOLEAN_PARAM);
+        if (cond_expr == NULL) {
+            goto bail_out_type_check;
+        }
+        sem_expr_t * then_expr = neart_type_check(cc, expr->right, expected_result);
+        if (then_expr == NULL) {
+            goto bail_out_type_check;
+        }
+        sem_expr_t * else_expr = neart_type_check(cc, expr->right->right, expected_result);
+        if (else_expr == NULL) {
+            goto bail_out_type_check;
+        }
+        // chain them
+        then_expr->next = else_expr;
+        else_expr->prev = then_expr;
+
+        // if is not a type -> it is a construct of bool,expr,expr
+        sem_expr_t * _if = _alloc_sem_expr(type_none, expr);
+        _if->detail = cond_expr;
+        _if->lang_construct = construct_if;
+        // chain them
+        _if->detail = cond_expr;
+        _if->next = then_expr;
+        then_expr->prev = _if;
+
+        if (expr->right->right->right != NULL) {
+            IMPL_ME();
+            goto bail_out_type_check;
+        }
+
+        return _if;
+    }
+    if (expr->type == ET_THEN) {
+        sem_expr_t * then_expr = neart_type_check(cc, expr->left, expected_result);
+        if (then_expr == NULL) {
+            goto bail_out_type_check;
+        }
+        sem_expr_t * then = _alloc_sem_expr(type_none, expr);
+        then->detail = then_expr;
+        then->lang_construct = construct_then;
+        return then;
+    }
+    if (expr->type == ET_ELSE) {
+        sem_expr_t * _else_expr = neart_type_check(cc, expr->left, expected_result);
+        if (_else_expr == NULL) {
+            goto bail_out_type_check;
+        }
+        sem_expr_t * _else = _alloc_sem_expr(type_none, expr);
+        _else->detail = _else_expr;
+        _else->lang_construct = construct_else;
+        return _else;
+    }
+
 
     func_t * builtin = neart_builtin_func_lookup(expr->type);
     if (builtin != NULL) {
@@ -219,7 +279,6 @@ bail_out_type_check:
  * There is an expected result.
  */
 sem_expr_t * neart_type_check(compile_context_t * cc, expr_t * expr, param_t * expected_result) {
-
     _pf_trans_t pf;
     pf.cc = cc;
     pf.expr = expr;
@@ -229,16 +288,3 @@ sem_expr_t * neart_type_check(compile_context_t * cc, expr_t * expr, param_t * e
 
     return _neart_type_check(&pf);
 }
-
-void neart_sem_post_expr_free(sem_expr_t * expr) {
-
-    sem_expr_t * cur = expr;
-    sem_expr_t * next = cur->next;
-
-    while (next != NULL) {
-        free(cur);
-        cur = next;
-        next = next->next;
-    }
-}
-

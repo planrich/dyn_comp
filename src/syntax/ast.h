@@ -6,12 +6,27 @@
 #include "khash.h"
 #include "klist.h"
 
-const char * expr_type_names[26];
+/**
+ *
+ * AST layout of the if expression
+ *
+ *    +---------+     +----------+       +----------+
+ * -> |   IF    | ->  |   THEN   |  ->   |   ELSE   | ->
+ *    +---------+     +----------+       +----------+
+ *         |                |                  |
+ *         v                v                  v
+ *     bool expr         then expr          else expr
+ *        ...               ...               ...
+ *
+ */
+
+const char * expr_type_names[27];
 #define FOREACH_EXPR_TYPE(PPF) \
     PPF(ET_ROOT, "module"), \
     PPF(ET_FUNC, "func"), \
     PPF(ET_IF, "if"), \
-    PPF(ET_IF_BODY, "if_body"), \
+    PPF(ET_THEN, "then"), \
+    PPF(ET_ELSE, "else"), \
     PPF(ET_PARAMS, "params"), \
     PPF(ET_PARAM, "param"), \
     PPF(ET_PATTERNS, "patterns"), \

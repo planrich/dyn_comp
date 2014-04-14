@@ -7,23 +7,55 @@
  * this ir is not tied to any machine arch. but is mostly intended
  * to validate the parameters, transform the expr into postfix notation
  */
-
 #include "ast.h"
 #include "symt.h"
 #include "gpir.h"
 #include "types.h"
 #include <inttypes.h>
 
-//////////////////////////////////////// semantic post expr
+//////////////////////////////////////// semantic expr
 
 struct __func_t;
 
+#define FOREACH_SEM_EXPR_CONSTRUCT(P) \
+    P(construct_func) \
+    P(construct_if) \
+    P(construct_then) \
+    P(construct_else) \
+    P(construct_param) \
+
+#define P1_COLON(C, ...) C,
+typedef enum __lang_construct {
+    FOREACH_SEM_EXPR_CONSTRUCT(P1_COLON)
+} elang_construct_t;
+
+/**
+ * +------+     +------+
+ * | expr | <-> | expr | <-> ...
+ * +------+     +------+
+ *    |            |
+ *    v            v
+ *  NULL        +------+
+ *              | expr |
+ *              +------+
+ *                 |
+ *                 v
+ *               NULL
+ *
+ * Then semantic expr (= double acyclic linked list) is a simplified version of the ast tree which is
+ * type checked. Each entry can have an optional detail semantic expression which is used for
+ * instance for the IF statement.
+ */
 struct __sem_expr_t {
     struct __sem_expr_t * next;
     struct __sem_expr_t * prev;
+
+    struct __sem_expr_t * detail;
+
     uint8_t apply; // check if this should reduced in the code generation phase. (func can be arguments)
     type_t type; // the type it has. $ builtin, i interger, g generic
     type_t type_specific;
+    elang_construct_t lang_construct; // what construct is it? func|if
     expr_t * expr; // the AST node
     struct __func_t * func; // the function or NULL if it type != type_func, the function otherwise
     int symbol_type; // the type of the entry in the symbol table.
@@ -43,7 +75,6 @@ typedef int params_t;
 typedef short param_offset_t;
 
 typedef char param_t;
-
 
 struct __pattern_t {
     sem_expr_t * expr;
@@ -116,7 +147,6 @@ typedef struct compile_context_t {
 void neart_module_add_function(compile_context_t * cc, module_t * ctx, func_t * func);
 
 //////////////////////////////////////// params
-//
 #define NEART_PARAM_SIZE (2)
 
 /**

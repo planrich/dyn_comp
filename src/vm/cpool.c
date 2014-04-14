@@ -6,14 +6,14 @@
 #include "utils.h"
 
 cpool_t * neart_cpool_alloc() {
-    ALLOC_STRUCT(cpool_t, p);
+    GC_ALLOC_STRUCT(cpool_t, p);
     p->size = 0;
     p->offset = 0;
-    p->offset_start = malloc(128);
+    p->offset_start = GC_MALLOC(128);
     p->offset_end = p->offset_start + (128);
     p->offset_cursor = p->offset_start;
 
-    p->pool_start = malloc(256);
+    p->pool_start = GC_MALLOC(256);
     p->pool_end = p->pool_start + 256;
     p->pool_cursor = p->pool_start;
 
@@ -51,7 +51,7 @@ uint32_t neart_cpool_insert(cpool_t * pool, void * data, int offset, int size) {
     // out of index space?
     if (off_cur + 1 >= off_end) {
         uint32_t size = (pool->offset_end - pool->offset_start) + 64;
-        pool->offset_start = realloc(pool->offset_start, size);
+        pool->offset_start = GC_REALLOC(pool->offset_start, size);
         pool->offset_end = pool->offset_start + size;
         printf("REALLOC OFFSET\n");
     }
@@ -64,7 +64,7 @@ uint32_t neart_cpool_insert(cpool_t * pool, void * data, int offset, int size) {
 
     if (pool_cur + size >= pool_end) {
         //uint32_t size = (pool->pool_end - pool->pool_start) + size + 256;
-        pool->pool_start = realloc(pool->pool_start, size);
+        pool->pool_start = GC_REALLOC(pool->pool_start, size);
         pool->pool_end = pool->pool_start + size;
         printf("REALLOC POOL\n");
     }
@@ -78,9 +78,11 @@ uint32_t neart_cpool_insert(cpool_t * pool, void * data, int offset, int size) {
 }
 
 void neart_cpool_free(cpool_t * p) {
+    /*
     free(p->offset_start);
     free(p->pool_start);
     free(p);
+    */
 }
 
 uint32_t neart_cpool_total_size(cpool_t * pool) {

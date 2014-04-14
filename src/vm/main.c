@@ -7,10 +7,14 @@
 #include "config.h"
 #include "vm.h"
 #include "loader.h"
+#include "gc.h"
 
 int main(int argc, char ** argv) {
     int c;
 
+    GC_INIT();
+
+    neart_log_level = LOG_INFO;
     while (1) {
         int option_index = 0;
         static struct option long_options[] = {
@@ -25,7 +29,7 @@ int main(int argc, char ** argv) {
 
         switch (c) {
             case 'v':
-                neart_log_level = 0xff; // log everything
+                neart_log_level = LOG_DEBUG; // log everything
                 break;
         }
     }
@@ -40,7 +44,8 @@ int main(int argc, char ** argv) {
     vmctx_t * ctx = neart_load_rcode_file(argv[optind]);
 
     int ret = neart_exec(ctx);
-    neart_vmctx_free(ctx);
 
-    return ret;
+    NEART_LOG_INFO("register 6 == %lld\n", ctx->registers[6]);
+
+    return 0;
 }

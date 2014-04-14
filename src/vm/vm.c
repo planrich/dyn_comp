@@ -94,7 +94,6 @@ instr_reg_load_int32: // 0x7
     registers[p1] = *((int32_t*)ip);
     ip += 5;
 
-
     goto vm_dispatch;
 instr_call: // 0x6
     i1 = *((int32_t*)ip);
@@ -152,6 +151,7 @@ instr_skip_equal: // 0xb
     p3 = *ip++;
     if (registers[p1] == registers[p2]) {
         ip += p3;
+        VM_LOG("jumping %d bytes\n", p3);
     }
     goto vm_dispatch;
 

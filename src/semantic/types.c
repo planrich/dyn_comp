@@ -4,16 +4,16 @@
 #include "logging.h"
 #include "gpir.h"
 
+#define BUILTIN_SYNTAX_NAME(p1, p2, p3, ...) p3,
 const char * builtin_types_name[] = {
     FOREACH_BUILTIN_TYPE(BUILTIN_SYNTAX_NAME)
 };
-
+#define BUILTIN_TYPES_CHAR(p1, p2, ...) p2,
 const char builtin_types[] = {
     FOREACH_BUILTIN_TYPE(BUILTIN_TYPES_CHAR)
 };
 
 #define BUILTIN_SHORT_TYPE_CASE_INDEX(p1, p2, p3, idx) if (p2 == type) { return p3; }
-
 const char * neart_builtin_type_name(type_t type) {
     FOREACH_BUILTIN_TYPE(BUILTIN_SHORT_TYPE_CASE_INDEX)
     return NULL;
@@ -37,6 +37,18 @@ static char params_binary_int[] = { 0x3, 0x0, 0x0, 0x0,
                                     type_int, 0x0,
                                     ',', 0x0,
                                   };
+
+static char params_binary_bool[] = { 0x3, 0x0, 0x0, 0x0, 
+                                     0xa, 0x0, 
+                                     0xe, 0x0,
+                                     0x12, 0x0,
+                                     type_int, 0x0,
+                                     ',', 0x0,
+                                     type_int, 0x0,
+                                     ',', 0x0,
+                                     type_bool, 0x0,
+                                     ',', 0x0,
+                                   };
 
 #define BUILTIN_FUNCS(p1, p2, param_count, _params, idx, ...) \
     static func_t p1 = { .name = p2, .params = (params_t*)&_params, .symbols = NULL, .patterns = NULL };

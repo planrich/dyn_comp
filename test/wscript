@@ -5,9 +5,10 @@ def configure(c):
     c.write_config_header('test_config.h')
 
 def build(c):
-    includes = '. ../src ../visual ../third/klib'
-    c.program( source = 'test_ast.c',
-               target = 'neart_test_ast',
-               use = 'neart_core neart_debug',
-               includes = includes,
-             )
+    pass
+
+def test(c):
+    tests = [ 'test_' + f for f in [ 'arith' ] ]
+    for test in tests:
+        t = __import__(test, globals(), locals(), [], 0)
+        print(t.code)

@@ -243,17 +243,22 @@ expr:
         $<expr>$ = expr; 
     }
   | T_IF expr T_THEN expr T_ELSE expr %prec DELSE {
-        expr_t * expr = neart_expr_alloc(ET_IF);
-        CPY_LOC(expr, @1, @6);
-        expr->left = $<expr>2;
+        expr_t * _if = neart_expr_alloc(ET_IF);
+        CPY_LOC(_if, @1, @6);
+        _if->left = $<expr>2;
 
-        expr_t * body = neart_expr_alloc(ET_IF_BODY);
-        expr->right = body;
-        CPY_LOC(body, @4, @6);
-        body->left = $<expr>4;
-        body->right = $<expr>6;
+        expr_t * then = neart_expr_alloc(ET_THEN);
+        CPY_LOC(then, @4, @4);
+        then->left = $<expr>4;
 
-        $<expr>$ = expr; 
+        expr_t * _else = neart_expr_alloc(ET_ELSE);
+        CPY_LOC(then, @6, @6);
+        _else->left = $<expr>6;
+
+        _if->right = then;
+        then->right = _else;
+
+        $<expr>$ = _if; 
     }
   | T_MINUS expr %prec UNARY_MINUS {
         expr_t * expr = neart_expr_alloc(ET_NEGATIVE);

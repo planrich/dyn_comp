@@ -10,6 +10,7 @@
 #include "qcode.h"
 #include "sem.h"
 #include "cpool_builder.h"
+#include "gc.h"
 
 #ifdef NEART_DEBUG
   #include "dot_syntax_tree.h"
@@ -32,6 +33,8 @@ int main(int argc, char *argv[])
     char * dot_file = NULL;
     char * dot_filter_func = NULL;
     char * file = "stdin";
+
+    GC_INIT();
 
     while (1) {
         int option_index = 0;

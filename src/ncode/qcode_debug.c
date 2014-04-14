@@ -4,6 +4,11 @@
 
 #include "vm.h"
 
+#define INSTR_NAME(p1, p2, ...) if (p1 == code) { return #p2; }
+static const char * _instr_name(rcode_t code) {
+    NEART_INSTR_FORECH(INSTR_NAME)
+    return NULL;
+}
 static char _debug_param_type(int32_t type) {
     
     switch (type) {
@@ -38,24 +43,23 @@ void neart_debug_print_rcode(qcode_t * code, cpool_t * pool) {
 void neart_debug_print_instr(qinstr_t * instr) {
 
     char type = '\0';
-    printf("op(%d)\t", instr->instruction);
+    printf("op(%10s)  ", _instr_name(instr->instruction));
     type = _debug_param_type(instr->param1_type);
-    printf("P1: ");
-    printf("%c", type);
     if (type != '_') {
+        printf("P1: ");
+        printf("%c", type);
         printf("%d", instr->param1);
     }
-    printf("\tP2: ");
     type = _debug_param_type(instr->param2_type);
-    printf("%c", type);
     if (type != '_') {
+        printf("\tP2: ");
+        printf("%c", type);
         printf("%d", instr->param2);
     }
-    printf("\tT: ");
     if (instr->target >= 0) {
-        printf("r%d\n", instr->target);
-    } else {
-        printf("_\n");
+        printf("\tT: ");
+        printf("%d", instr->target);
     }
+    printf("\n");
 }
 
