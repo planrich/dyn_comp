@@ -8,7 +8,7 @@ typedef struct __vmctx_t {
     rcode_t * code;
     cpool_t * symbols;
     register_t registers[128];
-    stack_cell_t * stack;
+    stack_cell_t ** stack;
     uint32_t main_offset;
 } vmctx_t;
 

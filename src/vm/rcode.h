@@ -8,19 +8,7 @@
 
 #define NEART_MAGIC (0x7472656e)
 
-// cpi is constant pool index
-
 typedef char rcode_t;
-
-typedef struct __code_t {
-    uint32_t func_cpi;
-    uint32_t code_length;
-} code_t;
-
-typedef struct __ncode_t {
-    cpool_t * cpool;
-    code_t * code;
-} ncode_t;
 
 typedef struct __rcode_header_t {
     uint32_t magic; 
@@ -33,5 +21,10 @@ typedef struct __rcode_header_t {
     uint32_t main_offset;
 } rcode_header_t;
 
+/**
+ * returns 0 if the instruction is not a jump,
+ * a negative or positive number instead.
+ */
+int32_t n_rcode_jmp_offset(rcode_t * rcode);
 
 #endif /* _CODE_H_ */

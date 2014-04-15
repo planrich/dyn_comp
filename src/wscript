@@ -5,7 +5,7 @@ def configure(c):
 
 def build(c):
 
-    includes = '. vm syntax semantic util type ncode visual ../third/klib'
+    includes = '. vm syntax semantic util type ncode visual jit ../third/klib'
     c.objects( source = 'visual/dot_syntax_tree.c ncode/qcode_debug.c', 
                target = 'neart_debug',
                includes = includes,
@@ -28,7 +28,7 @@ def build(c):
                includes = includes
              )
 
-    c.objects( source = 'vm/cpool.c vm/loader.c util/io.c',
+    c.objects( source = 'vm/cpool.c vm/loader.c vm/rcode.c util/io.c jit/compiler.c jit/bblock.c jit/reg_alloc.c',
                target = 'neart_runtime',
                includes = includes,
              )
@@ -43,3 +43,4 @@ def build(c):
                use = 'neart_vm neart_runtime',
                includes = includes,
              )
+

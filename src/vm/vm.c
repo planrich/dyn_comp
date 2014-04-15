@@ -43,7 +43,9 @@ int neart_exec(vmctx_t * ctx) {
 
 
     stack = get_sp();
-    stack -= 1000; // TODO when using get_sp() the stack grows somehow?
+    ctx->stack = &stack;
+
+    stack -= 1000; // TODO after using get_sp() the stack grows later?
     sp = stack;
     bp = stack;
     VM_LOG("top of stack %p\n", stack);

@@ -3,17 +3,13 @@
 
 #include "rcode.h"
 #include "cpool_builder.h"
+#include "collections.h"
 
 #define PT_REG (1)
 #define PT_CPOOL_IDX (2)
 #define PT_CONSTANT (3)
 
 #define UNUSED (-1)
-
-KHASH_MAP_INIT_STR(str_int, uint32_t);
-
-#define __free(x)
-KLIST_INIT(32, int32_t, __free);
 
 struct __qinstr_t {
     rcode_t instruction;

@@ -26,7 +26,7 @@
     FOR_EACH(0x7,  NR_L32,     0b00101, instr_reg_load_int32,      "load an int32") \
     FOR_EACH(0x8,  N_ENTER,    0b00100, instr_enter,               "the beginning of a method") \
     FOR_EACH(0x9,  NR_MOV,     0b10101, instr_reg_mov,             "move the value of a register to another register") \
-    FOR_EACH(0xa,  NR_JMP,     0b10100, instr_jmp,                 "move instr. pointer [-127,+128]") \
+    FOR_EACH(0xa,  NR_JMP,     0b00001, instr_jmp,                 "move instr. pointer [-127,+128]") \
     FOR_EACH(0xb,  NR_SKIP_EQ, 0b11111, instr_skip_equal,          "if register p1 and register p2 equal skip t bytes") \
 /*                               +++++      
  *                               ||||+-> target
@@ -44,6 +44,17 @@
 typedef enum __neart_instr_codes_t {
     NEART_INSTR_FORECH(INSTR_ENUM_DEFINE)
 } neart_instr_codes_t;
+
+#define INSTR_SIZE_DEFINE(p1, p2, p3, ...) p2##_SIZE = \
+    (\
+        ((p3 & 0x1) ? 1 : 0) + \
+        ((p3 & 0x2) ? ((p3 & 0x4) ? 1 : 4 ) : 0) + \
+        ((p3 & 0x3) ? ((p3 & 0x5) ? 1 : 4 ) : 0) + \
+        1 \
+    ),
+typedef enum __neart_instr_size_t {
+    NEART_INSTR_FORECH(INSTR_SIZE_DEFINE)
+} neart_instr_size_t;
 
 //const char * ncode_names[255];
 

@@ -47,5 +47,17 @@ def configure(c):
 def build(c):
     c.objects( target = 'klib', source = 'third/klib/kstring.c', includes = 'third/klib' )
     c.recurse('src')
-    if c.options.test:
-        c.recurse('test')
+
+
+#from waflib.TaskGen import feature, after
+#from waflib.Task import Task
+#
+#class unittest(Task):
+#    run_str = 'python -m unittest discover -s ${SRC}'
+#    color = 'BLUE'
+#
+#@feature('test')
+#@after('link')
+#def exec_tests(self):
+#    subprocess.check_output(['python', '-m', 'unittest', 'discover', '-s', 'test'])
+#
