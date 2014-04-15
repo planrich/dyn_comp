@@ -42,6 +42,17 @@ bblock_t * n_bblock_new(bbline_t * line) {
 }
 
 void n_bbline_free(bbline_t * line) {
+
+    for (int i = 0; i < line->size; i++) {
+        bblock_t * block = line->first + i;
+        if (block->oedges != NULL) {
+            kl_destroy(bb, block->oedges);
+        }
+        if (block->iedges != NULL) {
+            kl_destroy(bb, block->iedges);
+        }
+    }
+
     free(line->first);
     free(line);
 }
@@ -74,7 +85,6 @@ bbline_t * n_bbnize(rcode_t * code) {
             // creates some thing like
             // 
             //  case INSTR: \
-            //      bblock_t * block = n_block_new(line); \
             //      block->instr = wptr; \
             //      break;
             //
@@ -98,6 +108,17 @@ bbline_t * n_bbnize(rcode_t * code) {
             n_bbline_free(line);
             return NULL;
         }
+
+        // connect the edges
+        if (block->oedges == NULL) {
+            block->oedges = kl_init(bb);
+        }
+        *kl_pushp(bb, block->oedges) = target;
+
+        if (target->iedges == NULL) {
+            target->iedges = kl_init(bb);
+        }
+        *kl_pushp(bb, target->iedges) = block;
     }
 
     return line;

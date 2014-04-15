@@ -50,6 +50,7 @@ void n_bbline_free(bbline_t*);
 
 /**
  * Transform the function into a basic block format (bbline_t = { bbblock_t, bbblock_t, ... }).
+ * Currently each basic block contains at MOST one instruction.
  */
 bbline_t * n_bbnize(rcode_t * code);
 
