@@ -15,3 +15,10 @@ int32_t n_rcode_jmp_offset(rcode_t * rcode) {
     return 0;
 }
 
+
+#define INSTR_PARAM_TYPE(p1,p2,mask, ...) mask,
+int neart_parameter_usage(rcode_t instr) {
+    static char param_type[] = { NEART_INSTR_FORECH(INSTR_PARAM_TYPE) };
+
+    return param_type[instr];
+}

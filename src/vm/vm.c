@@ -41,7 +41,6 @@ int neart_exec(vmctx_t * ctx) {
     register rcode_t * ip = code_base + ctx->main_offset;
     rcode_t instr;
 
-
     stack = get_sp();
     ctx->stack = &stack;
 

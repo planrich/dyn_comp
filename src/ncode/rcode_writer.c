@@ -7,8 +7,6 @@
 #include "rcode.h"
 #include "vm.h"
 
-int neart_parameter_usage(rcode_t instr);
-
 static void fwrite_cpool(FILE * out, cpool_t * pool) {
     uint32_t size = neart_cpool_total_size(pool);
 
@@ -140,11 +138,4 @@ void neart_write_to_file(cpool_builder_t * builder, qcode_t * code, const char *
     NEART_LOG_DEBUG("file stats: pool %d bytes, code %d bytes\n", size, header.code_length);
 
     fclose(io);
-}
-
-#define INSTR_PARAM_TYPE(p1,p2,mask, ...) mask,
-int neart_parameter_usage(rcode_t instr) {
-    static char param_type[] = { NEART_INSTR_FORECH(INSTR_PARAM_TYPE) };
-
-    return param_type[instr];
 }

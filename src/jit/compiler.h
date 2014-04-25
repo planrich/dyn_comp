@@ -10,6 +10,6 @@ typedef char mcode_t;
  * compile register code to native machine code.
  * This implementation is x86 64 bit specific.
  */
-mcode_t * n_jit_compile(vmctx_t * vmc, rcode_t * code);
+mcode_t * neart_jit_compile(vmctx_t * vmc, rcode_t * code);
 
 #endif

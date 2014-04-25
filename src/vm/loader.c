@@ -38,6 +38,7 @@ cpool_t * _load_constant_pool(IO * io, rcode_header_t * header) {
     void * index = GC_MALLOC(index_length);
     fread(index, header->code_length, 1, io);
 
+    pool->size = index_length / 4;
     pool->offset_start = index;
     pool->offset_end = index + index_length;
 

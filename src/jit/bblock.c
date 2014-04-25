@@ -26,6 +26,7 @@ bbline_t * n_bbline_align(bbline_t * line) {
 
 bblock_t * n_bblock_new(bbline_t * line) {
 
+
     if (line->cursor >= line->size) {
         line->size *= 2;
         line->first = realloc(line->first, sizeof(bblock_t) * line->size);
@@ -60,10 +61,11 @@ void n_bbline_free(bbline_t * line) {
 #define _SWITCH_INSTR_BBNEW(p1, p2, p3, ...) \
     case p2: {\
         block->instr = wptr; \
+        wptr += p2##_SIZE;\
         break; \
     }
 
-bbline_t * n_bbnize(rcode_t * code) {
+bbline_t * neart_bbnize(rcode_t * code) {
 
     rcode_t * wptr = code;
     rcode_t * dptr = NULL;
@@ -72,6 +74,7 @@ bbline_t * n_bbnize(rcode_t * code) {
         return NULL;
     }
     wptr += N_ENTER_SIZE;
+    printf("enter size is: %d\n", N_ENTER_SIZE);
 
     bbline_t * line = n_bbline_alloc();
 
@@ -99,9 +102,17 @@ bbline_t * n_bbnize(rcode_t * code) {
 
     n_bbline_align(line);
 
+    NEART_LOG_DEBUG("created %d basic blocks for this func\n", line->size);
+
+    // now that all basic blocks have be created -> create the control
+    // flow edges...
     for (int i = 0; i < line->size; i++) {
         bblock_t * block = line->first + i;
         int byte_offset = n_rcode_jmp_offset(block->instr);
+        if (byte_offset == 0) { // not a jmp instr
+            continue;
+        }
+
         bblock_t * target = _rcode_find(line, block, i, byte_offset);
         if (target == NULL) {
             NEART_LOG_FATAL("could not find basic block which has %d bytes offset\n", byte_offset);

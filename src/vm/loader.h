@@ -10,6 +10,7 @@ typedef struct __vmctx_t {
     register_t registers[128];
     stack_cell_t ** stack;
     uint32_t main_offset;
+    int jit;
 } vmctx_t;
 
 vmctx_t * neart_vmctx_alloc(void);

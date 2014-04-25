@@ -20,16 +20,16 @@ int neart_log_level;
 
 #define NEART_LOG(level, msg, ...) if ((neart_log_level & level) != 0) { printf(msg, ##__VA_ARGS__); }
 #define NEART_LOG_ANY(msg, ...) NEART_LOG(0xff, msg, ##__VA_ARGS__)
+#define NEART_LOG_TRACE() NEART_LOG(LOG_TRACE, "[trace] %s\n", __PRETTY_FUNCTION__)
 #define NEART_LOG_INFO(msg, ...) NEART_LOG(LOG_INFO, msg, ##__VA_ARGS__)
 #define NEART_LOG_DEBUG(msg, ...) NEART_LOG(LOG_DEBUG, msg, ##__VA_ARGS__)
-#define NEART_LOG_FATAL(msg, ...) NEART_LOG(LOG_FATAL, "[fatal] "); NEART_LOG(LOG_FATAL, msg, ##__VA_ARGS__)
-#define NEART_LOG_TRACE() NEART_LOG(LOG_TRACE, "[trace] %s\n", __PRETTY_FUNCTION__)
+#define NEART_LOG_FATAL(msg, ...) printf("[fatal] "); printf(msg, ##__VA_ARGS__)
 
 #define NLH NEART_LOG_ANY("here\n");
 
 #define NEART_MSG(msg, ...) printf(msg, ##__VA_ARGS__);
 
-#define IMPL_ME() NEART_LOG_FATAL("(not impl.) func=%s line=%d  file=%s \n", __PRETTY_FUNCTION__, __LINE__, __FILE__)
+#define IMPL_ME() NEART_LOG_ANY("(not impl.) func=%s line=%d  file=%s \n", __PRETTY_FUNCTION__, __LINE__, __FILE__)
 
 #endif
 

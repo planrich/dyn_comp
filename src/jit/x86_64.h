@@ -2,6 +2,8 @@
 #ifndef X86_64_H
 #define X86_64_H
 
+#include "compiler.h"
+
 // 16 x86 64 general purpose registers
 typedef enum __qw_registers {
     RAX = 0,
@@ -21,6 +23,9 @@ typedef enum __qw_registers {
     R14 = 14,
     R15 = 15,
 } qw_registers_t;
+
+typedef int32_t reg_state_t;
+typedef uint32_t hwreg_t;
 
 void arch_load_32(mcode_t * __mc, rcode_t * data, qw_registers_t reg);
 

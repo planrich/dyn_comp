@@ -27,4 +27,6 @@ typedef struct __rcode_header_t {
  */
 int32_t n_rcode_jmp_offset(rcode_t * rcode);
 
+int neart_parameter_usage(rcode_t instr);
+
 #endif /* _CODE_H_ */
