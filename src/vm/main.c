@@ -32,7 +32,7 @@ int main(int argc, char ** argv) {
 
         switch (c) {
             case 'v':
-                neart_log_level = LOG_DEBUG; // log everything
+                neart_log_level = LOG_DEBUG | LOG_INFO;
                 break;
             case 'j':
                 jit = 1;
@@ -53,6 +53,7 @@ int main(int argc, char ** argv) {
     int ret = 0;
     if (jit) {
         ret = neart_jit_exec(ctx);
+        NEART_LOG_INFO("register 6 == %d\n", ret);
     } else {
         ret = neart_exec(ctx);
         NEART_LOG_INFO("register 6 == %lld\n", ctx->registers[6]);

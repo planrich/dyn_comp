@@ -1,6 +1,7 @@
 #include "run.h"
 
 #include "compiler.h"
+#include "logging.h"
 
 typedef int (*func_ptr)();
 
@@ -10,5 +11,6 @@ int neart_jit_exec(vmctx_t * ctx) {
 
     func_ptr f = (func_ptr)neart_jit_compile(ctx, main);
 
-    return f();
+    int result = f();
+    return result;
 }

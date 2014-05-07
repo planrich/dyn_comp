@@ -18,19 +18,24 @@ def build(c):
              )
     c.objects( source = 'syntax/neart.l syntax/neart.y syntax/ast.c ' +
                         'semantic/gpir.c semantic/sem.c semantic/typecheck.c ' +
-                        'util/symt.c semantic/types.c semantic/binding.c ',
+                        'util/symt.c semantic/types.c semantic/binding.c',
                target = 'neart_core',
+               includes = includes,
+             )
+
+    c.objects( source = 'util/memio.c ',
+               target = 'neart_shared',
                includes = includes,
              )
 
     c.program( source = 'main.c',
                target = 'neartc',
-               use = 'neart_core neart_code neart_runtime klib neart_debug',
+               use = 'neart_core neart_code neart_runtime klib neart_debug neart_shared',
                includes = includes
              )
 
     c.objects( source = 'vm/cpool.c vm/loader.c vm/rcode.c util/io.c jit/compiler.c jit/bblock.c jit/reg_alloc.c ' +
-                        'jit/run.c',
+                        'jit/run.c jit/x86_64.c',
                target = 'neart_runtime',
                includes = includes,
              )
@@ -42,7 +47,7 @@ def build(c):
 
     c.program( source = 'vm/main.c',
                target = 'nvm',
-               use = 'neart_vm neart_runtime',
+               use = 'neart_vm neart_runtime neart_shared',
                includes = includes,
              )
 

@@ -87,6 +87,9 @@ static int _generate_func(_ncode_gen_t * gen, func_t * func) {
         _generate_pattern(gen, func, pattern, i++);
     }
 
+    instr = _instr(N_METH_BOUND, 0, UNUSED, 0, UNUSED, UNUSED);
+    _qcode_append(gen->code, instr);
+
     return 0;
 }
 

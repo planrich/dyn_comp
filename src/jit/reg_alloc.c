@@ -3,7 +3,7 @@
 #include "logging.h"
 #include "gc.h"
 #include "vm.h"
-
+#include "x86_64.h"
 
 #define REG_COUNT(p1, p2, ...) p2##_REG_COUNT,
 static int _reg_count[] = {

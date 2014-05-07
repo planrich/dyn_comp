@@ -61,7 +61,7 @@ void n_bbline_free(bbline_t * line) {
 #define _SWITCH_INSTR_BBNEW(p1, p2, p3, ...) \
     case p2: {\
         block->instr = wptr; \
-        wptr += p2##_SIZE;\
+        skip_bytes = p2##_SIZE;\
         break; \
     }
 
@@ -69,19 +69,15 @@ bbline_t * neart_bbnize(rcode_t * code) {
 
     rcode_t * wptr = code;
     rcode_t * dptr = NULL;
+    int skip_bytes = 0;
 
     if (*wptr != N_ENTER) {
         return NULL;
     }
     wptr += N_ENTER_SIZE;
-    printf("enter size is: %d\n", N_ENTER_SIZE);
-
     bbline_t * line = n_bbline_alloc();
 
     while (1) {
-        if (*wptr == N_ENTER) {
-            break;
-        }
 
         bblock_t * block = n_bblock_new(line);
         switch (*wptr) {
@@ -89,6 +85,7 @@ bbline_t * neart_bbnize(rcode_t * code) {
             // 
             //  case INSTR: \
             //      block->instr = wptr; \
+            //      skip_bytes = INSTR_SIZE; \
             //      break;
             //
             //  for each instruction
@@ -96,8 +93,15 @@ bbline_t * neart_bbnize(rcode_t * code) {
             NEART_INSTR_FORECH(_SWITCH_INSTR_BBNEW)
 
             default:
-                NEART_LOG_FATAL("did not implement op code %x\n", *code);
+                NEART_LOG_FATAL("did not implement op code %x\n", *wptr);
         }
+
+        if (*wptr == N_METH_BOUND) {
+            break;
+        }
+
+        wptr += skip_bytes;
+        printf("%d -> size %d\n", *(block->instr), skip_bytes);
     }
 
     n_bbline_align(line);

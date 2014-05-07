@@ -155,5 +155,7 @@ instr_skip_equal: // 0xb
         VM_LOG("jumping %d bytes\n", p3);
     }
     goto vm_dispatch;
-
+instr_meth_bound:
+    VM_LOG("dispatching method bound. exiting\n");
+    return EXIT_FAILURE;
 }

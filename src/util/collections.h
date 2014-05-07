@@ -11,4 +11,6 @@ KLIST_INIT(32, int32_t, __free);
 
 KLIST_INIT(64, int64_t, __free);
 
+KLIST_INIT(life_range, int64_t, __free);
+
 #endif

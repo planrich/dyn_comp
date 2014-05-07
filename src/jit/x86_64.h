@@ -3,6 +3,8 @@
 #define X86_64_H
 
 #include "compiler.h"
+#include "memio.h"
+#include "reg_alloc.h"
 
 // 16 x86 64 general purpose registers
 typedef enum __qw_registers {
@@ -24,9 +26,21 @@ typedef enum __qw_registers {
     R15 = 15,
 } qw_registers_t;
 
+typedef struct __ra_state_t {
+
+    klist_t(32) * klist;
+
+
+} ra_state_t;
+
 typedef int32_t reg_state_t;
 typedef uint32_t hwreg_t;
+typedef int vreg_t;
 
-void arch_load_32(mcode_t * __mc, rcode_t * data, qw_registers_t reg);
+void arch_load_32(memio_t * io, int32_t c, hwreg_t vreg);
+
+void arch_ret(memio_t * io);
+
+hwreg_t arch_ra_hwreg(ra_state_t * state, life_range_t * ranges, vreg_t reg);
 
 #endif

@@ -2,6 +2,7 @@
 #include "symt.h"
 
 #include <errno.h>
+#include <inttypes.h>
 #include "logging.h"
 #include "utils.h"
 #include "ast.h"
