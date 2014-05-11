@@ -73,6 +73,7 @@ typedef enum __neart_instr_register_count_t {
 
 typedef int64_t register_t;
 typedef int32_t stack_cell_t;
+typedef int vreg_t;
 
 struct __vmctx_t;
 
