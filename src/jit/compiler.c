@@ -17,6 +17,7 @@ memio_t * neart_jit_template_transform(rcode_t * base, bbline_t * line, life_ran
 
 mcode_t * _neart_jit_compile(rcode_t * base, rcode_t * code) {
 
+    printf("starting to compile %p\n", code);
     bbline_t * line = neart_bbnize(code);
 
     // calculate life ranges
@@ -51,11 +52,17 @@ memio_t * neart_jit_template_transform(rcode_t * base, bbline_t * line, life_ran
             case NR_L32:
                 c1 = *(block->instr + 1);
                 r1 = *(block->instr + 1 + 4);
-                arch_load_32(io, c1, arch_ra_hwreg(state, ranges, r1, time_step));
+                if (r1 < 6) {
+                    // this is a paramter for a call -> push it on the stack
+                    //arch_push_const(io, c1);
+                } else {
+                    arch_load_32(io, c1, arch_ra_hwreg(state, ranges, r1, time_step));
+                }
                 break;
             case N_CALL:
                 c1 = *(block->instr + 1);
-                arch_call(io, &_neart_jit_compile, base, base + c1);
+                printf("_neart_hit_compile is at %p\n", &_neart_jit_compile);
+                arch_call(io, state, &_neart_jit_compile, base, base + c1, i);
                 break;
             case N_END:
                 arch_ret(io);

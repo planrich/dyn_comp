@@ -61,7 +61,7 @@ int main(int argc, char ** argv) {
 
     ctx = NULL;
 
-    GC_gcollect();
+    //GC_gcollect();
 
     return ret;
 }

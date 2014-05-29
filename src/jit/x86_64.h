@@ -43,17 +43,33 @@ typedef struct __ra_state_t {
 typedef int32_t reg_state_t;
 typedef int32_t hwreg_t;
 
-void arch_call(memio_t * io, void * func, void * arg1, void * arg2);
+void arch_call(memio_t * io, ra_state_t * state, void * func, void * arg1, void * arg2, int time_step);
 void arch_load_32(memio_t * io, int32_t c, hwreg_t vreg);
 void arch_ret(memio_t * io);
+void arch_push_const(memio_t * io, int32_t c);
 
 hwreg_t arch_ra_hwreg(ra_state_t * state, life_range_t * ranges, vreg_t reg, int time_step);
+
+/**
+ * Save the hardware register on the stack
+ */
+int arch_save_hw_reg(memio_t * io, ra_state_t * state, hwreg_t reg);
+
+/**
+ * Restore the hardware register from the stack.
+ */
+void arch_restore_hw_reg(memio_t * io, hwreg_t reg);
+
 /**
  * Is a hardware register in use?
  */
 int arch_ra_hwreg_in_use(ra_state_t * state, hwreg_t reg);
 
-ra_state_t * arch_ra_state_new(void);
+/**
+ * Move 64 bit to a register. (movabsq)
+ */
+void arch_move_long(memio_t * io, hwreg_t reg, void * ptr);
 
+ra_state_t * arch_ra_state_new(void);
 
 #endif
