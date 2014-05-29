@@ -164,10 +164,11 @@ int n_ra_reg(_ncode_gen_t * gen) {
     return gen->reg++;
 }
 
-static void _instr_call_param(_ncode_gen_t * gen, sem_expr_t * se, int index) {
+static int _instr_call_param(_ncode_gen_t * gen, sem_expr_t * se, int index) {
     qcode_t * code = _instructions(gen, se, index);
     _qcode_concat(gen->code, code);
     se->assigned_register = index;
+    return index;
 }
 
 static void _instr_call(_ncode_gen_t * gen, sem_expr_t * se, int target) {
@@ -203,10 +204,11 @@ static void _instr_call(_ncode_gen_t * gen, sem_expr_t * se, int target) {
     } else if (se->type == type_func) {
         int i = 0;
 
-        if (param_count > 5) {
-            NEART_LOG_FATAL("cannot handle more than 5 params ... yet\n");
+        if (param_count > 6) {
+            NEART_LOG_FATAL("cannot handle more than 6 params ... yet\n");
         }
 
+        // TODO save the registers
         sem_expr_t * cur = se->next;
         for (i = 0; i < param_count; i++) {
             _instr_call_param(gen, cur, i);
@@ -217,7 +219,6 @@ static void _instr_call(_ncode_gen_t * gen, sem_expr_t * se, int target) {
         instr = _instr(N_CALL, idx, PT_CPOOL_IDX, 0, UNUSED, UNUSED);
         _qcode_append(gen->code, instr);
         se->assigned_register = 6;
-
     } else {
         IMPL_ME();
     }

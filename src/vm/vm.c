@@ -158,4 +158,12 @@ instr_skip_equal: // 0xb
 instr_meth_bound:
     VM_LOG("dispatching method bound. exiting\n");
     return EXIT_FAILURE;
+instr_stack_arg:
+    p1 = *ip++;
+    // TODO load p1 from stack...
+    goto vm_dispatch;
+instr_push_reg:
+    p1 = *ip++;
+    // TODO push on the stack
+    goto vm_dispatch;
 }

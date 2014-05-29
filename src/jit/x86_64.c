@@ -17,7 +17,10 @@ static mcode_t mbuf[16];
 
 #define X86_RET (0xc3)
 #define X86_MOV (0xc7)
+#define X86_MOV_REG_REG (0x89)
 #define X86_CALLQ (0xff)
+
+#define X86_OP_81 (0x81)
 
 #define X86_MOVABS_L (0x48)
 #define X86_MOVABS_H (0x49)
@@ -28,109 +31,33 @@ static mcode_t mbuf[16];
 #define X86_PUSH_BYTE (0x6a)
 #define X86_PUSH_INT (0x68)
 
-ra_state_t * arch_ra_state_new(void) {
-    GC_ALLOC_STRUCT(ra_state_t, s);
+hwreg_t arch_ra_hwreg(ra_state_t * state, vreg_t reg) {
 
-    ra_t * f;
-    f = &s->registers[0];
-    f->hw_reg = RAX;
-    f->range = NULL;
-    f = &s->registers[1];
-    f->hw_reg = RCX;
-    f->range = NULL;
-    f = &s->registers[2];
-    f->hw_reg = RDX;
-    f->range = NULL;
-    f = &s->registers[3];
-    f->hw_reg = RBX;
-    f->range = NULL;
-    f = &s->registers[4];
-    f->hw_reg = RSI;
-    f->range = NULL;
-    f = &s->registers[5];
-    f->hw_reg = RDI;
-    f->range = NULL;
-    f = &s->registers[6];
-    f->hw_reg = R8;
-    f->range = NULL;
-    f = &s->registers[7];
-    f->hw_reg = R9;
-    f->range = NULL;
-    f = &s->registers[8];
-    f->hw_reg = R10;
-    f->range = NULL;
-    f = &s->registers[9];
-    f->hw_reg = R11;
-    f->range = NULL;
-    f = &s->registers[10];
-    f->hw_reg = R12;
-    f->range = NULL;
-    f = &s->registers[11];
-    f->hw_reg = R13;
-    f->range = NULL;
-    f = &s->registers[12];
-    f->hw_reg = R14;
-    f->range = NULL;
-    f = &s->registers[13];
-    f->hw_reg = R15;
-    f->range = NULL;
+    int time_step = state->time_step;
+    life_range_t * range = state->ranges + reg;
 
-    return s;
-}
+    if (reg > 6) {
+        for (int i = 0; i < HW_GP_REG_COUNT; i++) {
+            ra_t * ra = &state->registers[i];
 
-ra_t * _arch_ra_aquire_register(ra_state_t * state, life_range_t * range, vreg_t reg) {
-
-    ra_t * ra = NULL;
-
-    for (int i = 0; i < HW_GP_REG_COUNT; i++) {
-        ra = &state->registers[i];
-        if (ra->range == NULL) {
-            ra->range = range;
-            ra->v_reg = reg;
-            NEART_LOG_DEBUG("%d %d\n", ra->hw_reg, reg);
-            break;
-        }
-    }
-
-    return ra;
-}
-
-int arch_ra_hwreg_in_use(ra_state_t * state, hwreg_t reg) {
-    // maybe this can be done in O(1) -> blacklist if register is GP...
-    for (int i = 0; i < HW_GP_REG_COUNT; i++) {
-        ra_t * ra = &state->registers[i];
-
-        if (ra->hw_reg == reg) {
-            return ra->range != NULL;
-        }
-    }
-
-    return 0;
-}
-
-hwreg_t arch_ra_hwreg(ra_state_t * state, life_range_t * ranges, vreg_t reg, int time_step) {
-
-    life_range_t * range = ranges + reg;
-
-    for (int i = 0; i < HW_GP_REG_COUNT; i++) {
-        ra_t * ra = &state->registers[i];
-
-        if (ra->range != NULL) {
-            if (ra->range->end < time_step) {
-                NEART_LOG_DEBUG("releasing reg (mapped v_reg %d) %d at %d\n", ra->v_reg, ra->hw_reg, time_step);
-                ra->range = NULL; // release
-                continue;
+            if (ra->range != NULL) {
+                if (ra->range->end < time_step) {
+                    NEART_LOG_DEBUG("releasing reg (mapped v_reg %d) %d at %d\n", ra->v_reg, ra->hw_reg, time_step);
+                    ra->range = NULL; // release
+                    continue;
+                }
             }
-        }
 
-        if (ra->range != NULL && ra->v_reg == reg) {
-            NEART_LOG_DEBUG("access hw_reg (mapped v_reg %d) %d at %d\n", ra->v_reg, ra->hw_reg, time_step);
-            return ra->hw_reg;
+            if (ra->range != NULL && ra->v_reg == reg) {
+                NEART_LOG_DEBUG("access hw_reg (mapped v_reg %d) %d at %d\n", ra->v_reg, ra->hw_reg, time_step);
+                return ra->hw_reg;
+            }
         }
     }
 
     ra_t * new_reg = _arch_ra_aquire_register(state, range, reg);
     if (new_reg == NULL) {
+        NEART_LOG_FATAL("oh no! i ran out of registers... this would be a good time to spill\n");
         return -1;
     }
     NEART_LOG_DEBUG("first access hw_reg (mapped v_reg %d) %d at %d\n", new_reg->v_reg, new_reg->hw_reg, time_step);
@@ -138,34 +65,16 @@ hwreg_t arch_ra_hwreg(ra_state_t * state, life_range_t * ranges, vreg_t reg, int
     return new_reg->hw_reg;
 }
 
-inline
-void arch_load_32(memio_t * io, int32_t c, hwreg_t hwreg) {
+void arch_move_reg(memio_t * io, ra_state_t * state, vreg_t source, vreg_t target) {
+    hwreg_t hw_source = arch_ra_hwreg(state, source);
+    hwreg_t hw_target = arch_ra_hwreg(state, target);
 
-    mem_o_byte(io, REX | REX_W | (hwreg >= R8 ? REX_B : 0));
-    mem_o_byte(io, X86_MOV);
-    mem_o_byte(io, MOD_RM(hwreg % 8));
-    mem_o_int_le(io, c);
+    mem_o_byte(io, REX | REX_W);
+    mem_o_byte(io, X86_MOV_REG_REG);
+    mem_o_byte(io, MOD_RM(hw_source * 8 | (hw_target & 0x7)));
 }
 
-int arch_save_hw_reg(memio_t * io, ra_state_t * state, hwreg_t reg) {
-    if (arch_ra_hwreg_in_use(state, reg)) {
-        if (reg >= R8) {
-            mem_o_byte(io, REX | REX_B);
-        }
-
-        mem_o_byte(io, X86_PUSHQ_BASE + (reg % 8));
-
-        return 1;
-    }
-    return 0;
-}
-
-void arch_restore_hw_reg(memio_t * io, hwreg_t reg) {
-    if (reg >= R8) {
-        mem_o_byte(io, REX | REX_B);
-    }
-
-    mem_o_byte(io, X86_POPQ_BASE + (reg % 8));
+void arch_add_reg(memio_t * io, ra_state_t * state, vreg_t s1, vreg_t s2, vreg_t target) {
 }
 
 void arch_move_long(memio_t * io, hwreg_t reg, void * ptr) {
@@ -206,22 +115,44 @@ void arch_call(memio_t * io, ra_state_t * state, void * func, void * arg1, void 
     mem_o_byte(io, X86_CALLQ);
     mem_o_byte(io, 0xd0 | (hw_reg % 8));
 
+    if ((hw_reg_in_use & 0x4) != 0) { arch_restore_hw_reg(io, arg2_reg); }
+    if ((hw_reg_in_use & 0x2) != 0) { arch_restore_hw_reg(io, arg1_reg); }
+
+    // move rax to the hw register ->
+    mem_o_byte(io, REX | REX_W);
+    mem_o_byte(io, X86_MOV_REG_REG);
+    mem_o_byte(io, MOD_RM(RAX * 8 | (hw_reg & 0x7)));
+
+    if ((hw_reg_in_use & 0x8) != 0) { arch_restore_hw_reg(io, ret_reg); }
+
     // rax contains the address of the newly compiled code
     // at a later point in time this will not be invoked
     // any more -> the compile function turns this
     // code into a direct call. 
     // load reg, 0xaddr; call reg
     mem_o_byte(io, X86_CALLQ);
-    mem_o_byte(io, 0xd0 | (RAX % 8));
+    mem_o_byte(io, 0xd0 | (hw_reg % 8));
 
-    if ((hw_reg_in_use & 0x8) != 0) { arch_restore_hw_reg(io, ret_reg); }
-    if ((hw_reg_in_use & 0x4) != 0) { arch_restore_hw_reg(io, arg2_reg); }
-    if ((hw_reg_in_use & 0x2) != 0) { arch_restore_hw_reg(io, arg1_reg); }
     if ((hw_reg_in_use & 0x1) != 0) { arch_restore_hw_reg(io, hw_reg); }
 }
 
 inline 
-void arch_ret(memio_t * io) {
+void arch_ret(memio_t * io, int var_byte_count) {
+
+    if (var_byte_count > 0) {
+        mem_o_byte(io, REX | REX_W);
+        mem_o_byte(io, X86_OP_81);
+        mem_o_byte(io, 0xc0 + RSP); // c0 add?
+        mem_o_int_le(io, var_byte_count);
+    }
+
+    // mov rbp -> rsp
+    mem_o_byte(io, REX | REX_W);
+    mem_o_byte(io, X86_MOV_REG_REG);
+    mem_o_byte(io, MOD_RM(RBP * 8 | (RSP & 0x7)));
+
+    // pop rbp
+    mem_o_byte(io, X86_POPQ_BASE + RBP);
     mem_o_byte(io, X86_RET);
 }
 
@@ -234,4 +165,163 @@ void arch_push_const(memio_t * io, int32_t c) {
         mem_o_byte(io, X86_PUSH_INT);
         mem_o_int_le(io, c);
     /*}*/
+}
+
+void arch_enter_routine(memio_t * io, int32_t var_count_bytes) {
+    // push rbp
+    mem_o_byte(io, X86_PUSHQ_BASE + RBP);
+
+    // mov rsp -> rbp
+    mem_o_byte(io, REX | REX_W);
+    mem_o_byte(io, X86_MOV_REG_REG);
+    mem_o_byte(io, MOD_RM(RSP * 8 | (RBP & 0x7)));
+    if (var_count_bytes > 0) {
+        mem_o_byte(io, REX | REX_W);
+        mem_o_byte(io, X86_OP_81);
+        mem_o_byte(io, 0xe8 + RSP); // 0xec
+        mem_o_int_le(io, var_count_bytes);
+    }
+}
+
+inline
+void arch_load_32(memio_t * io, int32_t c, hwreg_t hwreg) {
+
+    mem_o_byte(io, REX | REX_W | (hwreg >= R8 ? REX_B : 0));
+    mem_o_byte(io, X86_MOV);
+    mem_o_byte(io, MOD_RM(hwreg % 8));
+    mem_o_int_le(io, c);
+}
+
+int arch_save_hw_reg(memio_t * io, ra_state_t * state, hwreg_t reg) {
+    if (arch_ra_hwreg_in_use(state, reg)) {
+        if (reg >= R8) {
+            mem_o_byte(io, REX | REX_B);
+        }
+
+        mem_o_byte(io, X86_PUSHQ_BASE + (reg % 8));
+
+        return 1;
+    }
+    return 0;
+}
+
+void arch_restore_hw_reg(memio_t * io, hwreg_t reg) {
+    if (reg >= R8) {
+        mem_o_byte(io, REX | REX_B);
+    }
+
+    mem_o_byte(io, X86_POPQ_BASE + (reg % 8));
+}
+
+ra_state_t * arch_ra_state_new(void) {
+    GC_ALLOC_STRUCT(ra_state_t, s);
+
+    // why this way? this is really not maintainable...
+    // fix this... maybe some time later :)
+    ra_t * f;
+    f = &s->registers[0];
+    f->hw_reg = RAX;
+    f->range = NULL;
+    f = &s->registers[1];
+    f->hw_reg = RCX;
+    f->range = NULL;
+    f = &s->registers[2];
+    f->hw_reg = RDX;
+    f->range = NULL;
+    f = &s->registers[3];
+    f->hw_reg = RBX;
+    f->range = NULL;
+    f = &s->registers[4];
+    f->hw_reg = RSI;
+    f->range = NULL;
+    f = &s->registers[5];
+    f->hw_reg = RDI;
+    f->range = NULL;
+    f = &s->registers[6];
+    f->hw_reg = RBP
+    f->range = NULL;
+    f = &s->registers[7];
+    f->hw_reg = RSP;
+    f->range = NULL;
+    f = &s->registers[8];
+    f->hw_reg = R8;
+    f->range = NULL;
+    f = &s->registers[9];
+    f->hw_reg = R9;
+    f->range = NULL;
+    f = &s->registers[10];
+    f->hw_reg = R10;
+    f->range = NULL;
+    f = &s->registers[11];
+    f->hw_reg = R11;
+    f->range = NULL;
+    f = &s->registers[12];
+    f->hw_reg = R12;
+    f->range = NULL;
+    f = &s->registers[13];
+    f->hw_reg = R13;
+    f->range = NULL;
+    f = &s->registers[14];
+    f->hw_reg = R14;
+    f->range = NULL;
+    f = &s->registers[15];
+    f->hw_reg = R15;
+    f->range = NULL;
+
+    s->reg_displacement[0] = R15;
+    s->reg_displacement[1] = R14;
+    s->reg_displacement[2] = R13;
+    s->reg_displacement[3] = R12;
+    s->reg_displacement[4] = R11;
+    s->reg_displacement[5] = R10;
+    s->reg_displacement[6] = 3;
+
+    s->reg_displacement[7] = 5;
+    s->reg_displacement[8] = 4;
+    s->reg_displacement[9] = 2;
+    s->reg_displacement[10] = 1;
+    s->reg_displacement[11] = 8;
+    s->reg_displacement[12] = 9;
+    s->reg_displacement[13] = RAX;
+
+    return s;
+}
+
+ra_t * _arch_ra_aquire_register(ra_state_t * state, life_range_t * range, vreg_t reg) {
+
+    ra_t * ra = NULL;
+
+    int pos = 0;
+    // it is a special register -> only use the real mapping
+    if (reg <= 6) {
+        pos = s->reg_displacement[HW_GP_REG_COUNT + reg];
+        ra = &state->registers[pos];
+        return ra;
+    }
+
+    for (int i = 0; i < HW_GP_REG_COUNT; i++) {
+        ra = &state->registers[state->reg_displacement[i]];
+        if (ra->range == NULL) {
+            ra->range = range;
+            ra->v_reg = reg;
+            NEART_LOG_DEBUG("allocating hw: %d with virtual: %d\n", ra->hw_reg, reg);
+            break;
+        }
+        ra = NULL;
+    }
+
+    return ra;
+}
+
+int arch_ra_hwreg_in_use(ra_state_t * state, hwreg_t reg) {
+    // maybe this can be done in O(1) -> blacklist if register is GP...
+    for (int i = 0; i < HW_REG_COUNT; i++) {
+        ra_t * ra = &state->registers[i];
+
+        if (ra->hw_reg == reg) {
+            return ra->range != NULL;
+        }
+    }
+
+    return 0;
 }

@@ -34,10 +34,16 @@ typedef struct __ra_t {
     life_range_t * range;
 } ra_t;
 
-#define HW_GP_REG_COUNT (14)
+#define HW_REG_COUNT (16)
+#define HW_GP_REG_COUNT (7)
+#define HW_ROUTINE_REG_COUNT (7)
 
 typedef struct __ra_state_t {
-    ra_t registers[HW_GP_REG_COUNT];
+    life_range_t * ranges;
+    int time_step;
+    ra_t registers[HW_REG_COUNT];
+    // this displacement is used for GP registers (first 7) and then for routine registers (the latter7)
+    char reg_displacement[HW_GP_REG_COUNT + HW_ROUTINE_REG_COUNT];
 } ra_state_t;
 
 typedef int32_t reg_state_t;
@@ -45,10 +51,17 @@ typedef int32_t hwreg_t;
 
 void arch_call(memio_t * io, ra_state_t * state, void * func, void * arg1, void * arg2, int time_step);
 void arch_load_32(memio_t * io, int32_t c, hwreg_t vreg);
-void arch_ret(memio_t * io);
 void arch_push_const(memio_t * io, int32_t c);
 
-hwreg_t arch_ra_hwreg(ra_state_t * state, life_range_t * ranges, vreg_t reg, int time_step);
+/**
+ * Return from a routine call.
+ */
+void arch_ret(memio_t * io, int var_byte_count);
+
+/**
+ * Get the hardware register for this virtual register.
+ */
+hwreg_t arch_ra_hwreg(ra_state_t * state, vreg_t reg);
 
 /**
  * Save the hardware register on the stack
@@ -71,5 +84,20 @@ int arch_ra_hwreg_in_use(ra_state_t * state, hwreg_t reg);
 void arch_move_long(memio_t * io, hwreg_t reg, void * ptr);
 
 ra_state_t * arch_ra_state_new(void);
+
+/**
+ * Enter a routine. arch_ret is the inverse.
+ */
+void arch_enter_routine(memio_t * io, int var_count_bytes);
+
+/**
+ * move a register to another register.
+ */
+void arch_move_reg(memio_t * io, ra_state_t * state, vreg_t source, vreg_t target);
+
+/**
+ * add two registers into a third one
+ */
+void arch_add_reg(memio_t * io, ra_state_t * state, vreg_t s1, vreg_t s2, vreg_t target);
 
 #endif

@@ -21,7 +21,7 @@
     FOR_EACH(0x1,  NI_LSI,       0b110101, instr_int_load_stack,      "load a 32 bit integer off the stack into the register x") \
     FOR_EACH(0x2,  NR_ADD,       0b111111, instr_reg_add,             "add to registers into a target register (32 bit)") \
     FOR_EACH(0x3,  NR_SUB,       0b111111, instr_reg_sub,             "sub to registers into a target register (32 bit)") \
-    FOR_EACH(0x4,  NI_SPI,       0b000100, instr_int_stack_push,      "push a 32 bit integer onto the stack") \
+    FOR_EACH(0x4,  N_SPI,        0b000100, instr_int_stack_push,      "push a 32 bit integer onto the stack") \
     FOR_EACH(0x5,  NR_PUT,       0b010100, instr_reg_print,           "print the contents of a register") \
     FOR_EACH(0x6,  N_CALL,       0b000100, instr_call,                "call a function") \
     FOR_EACH(0x7,  NR_L32,       0b100101, instr_reg_load_int32,      "load an int32") \
@@ -30,6 +30,8 @@
     FOR_EACH(0xa,  NR_JMP,       0b000001, instr_jmp,                 "move instr. pointer [-127,+128]") \
     FOR_EACH(0xb,  NR_SKIP_EQ,   0b011111, instr_skip_equal,          "if register p1 and register p2 equal skip t bytes") \
     FOR_EACH(0xc,  N_METH_BOUND, 0b000000, instr_meth_bound,          "set the bounds of a method") \
+    FOR_EACH(0xd,  NR_STACK_ARG, 0b010100, instr_stack_arg,           "an argument for a routine on the stack.") \
+    FOR_EACH(0xe,  NR_PUSH_REG,  0b010100, instr_push_reg,            "push the content of a register onto the stack.") \
 /*                                 ++++++      
  *                                 |||||+-> target
  *                                 ||||+--> param2
