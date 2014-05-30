@@ -5,8 +5,11 @@
 #include <sys/mman.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <malloc.h>
 #include <errno.h>
+
+#ifdef LINUX
+#include <malloc.h>
+#endif
 
 void _ensure_size(memio_t * io, int new) {
     if (io->cursor + new >= io->size) {
