@@ -4,7 +4,7 @@ import subprocess
 import os
 
 def options(c):
-    c.load('compiler_c')
+    c.load('compiler_c gas')
     # we are in debug mode all the time
     c.add_option('--test', action='store_true', default=False, help='build the test suit')
     c.add_option('--wall', action='store_true', default=False, help='show all warnings generated from cc')
@@ -12,7 +12,7 @@ def options(c):
 
 
 def configure(c):
-    c.load('compiler_c flex bison')
+    c.load('compiler_c gas flex bison')
     c.env.BISONFLAGS = ['-d','--report=solved']
     if sys.platform.startswith("darwin"):
         c.env.LIBPATH += ['/usr/local/Cellar/flex/2.5.37/lib/']

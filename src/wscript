@@ -35,7 +35,7 @@ def build(c):
              )
 
     c.objects( source = 'vm/cpool.c vm/loader.c vm/rcode.c util/io.c jit/compiler.c jit/bblock.c jit/reg_alloc.c ' +
-                        'jit/run.c jit/x86_64.c',
+                        'jit/run.c jit/x86_64.c jit/x86_jit_switch.S ',
                target = 'neart_runtime',
                includes = includes,
              )

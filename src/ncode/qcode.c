@@ -126,17 +126,17 @@ static void _instr_if(_ncode_gen_t * gen, sem_expr_t * se, int target) {
     _qcode_concat(gen->code, then);
 
     se->assigned_register = target;
-
-
 }
 
 static qcode_t * _instructions(_ncode_gen_t * gen, sem_expr_t * se, int target) {
     qcode_t * code = _qcode_alloc();
 
+    sem_expr_t * se_original = se;
+
     _ncode_gen_t g = { .code = code, .reg = gen->reg, .cpool = gen->cpool };
 
     // when nesting is encountered the data is in the detail branch
-    if (se->lang_construct == construct_nest) {
+    while (se->lang_construct == construct_nest) {
         se = se->detail;
     }
 
@@ -147,11 +147,15 @@ static qcode_t * _instructions(_ncode_gen_t * gen, sem_expr_t * se, int target) 
         _instr_if(&g, se, target);
     } else if (se->lang_construct == construct_param) {
         // this is just a constant value
-        if (target == -1) { NEART_LOG_FATAL("expected target register to be already specified\n"); }
+        //if (target == -1) { NEART_LOG_FATAL("expected target register to be already specified\n"); }
         _instr_move(code, se, target);
+        //IMPL_ME();
     } else {
         IMPL_ME();
     }
+
+    // propagate the information up in the tree
+    se_original->assigned_register = se->assigned_register;
 
     gen->reg = g.reg;
 
@@ -164,11 +168,9 @@ int n_ra_reg(_ncode_gen_t * gen) {
     return gen->reg++;
 }
 
-static int _instr_call_param(_ncode_gen_t * gen, sem_expr_t * se, int index) {
+static void _instr_call_param(_ncode_gen_t * gen, sem_expr_t * se, int index) {
     qcode_t * code = _instructions(gen, se, index);
     _qcode_concat(gen->code, code);
-    se->assigned_register = index;
-    return index;
 }
 
 static void _instr_call(_ncode_gen_t * gen, sem_expr_t * se, int target) {
@@ -214,6 +216,16 @@ static void _instr_call(_ncode_gen_t * gen, sem_expr_t * se, int target) {
             cur = cur->next;
         }
 
+        cur = se->next;
+        for (i = 0; i < param_count; i++) {
+            if (cur->assigned_register != i) {
+                qinstr_t instr = _instr(NR_MOV, cur->assigned_register, PT_REG, 0, UNUSED, i);
+                _qcode_append(gen->code, instr);
+                cur->assigned_register = i;
+            }
+            cur = cur->next;
+        }
+
         uint32_t idx = neart_cpool_builder_find_or_reserve_index(gen->cpool, se->func->name);
         instr = _instr(N_CALL, idx, PT_CPOOL_IDX, 0, UNUSED, UNUSED);
         _qcode_append(gen->code, instr);
@@ -222,11 +234,11 @@ static void _instr_call(_ncode_gen_t * gen, sem_expr_t * se, int target) {
         IMPL_ME();
     }
 
-
-    if (se->assigned_register != target) {
+    /*
+    if (se->assigned_register != target && target != -1) {
         qinstr_t instr = _instr(NR_MOV, se->assigned_register, PT_REG, 0, UNUSED, target);
         _qcode_append(gen->code, instr);
-    }
+    }*/
 }
 
 static qinstr_t * _qcode_last(qcode_t * code) {

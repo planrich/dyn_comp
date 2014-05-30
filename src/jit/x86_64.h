@@ -50,9 +50,11 @@ typedef struct __ra_state_t {
 typedef int32_t reg_state_t;
 typedef int32_t hwreg_t;
 
-void arch_call(memio_t * io, ra_state_t * state, void * func, void * arg1, void * arg2, int time_step);
+void arch_call(memio_t * io, ra_state_t * state, void * func, void * arg1);
 void arch_load_32(memio_t * io, int32_t c, hwreg_t vreg);
 void arch_push_const(memio_t * io, int32_t c);
+
+void arch_replace_jit_call(memio_t * io, void * mcode_addr, void * end_ptr);
 
 /**
  * Return from a routine call.

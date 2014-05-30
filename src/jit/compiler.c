@@ -10,30 +10,61 @@
 
 #define MCODE_SIZE 64
 
-static mcode_t * _jit_methods = NULL;
+mcode_t * _jit_methods = NULL;
+rcode_t * _register_code_base = NULL;
 
-mcode_t * _neart_jit_compile(rcode_t * base, rcode_t * code);
-memio_t * neart_jit_template_transform(rcode_t * base, bbline_t * line, life_range_t * ranges);
+void * jit_switch(rcode_t * code);
+
+mcode_t * _neart_jit_compile(rcode_t * code);
+memio_t * neart_jit_template_transform(bbline_t * line, life_range_t * ranges);
 
 int _count_stack_bytes(bblock_t * head);
 
-mcode_t * _neart_jit_compile(rcode_t * base, rcode_t * code) {
+void * jit_switch(rcode_t * code) {
 
-    printf("starting to compile %p\n", code);
+    void * ret_addr = __builtin_return_address(0);
+    //printf("%p return address got from jit_switch\n",ret_addr);
+    /*
+     * example generation 
+     * 0x0000000101000012:	push   %r15
+     * 0x0000000101000014:	push   %rdi <== move wptr here and write new callq (1)
+     * 0x0000000101000015:	push   %rax
+     * 0x0000000101000016:	movabs $0x100002310,%r15
+     * 0x0000000101000020:	movabs $0x1000bef98,%rdi
+     * 0x000000010100002a:	callq  *%r15
+     * 0x000000010100002d:	mov    %rax,%r15 <== ret_addr (2)
+     * 0x0000000101000030:	pop    %rax
+     * 0x0000000101000031:	pop    %rdi
+     * 0x0000000101000032:	callq  *%r15 <== eptr
+     * 0x0000000101000035:	pop    %r15
+     */
+    void * wptr = ret_addr - 26; // (1)
+    void * eptr = ret_addr + 3 + 1 + 1 + 1; // 3 mov, 1 pop, 1 pop
+    memio_t memio = { .memory = wptr, .cursor = 0, .size = 4096 };
+
+    mcode_t * m = _neart_jit_compile(code);
+    arch_replace_jit_call(&memio, m, eptr);
+
+    return m;
+}
+
+inline
+mcode_t * _neart_jit_compile(rcode_t * code) {
+
     bbline_t * line = neart_bbnize(code);
 
     // calculate life ranges
     life_range_t * life_ranges = neart_ra_life_ranges(line);
 
     // then invoke the assembler
-    memio_t * io = neart_jit_template_transform(base, line, life_ranges);
+    memio_t * io = neart_jit_template_transform(line, life_ranges);
 
     mem_set_exec(io);
 
     return io->memory;
 }
 
-memio_t * neart_jit_template_transform(rcode_t * base, bbline_t * line, life_range_t * ranges) {
+memio_t * neart_jit_template_transform(bbline_t * line, life_range_t * ranges) {
 
     int mcode_size = MCODE_SIZE;
     int32_t c1,c2;
@@ -47,7 +78,7 @@ memio_t * neart_jit_template_transform(rcode_t * base, bbline_t * line, life_ran
     bblock_t * first_block = line->first;
 
     int var_byte_count = _count_stack_bytes(first_block);
-    var_byte_count = 4;
+    var_byte_count = 0;
     arch_enter_routine(io,var_byte_count);
 
     for (int i = 0; i < line->size; i++) {
@@ -67,8 +98,7 @@ memio_t * neart_jit_template_transform(rcode_t * base, bbline_t * line, life_ran
                 break;
             case N_CALL:
                 c1 = *(block->instr + 1);
-                printf("_neart_hit_compile is at %p\n", &_neart_jit_compile);
-                arch_call(io, state, &_neart_jit_compile, base, base + c1, i);
+                arch_call(io, state, &jit_switch, _register_code_base + c1);
                 break;
             case NR_MOV:
                 r1 = *(block->instr + 1);
@@ -87,12 +117,6 @@ memio_t * neart_jit_template_transform(rcode_t * base, bbline_t * line, life_ran
         }
     }
 
-    int size = io->cursor;
-    for (int i = 0; i < size; i++) {
-        NEART_LOG_INFO("0x%x ", *(((unsigned char*)io->memory)+i));
-    }
-    NEART_LOG_INFO("\n");
-
     return io;
 }
 
@@ -101,11 +125,12 @@ mcode_t * neart_jit_compile(vmctx_t * vmc, rcode_t * code) {
     rcode_t * base = vmc->code;
 
     if (_jit_methods == NULL) {
+        _register_code_base = base;
         NEART_LOG_DEBUG("alloc jit methods table of size %d\n", vmc->symbols->size);
         _jit_methods = GC_MALLOC(sizeof(void*) * vmc->symbols->size);
     }
 
-    return _neart_jit_compile(base, code);
+    return _neart_jit_compile(code);
 }
 
 int _count_stack_bytes(bblock_t * head) {

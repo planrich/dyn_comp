@@ -32,6 +32,8 @@ static mcode_t mbuf[16];
 #define X86_PUSH_BYTE (0x6a)
 #define X86_PUSH_INT (0x68)
 
+#define X86_JMP_REL (0xe9)
+
 static 
 ra_t * _arch_ra_aquire_register(ra_state_t * state, life_range_t * range, vreg_t reg);
 
@@ -105,21 +107,19 @@ void _arch_call_reg(memio_t * io, hwreg_t hw_reg) {
     mem_o_byte(io, 0xd0 | (hw_reg % 8));
 }
 inline 
-void arch_call(memio_t * io, ra_state_t * state, void * func, void * arg1, void * arg2, int time_step) {
+void arch_call(memio_t * io, ra_state_t * state, void * func, void * arg1) {
 
     hwreg_t hw_reg = R15;
     hwreg_t arg1_reg = RDI;
-    hwreg_t arg2_reg = RSI;
     hwreg_t ret_reg = RAX;
 
     arch_save_hw_reg(io, state, hw_reg);
     arch_save_hw_reg(io, state, arg1_reg);
-    arch_save_hw_reg(io, state, arg2_reg);
+    arch_save_hw_reg(io, state, RSI);
     arch_save_hw_reg(io, state, ret_reg);
 
     arch_move_long(io, hw_reg, (int64_t)func);
     arch_move_long(io, arg1_reg, (int64_t)arg1);
-    arch_move_long(io, arg2_reg, (int64_t)arg2);
 
     // if reg >= r8 -> prepend REX | REX_B 
     if (hw_reg >= R8) {
@@ -132,7 +132,7 @@ void arch_call(memio_t * io, ra_state_t * state, void * func, void * arg1, void 
 
     arch_restore_hw_reg(io, ret_reg);
 
-    arch_restore_hw_reg(io, arg2_reg);
+    arch_restore_hw_reg(io, RSI);
     arch_restore_hw_reg(io, arg1_reg);
 
     // rax contains the address of the newly compiled code
@@ -143,6 +143,16 @@ void arch_call(memio_t * io, ra_state_t * state, void * func, void * arg1, void 
     _arch_call_reg(io, hw_reg);
 
     arch_restore_hw_reg(io, hw_reg);
+}
+
+inline
+void arch_replace_jit_call(memio_t * io, void * mcode_addr, void * end_ptr) {
+    hwreg_t reg = R15;
+    arch_move_long(io, reg, (int64_t)mcode_addr);
+    int diff = end_ptr - (io->memory + io->cursor) - 5; // minus 5. jmp <int> -> 5 bytes.
+
+    mem_o_byte(io, X86_JMP_REL);
+    mem_o_int_le(io, diff);
 }
 
 inline 
