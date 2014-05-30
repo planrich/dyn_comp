@@ -16,5 +16,5 @@ class TestArith(test.CompileExecute):
             func main: int
             =; {0} + {1}
         """.format(a, b))
-        self.assertEquals(self.register_value(6),1)
+        self.assertResult(1)
 

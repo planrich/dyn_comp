@@ -1,7 +1,7 @@
 
 import test
 
-class TestArith(test.CompileExecute):
+class TestFunc(test.CompileExecute):
 
     def test_func_call(self):
         self.compile_and_exec("""
@@ -11,12 +11,12 @@ class TestArith(test.CompileExecute):
             func add: int -> int -> int
             = a b ; a + b
         """)
-        assert self.register_value(6) == 10
+        self.assertResult(10)
 
     def test_func_call_func_param(self):
         self.compile_and_exec("""
             func main: int
-            =; add (three) (seven)
+            =; add three seven
 
             func add: int -> int -> int
             = a b ; a + b
@@ -27,7 +27,7 @@ class TestArith(test.CompileExecute):
             func seven: int
             =; 7
         """)
-        assert self.register_value(6) == 10
+        self.assertResult(10)
 
 
     def test_func_call_register_overlap(self):
@@ -41,4 +41,4 @@ class TestArith(test.CompileExecute):
             func seven: int
             =; 7
         """)
-        self.assertEquals(self.register_value(6), 9)
+        self.assertResult(9)
