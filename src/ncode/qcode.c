@@ -208,7 +208,6 @@ static void _instr_call(_ncode_gen_t * gen, sem_expr_t * se, int target) {
             NEART_LOG_FATAL("cannot handle more than 6 params ... yet\n");
         }
 
-        // TODO save the registers
         sem_expr_t * cur = se->next;
         for (i = 0; i < param_count; i++) {
             _instr_call_param(gen, cur, i);

@@ -125,11 +125,18 @@ static sem_expr_t * _type_check_func(_pf_trans_t * ctx, func_t * func) {
         expr_t * cur = kl_val(it);
         param_t * param = neart_param_at(params, i, 0);
         sem_expr_t * expr = neart_type_check(cc, cur, param);
-        expr->argument_index = i;
         if (expr == NULL) {
             kl_destroy(expr_t, list);
             return NULL;
         }
+
+        sem_expr_t * parens = _alloc_sem_expr(type_none, NULL);
+        parens->lang_construct = construct_nest;
+        parens->detail = expr;
+        parens->argument_index = i;
+        expr->argument_index = i;
+
+        expr = parens;
 
         spe->next = expr;
         expr->prev = spe;

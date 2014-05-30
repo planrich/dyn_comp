@@ -63,6 +63,8 @@ module_t * neart_check_semantics(compile_context_t * cc, expr_t * root) {
 
 bail_out_sem_check:
 
+    NEART_LOG_FATAL("semantic check failed!\n");
+
     kl_destroy(func_t, funcs);
     return NULL; 
 }

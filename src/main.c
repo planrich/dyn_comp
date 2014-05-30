@@ -40,7 +40,7 @@ int main(int argc, char *argv[])
         int option_index = 0;
         static struct option long_options[] = {
 #ifdef NEART_DEBUG
-            {"syntax",  required_argument, 0,  0 },
+            {"dot",  required_argument, 0,  0 },
             {"filter",  required_argument, 0,  1 },
 #endif
             {"verbose", no_argument,       0,  'v' },
@@ -96,7 +96,9 @@ int main(int argc, char *argv[])
     compile_context_t cc;
     cc.symbols = neart_sym_table_alloc();
     errno = 0;
+    NEART_LOG_INFO("checking semantics...");
     module_t * module = neart_check_semantics(&cc, root);
+    NEART_LOG_INFO("done\n");
     neart_expr_free_r(root);
 
     if (errno) {
@@ -104,9 +106,13 @@ int main(int argc, char *argv[])
     } else {
 
         cpool_builder_t * builder = neart_cpool_builder_alloc();
+        NEART_LOG_INFO("generating register code...");
         qcode_t * code = neart_generate_register_code(module, builder);
+        NEART_LOG_INFO("done\n");
         if (code) {
+            NEART_LOG_INFO("writing code & pool to file...");
             neart_write_to_file(builder, code, "code.nc");
+            NEART_LOG_INFO("done\n");
         }
 
         neart_cpool_builder_free(builder);
