@@ -31,7 +31,7 @@ int _ra_used_reg(life_range_t * ranges, int max_register, int reg, int basic_blo
 
 life_range_t * neart_ra_life_ranges(bbline_t * line) {
 
-    int max_register = 5;
+    int max_register = 16;
     life_range_t * ranges = GC_MALLOC(sizeof(life_range_t)*max_register);
     ranges->reg = -1; // the first reg must not equal 0 -> otherwise it is
                       // recognized as 'valid' life range
@@ -49,7 +49,7 @@ life_range_t * neart_ra_life_ranges(bbline_t * line) {
             for (int j = 0; j < 6; j++) {
                 life_range_t * range = ranges + j;
                 if (range->reg == j) {
-                    range->end = i;
+                    range->end = i+1; // add one offset -> first instr is no bblock
                 }
             }
         }

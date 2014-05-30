@@ -2,6 +2,7 @@
 #ifndef X86_64_H
 #define X86_64_H
 
+#include <inttypes.h>
 #include "compiler.h"
 #include "memio.h"
 #include "reg_alloc.h"
@@ -66,7 +67,7 @@ hwreg_t arch_ra_hwreg(ra_state_t * state, vreg_t reg);
 /**
  * Save the hardware register on the stack
  */
-int arch_save_hw_reg(memio_t * io, ra_state_t * state, hwreg_t reg);
+void arch_save_hw_reg(memio_t * io, ra_state_t * state, hwreg_t reg);
 
 /**
  * Restore the hardware register from the stack.
@@ -81,8 +82,11 @@ int arch_ra_hwreg_in_use(ra_state_t * state, hwreg_t reg);
 /**
  * Move 64 bit to a register. (movabsq)
  */
-void arch_move_long(memio_t * io, hwreg_t reg, void * ptr);
+void arch_move_long(memio_t * io, hwreg_t reg, int64_t ptr);
 
+/**
+ * create a new register allocator state.
+ */
 ra_state_t * arch_ra_state_new(void);
 
 /**

@@ -51,15 +51,14 @@ memio_t * neart_jit_template_transform(rcode_t * base, bbline_t * line, life_ran
     arch_enter_routine(io,var_byte_count);
 
     for (int i = 0; i < line->size; i++) {
-        state->time_step = 0;
+        state->time_step = i;
 
         bblock_t * block = line->first + i;
-        int time_step = i;
         switch (*block->instr) {
             case NR_L32:
                 c1 = *(block->instr + 1);
                 r1 = *(block->instr + 1 + 4);
-                arch_load_32(io, c1, arch_ra_hwreg(state, ranges, r1, time_step));
+                arch_load_32(io, c1, arch_ra_hwreg(state, r1));
                 //if (r1 < 6) {
                     // this is a paramter for a call -> push it on the stack
                     //arch_push_const(io, c1);
