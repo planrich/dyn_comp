@@ -16,8 +16,9 @@ def configure(c):
     c.env.BISONFLAGS = ['-d','--report=solved']
     if sys.platform.startswith("darwin"):
         c.env.LIBPATH += ['/usr/local/Cellar/flex/2.5.37/lib/']
-
-    c.env.STLIB += ['fl', 'gc']
+        c.env.STLIB += ['fl', 'gc']
+    else:
+        c.env.LIB += ['fl', 'gc']
 
     c.env.CFLAGS += ['-std=c99', '-m64']
 

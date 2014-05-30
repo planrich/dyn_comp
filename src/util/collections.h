@@ -1,6 +1,7 @@
 #ifndef COLLECTIONS_H
 #define COLLECTIONS_H
 
+#include <inttypes.h>
 #include "klist.h"
 #include "khash.h"
 

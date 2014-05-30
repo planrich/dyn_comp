@@ -5,6 +5,7 @@
 #include <sys/mman.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <malloc.h>
 #include <errno.h>
 
 void _ensure_size(memio_t * io, int new) {
