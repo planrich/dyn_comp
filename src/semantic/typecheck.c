@@ -161,7 +161,7 @@ sem_expr_t * _neart_type_check(_pf_trans_t * ctx) {
     if (expr->type == ET_PARENS) {
 
         sem_expr_t * se = neart_type_check(cc, expr->left, expected_result);
-        sem_expr_t * parens = _alloc_sem_expr(type_none, expr->left);
+        sem_expr_t * parens = _alloc_sem_expr(type_none, NULL);
         parens->detail = se;
         parens->lang_construct = construct_nest;
         return parens;
