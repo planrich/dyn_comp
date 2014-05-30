@@ -12,4 +12,7 @@ KLIST_INIT(32, int32_t, __free);
 
 KLIST_INIT(64, int64_t, __free);
 
+struct __bblock;
+KLIST_INIT(bb, struct __bblock*, __free);
+
 #endif

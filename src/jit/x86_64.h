@@ -54,6 +54,35 @@ void arch_call(memio_t * io, ra_state_t * state, void * func, void * arg1);
 void arch_load_32(memio_t * io, int32_t c, hwreg_t vreg);
 void arch_push_const(memio_t * io, int32_t c);
 
+/**
+ * Patch the jump offset
+ */
+void arch_patch_jmp(memio_t * io, neart_instr_codes_t code, mcode_t * mcode);
+
+/**
+ * condiationally jumps the difference in bytes. Note that
+ * this instruction cannot yet calculate the bytes offset to jump to.
+ * It rather inserts the diff parameter as placeholder.
+ *
+ * Decide which operation with the last parameter
+ *
+ * NOTE: patch the diff bytes at the end of the jit compilation
+ */
+void arch_cond_jmp(memio_t * io, ra_state_t * state, vreg_t s1, vreg_t s2, int32_t diff, neart_instr_codes_t code);
+
+/**
+ * Jumps the difference in bytes.
+ *
+ * NOTE: patch the diff bytes at the end of the jit compilation
+ */
+void arch_jmp(memio_t * io, int32_t diff);
+
+
+/**
+ * When a method is entered the first time, the old machine code
+ * is replaced with the brand new jit compiled method. This method
+ * patches the machine code.
+ */
 void arch_replace_jit_call(memio_t * io, void * mcode_addr, void * end_ptr);
 
 /**

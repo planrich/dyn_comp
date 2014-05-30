@@ -141,12 +141,10 @@ bbline_t * neart_bbnize(rcode_t * code) {
 
 bblock_t * _rcode_find(bbline_t * line, bblock_t * start, int i, int32_t byte_offset) {
 
-    // XXX TEST
-
     rcode_t * base = start->instr;
     int32_t diff;
 
-    while (byte_offset > 0) {
+    while (byte_offset < 0) {
 
         if (i > 1) {
             i--;
@@ -167,8 +165,9 @@ bblock_t * _rcode_find(bbline_t * line, bblock_t * start, int i, int32_t byte_of
         }
     }
 
-    while (byte_offset < 0) {
+    base = (start+1)->instr;
 
+    while (byte_offset > 0) {
         if (i < line->size) {
             i++;
         } else {
@@ -181,10 +180,10 @@ bblock_t * _rcode_find(bbline_t * line, bblock_t * start, int i, int32_t byte_of
         if (diff == byte_offset) {
             // we found it!
             return target;
-        } else if (diff > byte_offset) {
+        //} else if (diff > byte_offset) {
             // if the diff is bigger than the offset the
             // basic block could not be found
-            return NULL;
+        //    return NULL;
         }
     }
 

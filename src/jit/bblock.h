@@ -3,12 +3,8 @@
 
 #include "vm.h"
 #include "rcode.h"
-#include "klist.h"
-
-struct __bblock;
-
-#define __bb_free(x)
-KLIST_INIT(bb, struct __bblock *, __bb_free)
+#include "collections.h"
+#include "compiler.h"
 
 // note that the basic bloc will not be garbage collected
 typedef struct __bblock {
@@ -22,6 +18,11 @@ typedef struct __bblock {
      * How many instructions are included in this basic block?
      */
     int instr_count;
+
+    /**
+     * A pointer to the assembled machine code
+     */
+    mcode_t * mcode;
 
     /**
      * BB edges going out. initially NULL and will not be allocated unless it is needed.

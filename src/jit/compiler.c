@@ -1,5 +1,6 @@
 #include "compiler.h"
 
+#include "collections.h"
 #include "bblock.h"
 #include "vm.h"
 #include "logging.h"
@@ -81,20 +82,18 @@ memio_t * neart_jit_template_transform(bbline_t * line, life_range_t * ranges) {
     var_byte_count = 0;
     arch_enter_routine(io,var_byte_count);
 
+    klist_t(bb) * jmps = kl_init(bb);
+
     for (int i = 0; i < line->size; i++) {
         state->time_step = i;
 
         bblock_t * block = line->first + i;
+        block->mcode = io->memory + io->cursor;
         switch (*block->instr) {
             case NR_L32:
                 c1 = *(block->instr + 1);
                 r1 = *(block->instr + 1 + 4);
                 arch_load_32(io, c1, arch_ra_hwreg(state, r1));
-                //if (r1 < 6) {
-                    // this is a paramter for a call -> push it on the stack
-                    //arch_push_const(io, c1);
-                //} else {
-                //}
                 break;
             case N_CALL:
                 c1 = *(block->instr + 1);
@@ -111,11 +110,37 @@ memio_t * neart_jit_template_transform(bbline_t * line, life_range_t * ranges) {
                 t3 = *(block->instr + 1 + 1 + 1);
                 arch_add_reg(io, state, r1, r2, t3);
                 break;
+            case NR_SKIP_EQ:
+                r1 = *(block->instr + 1);
+                r2 = *(block->instr + 1 + 1);
+                t3 = *(block->instr + 1 + 1 + 1);
+
+                arch_cond_jmp(io, state, r1, r2, t3, *block->instr);
+                *kl_pushp(bb, jmps) = block;
+                printf("pushing block %p\n", block);
+                break;
+            case NR_JMP:
+                t3 = *(block->instr + 1);
+
+                arch_jmp(io, t3);
+                *kl_pushp(bb, jmps) = block;
+                break;
             case N_END:
                 arch_ret(io,var_byte_count);
                 break;
         }
     }
+
+    kliter_t(bb) *it;
+    for (it = kl_begin(jmps); it != kl_end(jmps); it = kl_next(it)) {
+        bblock_t * block = kl_val(it);
+        memio_t memio = { .memory = block->mcode, .cursor = 0, .size = 4096 };
+        // every bb can only have 1 out edge.
+        bblock_t * target = kl_val(kl_begin(block->oedges));
+        arch_patch_jmp(&memio, *block->instr, target->mcode);
+    }
+
+    kl_destroy(bb, jmps);
 
     return io;
 }

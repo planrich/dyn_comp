@@ -34,6 +34,11 @@ static mcode_t mbuf[16];
 
 #define X86_JMP_REL (0xe9)
 
+#define FAR_JMP (0x0f)
+#define X86_JMP_EQ (0x84)
+
+#define X86_CMP_REG_REG (0x39)
+
 static 
 ra_t * _arch_ra_aquire_register(ra_state_t * state, life_range_t * range, vreg_t reg);
 
@@ -42,6 +47,12 @@ ra_t * _arch_ra_aquire_register(ra_state_t * state, life_range_t * range, vreg_t
  */
 static
 void _arch_move_hwreg(memio_t * io, hwreg_t hw_source, hwreg_t hw_target);
+
+/**
+ * Cmp two registers.
+ */
+static
+void _arch_cmp_hwreg(memio_t * io, hwreg_t hw_source, hwreg_t hw_target);
 
 /**
  * Add two registers into the target.
@@ -56,9 +67,65 @@ static
 void _arch_call_reg(memio_t * io, hwreg_t hw_reg);
 
 inline
-void _arch_move_hwreg(memio_t * io, hwreg_t hw_source, hwreg_t hw_target) {
-    NEART_LOG_DEBUG("mov %d -> %d \n", hw_source, hw_target);
+void arch_cond_jmp(memio_t * io, ra_state_t * state, vreg_t s1, vreg_t s2, int32_t diff, neart_instr_codes_t code) {
+    hwreg_t hw_s1 = arch_ra_hwreg(state, s1);
+    hwreg_t hw_s2 = arch_ra_hwreg(state, s2);
 
+    _arch_cmp_hwreg(io, hw_s1, hw_s2);
+
+    mem_o_byte(io, FAR_JMP);
+    switch (code) {
+        case NR_SKIP_EQ:
+            mem_o_byte(io, X86_JMP_EQ);
+            break;
+        default:
+            IMPL_ME();
+    }
+
+    // reserve space for real byte offset
+    mem_o_int_le(io, diff);
+}
+
+inline
+void arch_jmp(memio_t * io, int32_t diff) {
+    mem_o_byte(io, X86_JMP_REL);
+    // reserve space for real byte offset
+    mem_o_int_le(io, diff);
+}
+
+inline
+void arch_patch_jmp(memio_t * io, neart_instr_codes_t code, mcode_t * mcode) {
+    mcode_t * start;
+    int offset = 0;
+    switch (code) {
+        case NR_SKIP_EQ:
+            offset = 3 + 2; // 3 cmp, 2 head je
+            start = io->memory + 3 + 6;
+            break;
+        case NR_JMP:
+            offset = 1;
+            start = io->memory + 5;
+            break;
+        default:
+            IMPL_ME();
+    }
+    io->cursor = offset;
+
+    int diff = mcode - start;
+
+    mem_o_int_le(io, diff);
+}
+
+
+inline
+void _arch_cmp_hwreg(memio_t * io, hwreg_t hw_source, hwreg_t hw_target) {
+    mem_o_byte(io, REX | REX_W | (hw_target >= R8 ? REX_B : 0) | (hw_source >= R8 ? REX_R : 0) );
+    mem_o_byte(io, X86_CMP_REG_REG);
+    mem_o_byte(io, MOD_RM(hw_source * 8 | (hw_target & 0x7)));
+}
+
+inline
+void _arch_move_hwreg(memio_t * io, hwreg_t hw_source, hwreg_t hw_target) {
     mem_o_byte(io, REX | REX_W | (hw_target >= R8 ? REX_B : 0) | (hw_source >= R8 ? REX_R : 0) );
     mem_o_byte(io, X86_MOV_REG_REG);
     mem_o_byte(io, MOD_RM(hw_source * 8 | (hw_target & 0x7)));
@@ -166,7 +233,7 @@ void arch_ret(memio_t * io, int var_byte_count) {
     }
 
     // mov rbp -> rsp
-    _arch_move_hwreg(io, RBP, RSP);
+    // NO NEED to do that! _arch_move_hwreg(io, RBP, RSP);
 
     // pop rbp
     mem_o_byte(io, X86_POPQ_BASE + RBP);
