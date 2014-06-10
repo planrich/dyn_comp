@@ -20,7 +20,7 @@
  *
  */
 
-const char * expr_type_names[27];
+const char * expr_type_names[30];
 #define FOREACH_EXPR_TYPE(PPF) \
     PPF(ET_ROOT, "module"), \
     PPF(ET_FUNC, "func"), \
@@ -48,6 +48,9 @@ const char * expr_type_names[27];
     PPF(ET_NEGATIVE, "-"), \
     PPF(ET_OP_CONS, ":"), \
     PPF(ET_OP_EQUAL, "=="), \
+    PPF(ET_OP_NOT_EQUAL, "!="), \
+    PPF(ET_OP_LESS_EQUAL, "<="), \
+    PPF(ET_OP_GREATER_EQUAL, ">="), \
 
 #define ENUM_CNAME(cname, hname) cname
 #define ENUM_HNAME(cname, hname) hname

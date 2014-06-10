@@ -16,7 +16,7 @@
 #endif
 
 #define stack_push_64(var) *((int64_t*)sp) = ((int64_t)var); sp -= 2
-#define stack_pop_64(var) sp += 2; var = *((int64_t*)sp)
+#define stack_pop_64(var,type) sp += 2; var = (type*)*((int64_t*)sp)
 #define stack_push_32(var) *sp = var; sp -= 1
 #define stack_pop_32(var) sp += 1; var = *sp
 
@@ -132,14 +132,14 @@ instr_ret: //0x0
 
     stack_pop_32(p1);
     for (v = p1-1; v >= 0; v--) {
-        stack_pop_64(registers[v+7]);
+        stack_pop_64(registers[v+7], register_t);
     }
     sp = bp;
-    stack_pop_64(bp);
+    stack_pop_64(bp, stack_cell_t);
 
     VM_LOG("exit sp: %p\n", sp);
 
-    stack_pop_64(ip);
+    stack_pop_64(ip, rcode_t);
     //sp = bp - 2;
     //ip = *sp;
     VM_LOG("sp after popping: %p\n", sp);
@@ -194,5 +194,44 @@ instr_stack_arg:
 instr_push_reg:
     p1 = *ip++;
     // TODO push on the stack
+    goto vm_dispatch;
+instr_skip_not_equal: // 0xf
+    p1 = *ip++;
+    p2 = *ip++;
+    p3 = *ip++;
+    if (registers[p1] != registers[p2]) {
+        ip += p3;
+        VM_LOG("jumping %d bytes\n", p3);
+    }
+    goto vm_dispatch;
+instr_skip_less_equal: // 0x10
+    p1 = *ip++;
+    p2 = *ip++;
+    p3 = *ip++;
+    if (registers[p1] <= registers[p2]) {
+        ip += p3;
+        VM_LOG("jumping %d bytes\n", p3);
+    }
+    goto vm_dispatch;
+instr_skip_greater_equal: // 0x11
+    p1 = *ip++;
+    p2 = *ip++;
+    p3 = *ip++;
+    if (registers[p1] >= registers[p2]) {
+        ip += p3;
+        VM_LOG("jumping %d bytes\n", p3);
+    }
+    goto vm_dispatch;
+instr_reg_mul: // 0x12
+    p1 = *ip++;
+    p2 = *ip++;
+    p3 = *ip++;
+    registers[p3] = registers[p1] * registers[p2];
+    goto vm_dispatch;
+instr_reg_div: // 0x13
+    p1 = *ip++;
+    p2 = *ip++;
+    p3 = *ip++;
+    registers[p3] = registers[p1] / registers[p2];
     goto vm_dispatch;
 }

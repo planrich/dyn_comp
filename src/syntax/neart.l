@@ -65,6 +65,9 @@ STRING \"[^\"]\";
 ">" { return T_GT; }
 ":" { return T_COLON; }
 "==" { return T_DOUBLE_EQUAL; }
+"!=" { return T_NOT_EQUAL; }
+"<=" { return T_LESS_EQUAL; }
+">=" { return T_GREATER_EQUAL; }
 "=" { return T_EQUAL; }
 ";" { return T_SEMI_COLON; }
 

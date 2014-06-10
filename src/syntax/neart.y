@@ -51,6 +51,9 @@ int yyerror (YYLTYPE *locp, expr_t * root, char const * msg);
 %token T_COLON
 %token T_EQUAL
 %token T_DOUBLE_EQUAL
+%token T_NOT_EQUAL
+%token T_LESS_EQUAL
+%token T_GREATER_EQUAL
 %token T_SEMI_COLON
 %token T_COMMA
 %token T_UNDERSCORE
@@ -69,7 +72,7 @@ int yyerror (YYLTYPE *locp, expr_t * root, char const * msg);
 %token T_GT
 
 %left DELSE
-%left T_DOUBLE_EQUAL
+%left T_DOUBLE_EQUAL T_NOT_EQUAL T_LESS_EQUAL T_GREATER_EQUAL
 %left T_COLON
 %left T_MINUS 
 %left T_PLUS 
@@ -237,6 +240,27 @@ expr:
     }
   | expr T_DOUBLE_EQUAL expr {
         expr_t * expr = neart_expr_alloc(ET_OP_EQUAL);
+        CPY_LOC(expr, @1, @3);
+        expr->left = $<expr>1;
+        expr->right = $<expr>3;
+        $<expr>$ = expr; 
+    }
+  | expr T_NOT_EQUAL expr {
+        expr_t * expr = neart_expr_alloc(ET_OP_NOT_EQUAL);
+        CPY_LOC(expr, @1, @3);
+        expr->left = $<expr>1;
+        expr->right = $<expr>3;
+        $<expr>$ = expr; 
+    }
+  | expr T_LESS_EQUAL expr {
+        expr_t * expr = neart_expr_alloc(ET_OP_LESS_EQUAL);
+        CPY_LOC(expr, @1, @3);
+        expr->left = $<expr>1;
+        expr->right = $<expr>3;
+        $<expr>$ = expr; 
+    }
+  | expr T_GREATER_EQUAL expr {
+        expr_t * expr = neart_expr_alloc(ET_OP_GREATER_EQUAL);
         CPY_LOC(expr, @1, @3);
         expr->left = $<expr>1;
         expr->right = $<expr>3;
