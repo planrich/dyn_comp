@@ -16,7 +16,7 @@ int main(int argc, char ** argv) {
 
     GC_INIT();
 
-    neart_log_level = LOG_INFO;
+    neart_log_level = 0x0;
     while (1) {
         int option_index = 0;
         static struct option long_options[] = {
@@ -56,7 +56,11 @@ int main(int argc, char ** argv) {
         NEART_LOG_INFO("register 6 == %d\n", ret);
     } else {
         ret = neart_exec(ctx);
+        if (ret != 0) {
+            NEART_LOG_FATAL("interpretor returned error code %d\n", ret);
+        }
         NEART_LOG_INFO("register 6 == %lld\n", ctx->registers[6]);
+        ret = ctx->registers[6];
     }
 
     ctx = NULL;

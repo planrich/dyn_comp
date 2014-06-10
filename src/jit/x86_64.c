@@ -491,8 +491,8 @@ ra_t * _arch_ra_aquire_register(ra_state_t * state, life_range_t * range, vreg_t
         pos = state->reg_displacement[HW_GP_REG_COUNT + reg];
         ra = &state->registers[pos];
         if (ra->range != NULL) {
-            //IMPL_ME();
-            //printf("fail fail fail r%d, start: %d, end: %d now: %d\n", range->reg, range->start, range->end, state->time_step);
+            //IMPL_ME(); this is no error -> value of the
+            //reg is on the stack...
         } else {
             ra->range = range;
             ra->v_reg = reg;

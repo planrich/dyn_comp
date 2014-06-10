@@ -77,15 +77,21 @@ static int _generate_func(_ncode_gen_t * gen, func_t * func) {
     _gen_start_func(gen);
 
     uint32_t idx = neart_cpool_builder_find_or_reserve_index(gen->cpool, func->name);
-    qinstr_t instr = _instr(N_ENTER, idx, PT_CPOOL_IDX, neart_params_count(params), PT_REG, UNUSED);
-    _qcode_append(gen->code, instr);
+
+    qcode_t * tmp = _qcode_alloc();
+    _ncode_gen_t g = { .code = tmp, .reg = gen->reg, .cpool = gen->cpool };
 
     kliter_t(pattern_t) * k;
     int i = 0;
     for (k = kl_begin(l); k != kl_end(l); k = kl_next(k)) {
         pattern_t * pattern = kl_val(k);
-        _generate_pattern(gen, func, pattern, i++);
+        _generate_pattern(&g, func, pattern, i++);
     }
+
+    qinstr_t instr = _instr(N_ENTER, idx, PT_CPOOL_IDX, neart_params_count(params), PT_REG, g.reg - 7 - 1);
+    _qcode_append(gen->code, instr);
+    _qcode_concat(gen->code, tmp);
+    GC_FREE(tmp);
 
     instr = _instr(N_METH_BOUND, 0, UNUSED, 0, UNUSED, UNUSED);
     _qcode_append(gen->code, instr);

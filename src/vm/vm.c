@@ -10,13 +10,15 @@
 #define NOT_IMPL 0xff
 
 #ifdef NEART_DEBUG
-    #define VM_LOG(string, ...) printf(string, ##__VA_ARGS__)
+    #define VM_LOG(string, ...) NEART_LOG_DEBUG(string, ##__VA_ARGS__)
 #else
     #define VM_LOG(string, ...)
 #endif
 
 #define stack_push_64(var) *((int64_t*)sp) = ((int64_t)var); sp -= 2
+#define stack_pop_64(var) sp += 2; var = *((int64_t*)sp)
 #define stack_push_32(var) *sp = var; sp -= 1
+#define stack_pop_32(var) sp += 1; var = *sp
 
 void * get_sp() {
     void * ptr;
@@ -32,6 +34,7 @@ int neart_exec(vmctx_t * ctx) {
 
     int32_t i1;
     char p1,p2,p3,p4;
+    int v;
 
     stack_cell_t * stack;// = (stack_cell_t*)get_stack_pointer();
     register_t * registers = ctx->registers;
@@ -47,13 +50,14 @@ int neart_exec(vmctx_t * ctx) {
     stack -= 1000; // TODO after using get_sp() the stack grows later?
     sp = stack;
     bp = stack;
-    VM_LOG("top of stack %p\n", stack);
 
     stack_push_64(bp);
-    bp = sp + 2;
+    bp = sp;
 
-    // push the return address
-    stack_push_32(0);
+    stack = sp;
+    VM_LOG("top of stack %p\n", stack);
+
+    stack_push_64(0); // pseudo return addr
 
 vm_dispatch:
     VM_LOG("dispatch opcode 0x%x %p byteoffset: %d\n", *ip, ip, (int)(ip - code_base));
@@ -89,7 +93,6 @@ instr_reg_print:
     p1 = *ip++;
     goto vm_dispatch;
 instr_reg_load_int32: // 0x7
-
     p1 = *(ip+4);
 
     registers[p1] = *((int32_t*)ip);
@@ -100,27 +103,49 @@ instr_call: // 0x6
     i1 = *((int32_t*)ip);
     ip += 4;
 
-    // push the base pointer
-    stack_push_64(bp);
-    bp = sp + 2;
-
     // push the return address
-    stack_push_32((int32_t)(ip - code_base));
-
-    // TODO local variables -> reserve on the stack
+    stack_push_64(ip);
 
     ip = code_base + i1;
     goto vm_dispatch;
 instr_enter: // 0x8
     // first parameter points into cpool
     ip += 4;
+    p2 = *ip++; // how many local variables
+    p1 = *ip++; // how many registers from [7..255)
+    VM_LOG("enter sp: %p\n", sp);
+
+    stack_push_64(bp);
+    bp = sp;
+
+    for (v = 0; v < p2; v++) {
+        stack_push_64(registers[v]);
+    }
+
+    for (v = 0; v < p1; v++) {
+        stack_push_64(registers[v+7]);
+    }
+    stack_push_32(p1);
+
     goto vm_dispatch;
 instr_ret: //0x0
-    sp = bp - 2;
-    ip = code_base + *sp;
 
+    stack_pop_32(p1);
+    for (v = p1-1; v >= 0; v--) {
+        stack_pop_64(registers[v+7]);
+    }
     sp = bp;
-    bp = *((stack_cell_t**)sp);
+    stack_pop_64(bp);
+
+    VM_LOG("exit sp: %p\n", sp);
+
+    stack_pop_64(ip);
+    //sp = bp - 2;
+    //ip = *sp;
+    VM_LOG("sp after popping: %p\n", sp);
+
+    //sp = bp;
+    //bp = *((stack_cell_t**)sp);
 
     if (sp == stack) {
         VM_LOG("reached end of program. ret sp = stack\n");
@@ -134,7 +159,11 @@ instr_ret: //0x0
 instr_reg_mov: // 0x9
     p1 = *ip++;
     p2 = *ip++;
-    registers[p2] = registers[p1];
+    if (p1 < 6) {
+        registers[p2] = *(bp - (p1*2));
+    } else {
+        registers[p2] = registers[p1];
+    }
     goto vm_dispatch;
 
 instr_jmp: // 0xa  -> the short jump [-127,128]

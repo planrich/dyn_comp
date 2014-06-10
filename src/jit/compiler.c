@@ -27,7 +27,6 @@ void * jit_switch(rcode_t * code) {
 
     void * ret_addr = __builtin_return_address(0);
     mcode_t * jit_addr = NULL;
-    //printf("%p return address got from jit_switch\n",ret_addr);
     /*
      * example generation 
      * 0x0000000101000012:	push   %r15
@@ -161,7 +160,6 @@ memio_t * neart_jit_template_transform(bbline_t * line, life_range_t * ranges) {
 
                 arch_cond_jmp(io, state, r1, r2, t3, *block->instr);
                 *kl_pushp(bb, jmps) = block;
-                printf("pushing block %p\n", block);
                 break;
             case NR_JMP:
                 t3 = *(block->instr + 1);
@@ -210,7 +208,6 @@ mcode_t * neart_jit_compile(vmctx_t * vmc, rcode_t * code) {
             // in a call one can more easily lookup the function
             uint32_t off = *offset++;
             _jit_methods_offset[i++] = *((int*)(symbols->pool_start + off));
-            printf("%d has %d\n", i-1, _jit_methods_offset[i-1]);
         }
 
 

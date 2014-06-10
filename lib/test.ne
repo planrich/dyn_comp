@@ -1,7 +1,7 @@
 unit prelude
 
 func main: int
-=; sum 10
+=; sum 100
 
 
 func sum: int -> int

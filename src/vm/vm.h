@@ -25,7 +25,7 @@
     FOR_EACH(0x5,  NR_PUT,       0b010100, instr_reg_print,           "print the contents of a register") \
     FOR_EACH(0x6,  N_CALL,       0b000100, instr_call,                "call a function") \
     FOR_EACH(0x7,  NR_L32,       0b100101, instr_reg_load_int32,      "load an int32") \
-    FOR_EACH(0x8,  N_ENTER,      0b001110, instr_enter,               "the beginning of a method") \
+    FOR_EACH(0x8,  N_ENTER,      0b101111, instr_enter,               "the beginning of a method") \
     FOR_EACH(0x9,  NR_MOV,       0b110101, instr_reg_mov,             "move the value of a register to another register") \
     FOR_EACH(0xa,  NR_JMP,       0b000001, instr_jmp,                 "move instr. pointer [-127,+128]") \
     FOR_EACH(0xb,  NR_SKIP_EQ,   0b011111, instr_skip_equal,          "if register p1 and register p2 equal skip t bytes") \

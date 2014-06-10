@@ -44,7 +44,7 @@ void neart_debug_print_rcode(qcode_t * code, cpool_t * pool) {
 void neart_debug_print_instr(qinstr_t * instr) {
 
     char type = '\0';
-    printf("op(%10s)  ", _instr_name(instr->instruction));
+    printf("op(%10s|0x%x)  ", _instr_name(instr->instruction), instr->instruction);
     type = _debug_param_type(instr->param1_type);
     if (type != '_') {
         printf("P1: ");
