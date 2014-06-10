@@ -133,8 +133,8 @@ static sem_expr_t * _type_check_func(_pf_trans_t * ctx, func_t * func) {
         sem_expr_t * parens = _alloc_sem_expr(type_none, NULL);
         parens->lang_construct = construct_nest;
         parens->detail = expr;
-        parens->argument_index = i;
-        expr->argument_index = i;
+        //parens->argument_index = i;
+        //expr->argument_index = i;
 
         expr = parens;
 
@@ -205,7 +205,6 @@ sem_expr_t * _neart_type_check(_pf_trans_t * ctx) {
         }
     }
 
-
     // look at the layout in ast.h
     if (expr->type == ET_IF) {
         sem_expr_t * cond_expr = neart_type_check(cc, expr->left, BOOLEAN_PARAM);
@@ -240,6 +239,7 @@ sem_expr_t * _neart_type_check(_pf_trans_t * ctx) {
 
         return _if;
     }
+
     if (expr->type == ET_THEN) {
         sem_expr_t * then_expr = neart_type_check(cc, expr->left, expected_result);
         if (then_expr == NULL) {

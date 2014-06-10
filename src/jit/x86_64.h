@@ -135,4 +135,19 @@ void arch_move_reg(memio_t * io, ra_state_t * state, vreg_t source, vreg_t targe
  */
 void arch_add_reg(memio_t * io, ra_state_t * state, vreg_t s1, vreg_t s2, vreg_t target);
 
+/**
+ * substract two registers into a third one
+ */
+void arch_sub_reg(memio_t * io, ra_state_t * state, vreg_t s1, vreg_t s2, vreg_t target);
+
+/**
+ * Move the register to the stack below the RBP register.
+ */
+void arch_mov_arg_reg_to_stack(memio_t * io, ra_state_t * state, int arg_reg);
+
+/**
+ * Move stack contents (argument) from the stack into a register
+ */
+void arch_mov_arg_stack_to_reg(memio_t * io, ra_state_t * state, int arg_reg, vreg_t vreg);
+
 #endif

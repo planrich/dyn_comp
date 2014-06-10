@@ -10,7 +10,12 @@ static int _reg_count[] = {
     NEART_INSTR_FORECH(REG_COUNT)
 };
 
-int _ra_used_reg(life_range_t * ranges, int max_register, int reg, int basic_block) {
+typedef enum __reg_access_mode {
+    READ = 0,
+    WRITE = 1
+} reg_access_mode_t;
+
+int _ra_used_reg(life_range_t * ranges, int max_register, int reg, int basic_block, reg_access_mode_t mode) {
 
     if (reg > max_register) {
         ranges = GC_REALLOC(ranges, sizeof(life_range_t) * reg);
@@ -22,6 +27,7 @@ int _ra_used_reg(life_range_t * ranges, int max_register, int reg, int basic_blo
         range->reg = reg;
         range->start = basic_block;
         range->end = basic_block;
+        range->mask |= (uint64_t)(1 << basic_block);
     } else {
         range->end = basic_block;
     }
@@ -56,21 +62,21 @@ life_range_t * neart_ra_life_ranges(bbline_t * line) {
 
         instr += 1;
         if (INSTR_IS_REG_PARAM1(param)) {
-            max_register = _ra_used_reg(ranges, max_register, *(instr + offset), i);
+            max_register = _ra_used_reg(ranges, max_register, *(instr + offset), i, READ);
             offset += 1;
         } else if (INSTR_USES_PARAM1(param)) {
             offset += 4;
         }
 
         if (INSTR_IS_REG_PARAM2(param)) {
-            max_register = _ra_used_reg(ranges, max_register, *(instr + offset), i);
+            max_register = _ra_used_reg(ranges, max_register, *(instr + offset), i, READ);
             offset += 1;
         } else if (INSTR_USES_PARAM2(param)) {
             offset += 4;
         }
 
         if (INSTR_IS_REG_TARGET(param)) {
-            max_register = _ra_used_reg(ranges, max_register, *(instr + offset), i);
+            max_register = _ra_used_reg(ranges, max_register, *(instr + offset), i, WRITE);
         }
     }
 

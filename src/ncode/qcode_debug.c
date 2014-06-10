@@ -22,16 +22,17 @@ static char _debug_param_type(int32_t type) {
 
 void neart_debug_print_rcode(qcode_t * code, cpool_t * pool) {
 
-    int i = 0;
+    int i = 0, c = 0;
     qinstr_t * instr = code->instr;
     while (i < code->instr_cursor) {
 
         if (instr->instruction == N_ENTER) {
             char * name = (char*)(neart_cpool_lookup(pool, instr->param1) + 4);
             printf("%s:\n", name);
+            c = 0;
         }
 
-        printf("  ");
+        printf("%d:  ", c++);
 
         neart_debug_print_instr(instr);
 

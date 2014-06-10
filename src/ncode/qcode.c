@@ -41,7 +41,7 @@ qcode_t * neart_generate_register_code(module_t * module, cpool_builder_t * buil
     qcode_t * code = _qcode_alloc();
 
     GC_ALLOC_STRUCT(_ncode_gen_t, gen);
-    gen->reg = 0;
+    gen->reg = 7;
     gen->cpool = builder;
     gen->code = code;
     gen->register_assoc = kh_init(str_int);
@@ -77,7 +77,7 @@ static int _generate_func(_ncode_gen_t * gen, func_t * func) {
     _gen_start_func(gen);
 
     uint32_t idx = neart_cpool_builder_find_or_reserve_index(gen->cpool, func->name);
-    qinstr_t instr = _instr(N_ENTER, idx, PT_CPOOL_IDX, 0, UNUSED, UNUSED);
+    qinstr_t instr = _instr(N_ENTER, idx, PT_CPOOL_IDX, neart_params_count(params), PT_REG, UNUSED);
     _qcode_append(gen->code, instr);
 
     kliter_t(pattern_t) * k;
@@ -170,6 +170,10 @@ int n_ra_reg(_ncode_gen_t * gen) {
 
 static void _instr_call_param(_ncode_gen_t * gen, sem_expr_t * se, int index) {
     qcode_t * code = _instructions(gen, se, index);
+    if (se->assigned_register != index) {
+        printf("reg %d should be %d\n", se->assigned_register, index);
+        _instr_move(gen->code, se, index);
+    }
     _qcode_concat(gen->code, code);
 }
 
@@ -191,6 +195,17 @@ static void _instr_call(_ncode_gen_t * gen, sem_expr_t * se, int target) {
             _instr_call_param(gen, se->next->next, p2);
 
             instr = _instr(NR_ADD, p1, PT_REG, p2, PT_REG, t);
+            _qcode_append(gen->code, instr);
+        } else if (se->expr->type == ET_OP_ISUB) {
+            int t = n_ra_reg(gen);
+            se->assigned_register = t;
+
+            int p1 = n_ra_reg(gen);
+            int p2 = n_ra_reg(gen);
+            _instr_call_param(gen, se->next, p1);
+            _instr_call_param(gen, se->next->next, p2);
+
+            instr = _instr(NR_SUB, p1, PT_REG, p2, PT_REG, t);
             _qcode_append(gen->code, instr);
         } else if (se->expr->type == ET_OP_EQUAL) {
             int p1 = n_ra_reg(gen);
@@ -234,8 +249,11 @@ static void _instr_call(_ncode_gen_t * gen, sem_expr_t * se, int target) {
         IMPL_ME();
     }
 
-    /*
-    if (se->assigned_register != target && target != -1) {
+    if (se->assigned_register != target) {
+        printf("reg %d should be %d\n", se->assigned_register, target);
+        _instr_move(gen->code, se, target);
+    }
+    /* if (se->assigned_register != target && target != -1) {
         qinstr_t instr = _instr(NR_MOV, se->assigned_register, PT_REG, 0, UNUSED, target);
         _qcode_append(gen->code, instr);
     }*/
@@ -273,7 +291,7 @@ static int _qcode_append(qcode_t * code, qinstr_t instr) {
 }
 
 static void _gen_start_func(_ncode_gen_t * gen) {
-    gen->reg = 6;
+    gen->reg = 7;
 }
 
 static qcode_t * _qcode_alloc(void) {
@@ -303,25 +321,21 @@ static void _instr_move(qcode_t * code, sem_expr_t * se, int reg) {
         int32_t p1 = neart_expr_to_int32(se->expr);
         qinstr_t instr = _instr(NR_L32, p1, PT_CONSTANT, 0, UNUSED, reg);
         _qcode_append(code, instr);
-    } else if (se->type == type_generic) {
+    } else if (se->type == type_generic && se->assigned_register == -1 && (se->symbol_type & SYM_ARG) != 0) {
         // a variable
         int32_t p1 = se->assigned_register;
-        if (p1 == -1 && (se->symbol_type & SYM_ARG) != 0) {
-            // if it is an argument the variable references a parameter
-            // thus it is already in the register 0-5 or on the stack
-            p1 = se->argument_index;
-            qinstr_t instr = _instr(NR_MOV, p1, PT_REG, 0, UNUSED, reg);
-            _qcode_append(code, instr);
-        } else {
-            qinstr_t instr = _instr(NR_MOV, p1, PT_REG, 0, UNUSED, reg);
-            _qcode_append(code, instr);
-        }
+        // if it is an argument the variable references a parameter
+        // thus it is already in the register 0-5 or on the stack
+        p1 = se->argument_index;
+        qinstr_t instr = _instr(NR_MOV, p1, PT_REG, 0, UNUSED, reg);
+        _qcode_append(code, instr);
     } else if (se->type == type_func) {
         int32_t p1 = se->assigned_register;
         qinstr_t instr = _instr(NR_MOV, p1, PT_REG, 0, UNUSED, reg);
         _qcode_append(code, instr);
     } else {
-        IMPL_ME();
+        qinstr_t instr = _instr(NR_MOV, se->assigned_register, PT_REG, 0, UNUSED, reg);
+        _qcode_append(code, instr);
     }
 
     se->assigned_register = reg;

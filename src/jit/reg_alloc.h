@@ -11,6 +11,7 @@ typedef struct __life_range {
     uint8_t reg;
     uint16_t start;
     uint16_t end;
+    uint64_t mask;
 } life_range_t;
 
 life_range_t * neart_ra_life_ranges(bbline_t * line);

@@ -16,7 +16,7 @@ class TestFunc(test.CompileExecute):
     def test_func_call_func_param(self):
         self.compile_and_exec("""
             func main: int
-            =; add three seven
+            =; add (three) (seven)
 
             func add: int -> int -> int
             = a b ; a + b

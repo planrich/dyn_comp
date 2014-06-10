@@ -11,7 +11,9 @@
 
 #define MCODE_SIZE 64
 
-mcode_t * _jit_methods = NULL;
+int _jit_method_count = 0;
+int * _jit_methods_offset = NULL;
+mcode_t ** _jit_methods = NULL;
 rcode_t * _register_code_base = NULL;
 
 void * jit_switch(rcode_t * code);
@@ -24,6 +26,7 @@ int _count_stack_bytes(bblock_t * head);
 void * jit_switch(rcode_t * code) {
 
     void * ret_addr = __builtin_return_address(0);
+    mcode_t * jit_addr = NULL;
     //printf("%p return address got from jit_switch\n",ret_addr);
     /*
      * example generation 
@@ -43,10 +46,23 @@ void * jit_switch(rcode_t * code) {
     void * eptr = ret_addr + 3 + 1 + 1 + 1; // 3 mov, 1 pop, 1 pop
     memio_t memio = { .memory = wptr, .cursor = 0, .size = 4096 };
 
-    mcode_t * m = _neart_jit_compile(code);
-    arch_replace_jit_call(&memio, m, eptr);
+    // this is bad. lookup O(methodcount)
+    int offset = code - _register_code_base;
+    int index = -1;
+    for (int j = 0; j < _jit_method_count; j++) {
+        if (_jit_methods_offset[j] == offset) {
+            jit_addr = _jit_methods[j];
+            index = j;
+            break;
+        }
+    }
+    if (jit_addr == NULL) {
+        jit_addr = _neart_jit_compile(code);
+        if (index != -1) { _jit_methods[index] = jit_addr; }
+    }
+    arch_replace_jit_call(&memio, jit_addr, eptr);
 
-    return m;
+    return jit_addr;
 }
 
 inline
@@ -78,18 +94,27 @@ memio_t * neart_jit_template_transform(bbline_t * line, life_range_t * ranges) {
 
     bblock_t * first_block = line->first;
 
-    int var_byte_count = _count_stack_bytes(first_block);
-    var_byte_count = 0;
-    arch_enter_routine(io,var_byte_count);
-
     klist_t(bb) * jmps = kl_init(bb);
 
+    int var_count = 0;
     for (int i = 0; i < line->size; i++) {
         state->time_step = i;
 
         bblock_t * block = line->first + i;
         block->mcode = io->memory + io->cursor;
         switch (*block->instr) {
+            case N_ENTER:
+                c1 = *(block->instr + 1);
+                var_count = *(block->instr + 1 + 4);
+                NEART_LOG_DEBUG("entering enter %d params\n", var_count);
+
+                arch_enter_routine(io, var_count*8);
+
+                for (int j = 0; j < var_count; j++) {
+                    arch_mov_arg_reg_to_stack(io, state, j);
+                }
+
+                break;
             case NR_L32:
                 c1 = *(block->instr + 1);
                 r1 = *(block->instr + 1 + 4);
@@ -102,13 +127,32 @@ memio_t * neart_jit_template_transform(bbline_t * line, life_range_t * ranges) {
             case NR_MOV:
                 r1 = *(block->instr + 1);
                 t3 = *(block->instr + 1 + 1);
-                arch_move_reg(io, state, r1, t3);
+                if (r1 < 6) {
+                    arch_mov_arg_stack_to_reg(io, state, r1, t3);
+                } else {
+                    arch_move_reg(io, state, r1, t3);
+                }
                 break;
             case NR_ADD:
                 r1 = *(block->instr + 1);
                 r2 = *(block->instr + 1 + 1);
                 t3 = *(block->instr + 1 + 1 + 1);
                 arch_add_reg(io, state, r1, r2, t3);
+                break;
+            case NR_SUB:
+                r1 = *(block->instr + 1);
+                r2 = *(block->instr + 1 + 1);
+                t3 = *(block->instr + 1 + 1 + 1);
+                // note that r2 and r1 are switched.
+                //
+                //
+                //      -
+                //     / \
+                //    1   2
+                //
+                // the result is -1 thus in assembly: sub r2 r1 -> which
+                // is then in register r1
+                arch_sub_reg(io, state, r2, r1, t3);
                 break;
             case NR_SKIP_EQ:
                 r1 = *(block->instr + 1);
@@ -126,7 +170,7 @@ memio_t * neart_jit_template_transform(bbline_t * line, life_range_t * ranges) {
                 *kl_pushp(bb, jmps) = block;
                 break;
             case N_END:
-                arch_ret(io,var_byte_count);
+                arch_ret(io,var_count*8);
                 break;
         }
     }
@@ -152,7 +196,24 @@ mcode_t * neart_jit_compile(vmctx_t * vmc, rcode_t * code) {
     if (_jit_methods == NULL) {
         _register_code_base = base;
         NEART_LOG_DEBUG("alloc jit methods table of size %d\n", vmc->symbols->size);
-        _jit_methods = GC_MALLOC(sizeof(void*) * vmc->symbols->size);
+        _jit_method_count = vmc->symbols->size;
+        _jit_methods = GC_MALLOC(sizeof(void*) * _jit_method_count);
+        _jit_methods_offset = GC_MALLOC(sizeof(int) * _jit_method_count);
+
+        // fill the method offset -> this prevents recompilation of already jitted methods
+        cpool_t * symbols = vmc->symbols;
+        uint32_t * offset = symbols->offset_start;
+        uint32_t * end_offset = symbols->offset_end;
+        int i = 0;
+        while (offset != end_offset) {
+            // set the register code offset. 
+            // in a call one can more easily lookup the function
+            uint32_t off = *offset++;
+            _jit_methods_offset[i++] = *((int*)(symbols->pool_start + off));
+            printf("%d has %d\n", i-1, _jit_methods_offset[i-1]);
+        }
+
+
     }
 
     return _neart_jit_compile(code);

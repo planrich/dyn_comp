@@ -74,7 +74,7 @@ bbline_t * neart_bbnize(rcode_t * code) {
     if (*wptr != N_ENTER) {
         return NULL;
     }
-    wptr += N_ENTER_SIZE;
+    //wptr += N_ENTER_SIZE;
     bbline_t * line = n_bbline_alloc();
 
     while (1) {
@@ -101,7 +101,6 @@ bbline_t * neart_bbnize(rcode_t * code) {
         }
 
         wptr += skip_bytes;
-        printf("%d -> size %d\n", *(block->instr), skip_bytes);
     }
 
     n_bbline_align(line);

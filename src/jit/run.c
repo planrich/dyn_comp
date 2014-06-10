@@ -11,7 +11,6 @@ int neart_jit_exec(vmctx_t * ctx) {
 
     func_ptr f = (func_ptr)neart_jit_compile(ctx, main);
 
-    printf("jitted code %p\n", f);
     int result = f();
     return result;
 }

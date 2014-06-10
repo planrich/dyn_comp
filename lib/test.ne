@@ -1,5 +1,10 @@
 unit prelude
 
 func main: int
-=; if 1 == 1 then 10 else 0
+=; sum 10
+
+
+func sum: int -> int
+= a ; if a == 0 then 0
+      else (sum (a-1)) + a
 
