@@ -177,7 +177,6 @@ int n_ra_reg(_ncode_gen_t * gen) {
 static void _instr_call_param(_ncode_gen_t * gen, sem_expr_t * se, int index) {
     qcode_t * code = _instructions(gen, se, index);
     if (se->assigned_register != index) {
-        printf("reg %d should be %d\n", se->assigned_register, index);
         _instr_move(gen->code, se, index);
     }
     _qcode_concat(gen->code, code);
@@ -256,7 +255,7 @@ static void _instr_call(_ncode_gen_t * gen, sem_expr_t * se, int target) {
     }
 
     if (se->assigned_register != target) {
-        printf("reg %d should be %d\n", se->assigned_register, target);
+        //printf("reg %d should be %d\n", se->assigned_register, target);
         _instr_move(gen->code, se, target);
     }
     /* if (se->assigned_register != target && target != -1) {
@@ -368,8 +367,7 @@ uint32_t n_ncode_bytes(qcode_t * code) {
         }
         // the target
         if (INSTR_USES_TARGET(uses)) {
-            // target is ALWAYS a register!
-            count += 1;
+            count += (INSTR_IS_REG_TARGET(uses) ? 1 : 4);
         }
 
         instr++;

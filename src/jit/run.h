@@ -2,7 +2,8 @@
 #define RUN_H
 
 #include "loader.h"
+#include <inttypes.h>
 
-int neart_jit_exec(vmctx_t * ctx);
+int64_t neart_jit_exec(vmctx_t * ctx);
 
 #endif

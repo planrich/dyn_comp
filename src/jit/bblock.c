@@ -4,7 +4,7 @@
 #include "utils.h"
 #include "logging.h"
 
-#define INIT_SIZE 8
+#define INIT_SIZE 64
 
 bblock_t * _rcode_find(bbline_t * line, bblock_t * start, int i, int32_t byte_offset);
 
@@ -25,7 +25,6 @@ bbline_t * n_bbline_align(bbline_t * line) {
 }
 
 bblock_t * n_bblock_new(bbline_t * line) {
-
 
     if (line->cursor >= line->size) {
         line->size *= 2;
@@ -72,6 +71,7 @@ bbline_t * neart_bbnize(rcode_t * code) {
     int skip_bytes = 0;
 
     if (*wptr != N_ENTER) {
+        NEART_LOG_FATAL("beginning is NOT ENTER\n");
         return NULL;
     }
     //wptr += N_ENTER_SIZE;
@@ -176,13 +176,10 @@ bblock_t * _rcode_find(bbline_t * line, bblock_t * start, int i, int32_t byte_of
 
         bblock_t * target = line->first + i;
         diff = abs(base - target->instr);
+        //printf("instr %d %d\n", *target->instr, diff);
         if (diff == byte_offset) {
             // we found it!
             return target;
-        //} else if (diff > byte_offset) {
-            // if the diff is bigger than the offset the
-            // basic block could not be found
-        //    return NULL;
         }
     }
 

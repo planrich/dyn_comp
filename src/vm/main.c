@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <unistd.h>
 #include <getopt.h>
+#include <time.h>
 #include "vm.h"
 #include "logging.h"
 #include "config.h"
@@ -13,6 +14,9 @@
 int main(int argc, char ** argv) {
     int c;
     int jit = 0;
+    clock_t start, end;
+    double cpu_time_used;
+     
 
     GC_INIT();
 
@@ -42,7 +46,12 @@ int main(int argc, char ** argv) {
 
     NEART_LOG_INFO("nvm %s-%s\n", NEART_VERSION, NEART_SCM_HASH);
     if (optind >= argc) {
-        NEART_LOG_FATAL("usage: nvm [-v] <rcode_file>\n");
+        printf("usage: nvm [-jv] <rcode_file>\n");
+        return EXIT_FAILURE;
+    }
+
+    if (access(argv[optind], F_OK) == -1) {
+        printf("ncode file '%s' does not exist!\n", argv[optind]);
         return EXIT_FAILURE;
     }
 
@@ -52,20 +61,27 @@ int main(int argc, char ** argv) {
 
     int ret = 0;
     if (jit) {
-        ret = neart_jit_exec(ctx);
-        NEART_LOG_INFO("register 6 == %d\n", ret);
+        start = clock();
+        int64_t val = neart_jit_exec(ctx);
+        end = clock();
+        cpu_time_used = ((double) (end - start)) / CLOCKS_PER_SEC;
+        printf("register 6 == %lld\n", val);
+        printf("took me %f secs\n", cpu_time_used);
     } else {
+        start = clock();
         ret = neart_exec(ctx);
+        end = clock();
+        cpu_time_used = ((double) (end - start)) / CLOCKS_PER_SEC;
+        printf("took me %f secs\n", cpu_time_used);
         if (ret != 0) {
             NEART_LOG_FATAL("interpretor returned error code %d\n", ret);
         }
-        NEART_LOG_INFO("register 6 == %lld\n", ctx->registers[6]);
-        ret = ctx->registers[6];
+        printf("register 6 == %lld\n", ctx->registers[6]);
     }
 
     ctx = NULL;
 
     //GC_gcollect();
 
-    return ret;
+    return 0;
 }

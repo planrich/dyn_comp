@@ -80,12 +80,13 @@ life_range_t * neart_ra_life_ranges(bbline_t * line) {
         }
     }
 
+    /*
     for (int i = 0; i < max_register; i++) {
         life_range_t * range = ranges + i;
         if (range->reg == i) {
             NEART_LOG_DEBUG("%d range (%d-%d)\n", range->reg, range->start, range->end);
         }
-    }
+    }*/
 
     return ranges;
 }

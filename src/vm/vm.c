@@ -16,7 +16,7 @@
 #endif
 
 #define stack_push_64(var) *((int64_t*)sp) = ((int64_t)var); sp -= 2
-#define stack_pop_64(var,type) sp += 2; var = (type*)*((int64_t*)sp)
+#define stack_pop_64(var,type) sp += 2; var = (type)*((int64_t*)sp)
 #define stack_push_32(var) *sp = var; sp -= 1
 #define stack_pop_32(var) sp += 1; var = *sp
 
@@ -135,11 +135,11 @@ instr_ret: //0x0
         stack_pop_64(registers[v+7], register_t);
     }
     sp = bp;
-    stack_pop_64(bp, stack_cell_t);
+    stack_pop_64(bp, stack_cell_t*);
 
     VM_LOG("exit sp: %p\n", sp);
 
-    stack_pop_64(ip, rcode_t);
+    stack_pop_64(ip, rcode_t*);
     //sp = bp - 2;
     //ip = *sp;
     VM_LOG("sp after popping: %p\n", sp);

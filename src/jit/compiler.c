@@ -21,8 +21,6 @@ void * jit_switch(rcode_t * code);
 mcode_t * _neart_jit_compile(rcode_t * code);
 memio_t * neart_jit_template_transform(bbline_t * line, life_range_t * ranges);
 
-int _count_stack_bytes(bblock_t * head);
-
 void * jit_switch(rcode_t * code) {
 
     void * ret_addr = __builtin_return_address(0);
@@ -67,6 +65,16 @@ void * jit_switch(rcode_t * code) {
 inline
 mcode_t * _neart_jit_compile(rcode_t * code) {
 
+    /*
+    int off = code - _register_code_base;
+    int index = -1;
+    for (int j = 0; j < _jit_method_count; j++) {
+        if (_jit_methods_offset[j] == off) {
+            index = j;
+            break;
+        }
+    }
+    printf("jitting %d %d\n", off, index);*/
     bbline_t * line = neart_bbnize(code);
 
     // calculate life ranges
@@ -105,7 +113,7 @@ memio_t * neart_jit_template_transform(bbline_t * line, life_range_t * ranges) {
             case N_ENTER:
                 c1 = *(block->instr + 1);
                 var_count = *(block->instr + 1 + 4);
-                NEART_LOG_DEBUG("entering enter %d params\n", var_count);
+                //NEART_LOG_DEBUG("entering enter %d params\n", var_count);
 
                 arch_enter_routine(io, var_count*8);
 
@@ -120,7 +128,8 @@ memio_t * neart_jit_template_transform(bbline_t * line, life_range_t * ranges) {
                 arch_load_32(io, c1, arch_ra_hwreg(state, r1));
                 break;
             case N_CALL:
-                c1 = *(block->instr + 1);
+                c1 = *((uint32_t*)(block->instr + 1));
+                //printf("calling offset %d\n", c1);
                 arch_call(io, state, &jit_switch, _register_code_base + c1);
                 break;
             case NR_MOV:
@@ -208,22 +217,11 @@ mcode_t * neart_jit_compile(vmctx_t * vmc, rcode_t * code) {
             // in a call one can more easily lookup the function
             uint32_t off = *offset++;
             _jit_methods_offset[i++] = *((int*)(symbols->pool_start + off));
+            printf("%d is at offset: %d\n", i-1, _jit_methods_offset[i-1]);
         }
 
 
     }
 
     return _neart_jit_compile(code);
-}
-
-int _count_stack_bytes(bblock_t * head) {
-    int count = 0;
-
-    bblock_t * wptr = head;
-    //rcode_t * instr;
-    //while (*wtpr->instr != NR_L32) {
-        //if (*instr == NR_MOV
-    //}
-
-    return count;
 }

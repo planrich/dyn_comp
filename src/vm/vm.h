@@ -28,13 +28,13 @@
     FOR_EACH(0x8,  N_ENTER,      0b101111, instr_enter,               "the beginning of a method") \
     FOR_EACH(0x9,  NR_MOV,       0b110101, instr_reg_mov,             "move the value of a register to another register") \
     FOR_EACH(0xa,  NR_JMP,       0b000001, instr_jmp,                 "move instr. pointer [-127,+128]") \
-    FOR_EACH(0xb,  NR_SKIP_EQ,   0b011111, instr_skip_equal,          "if register p1 and register p2 equal skip t bytes") \
+    FOR_EACH(0xb,  NR_SKIP_EQ,   0b111111, instr_skip_equal,          "if register p1 and register p2 equal skip t bytes") \
     FOR_EACH(0xc,  N_METH_BOUND, 0b000000, instr_meth_bound,          "set the bounds of a method") \
     FOR_EACH(0xd,  NR_STACK_ARG, 0b010100, instr_stack_arg,           "an argument for a routine on the stack.") \
     FOR_EACH(0xe,  NR_PUSH_REG,  0b010100, instr_push_reg,            "push the content of a register onto the stack.") \
-    FOR_EACH(0xf,  NR_SKIP_NEQ,  0b011111, instr_skip_not_equal,      "if register p1 and register p2 not equal skip t bytes") \
-    FOR_EACH(0x10, NR_SKIP_LEQ,  0b011111, instr_skip_less_equal,     "if register p1 and register p2 less or equal skip t bytes") \
-    FOR_EACH(0x11, NR_SKIP_GEQ,  0b011111, instr_skip_greater_equal,  "if register p1 and register p2 greater or equal skip t bytes") \
+    FOR_EACH(0xf,  NR_SKIP_NEQ,  0b111111, instr_skip_not_equal,      "if register p1 and register p2 not equal skip t bytes") \
+    FOR_EACH(0x10, NR_SKIP_LEQ,  0b111111, instr_skip_less_equal,     "if register p1 and register p2 less or equal skip t bytes") \
+    FOR_EACH(0x11, NR_SKIP_GEQ,  0b111111, instr_skip_greater_equal,  "if register p1 and register p2 greater or equal skip t bytes") \
     FOR_EACH(0x12, NR_MUL,       0b111111, instr_reg_mul,             "mul two registers into a target register (64 bit)") \
     FOR_EACH(0x13, NR_DIV,       0b111111, instr_reg_div,             "divide two registers into a target register (64 bit)") \
 /*                                 ++++++      

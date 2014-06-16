@@ -1,10 +1,15 @@
-unit prelude
+unit mymodule
 
 func main: int
-=; sum 100
-
+=; sum 10
 
 func sum: int -> int
-= a ; if a == 0 then 0
-      else (sum (a-1)) + a
+= x ; if x == 0 then 0
+      else (sum (x-1)) + x
+
+
+
+
+
+
 

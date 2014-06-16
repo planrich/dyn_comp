@@ -7,9 +7,10 @@ int32_t n_rcode_jmp_offset(rcode_t * rcode) {
     rcode_t c = *rcode;
 
     if (c == NR_SKIP_EQ) {
-        return *(rcode + 3); // skip op, p1, p2 -> return t
+        //printf("skip equal %x %d %d %d\n", *(rcode), *(rcode+1), *(rcode+2), *(rcode+3));
+        return *((int8_t*)(rcode + 3)); // skip op, p1, p2 -> return t
     } else if (c == NR_JMP) {
-        return *(rcode + 1); // skip op -> return t
+        return *((int8_t*)(rcode + 1)); // skip op -> return t
     }
 
     return 0;

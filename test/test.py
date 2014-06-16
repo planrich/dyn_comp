@@ -30,5 +30,5 @@ class CompileExecute(unittest.TestCase):
         return int(re.search(r'register {} == (\d+)'.format(register), output).group(1)) # and \
             #int(re.search(r'register {} == (\d+)'.format(register), self.jit_output).group(1))
     def assertResult(self, result): 
-        self.assertEquals(self.register_value(6),result)
+        self.assertEquals(self.register_value(6, output=self.output), result)
         self.assertEquals(self.register_value(6, output=self.jit_output), result)
