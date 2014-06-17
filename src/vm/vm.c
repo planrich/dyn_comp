@@ -35,6 +35,7 @@ int neart_exec(vmctx_t * ctx) {
     int32_t i1;
     char p1,p2,p3,p4;
     int v;
+    int enter_count = 0;
 
     stack_cell_t * stack;// = (stack_cell_t*)get_stack_pointer();
     register_t * registers = ctx->registers;
@@ -60,7 +61,7 @@ int neart_exec(vmctx_t * ctx) {
     stack_push_64(0); // pseudo return addr
 
 vm_dispatch:
-    VM_LOG("dispatch opcode 0x%x %p byteoffset: %d\n", *ip, ip, (int)(ip - code_base));
+    //VM_LOG("dispatch opcode 0x%x %p byteoffset: %d\n", *ip, ip, (int)(ip - code_base));
     instr = *ip++;
     goto *labels[instr];
 
@@ -115,6 +116,8 @@ instr_enter: // 0x8
     p1 = *ip++; // how many registers from [7..255)
     VM_LOG("enter sp: %p\n", sp);
 
+    enter_count += 1;
+
     stack_push_64(bp);
     bp = sp;
 
@@ -126,11 +129,13 @@ instr_enter: // 0x8
         stack_push_64(registers[v+7]);
     }
     stack_push_32(p1);
+    VM_LOG("PUSHING %d %d size %d\n", p1, enter_count, (stack -sp));
 
     goto vm_dispatch;
 instr_ret: //0x0
 
     stack_pop_32(p1);
+    VM_LOG("POPing %d\n", p1);
     for (v = p1-1; v >= 0; v--) {
         stack_pop_64(registers[v+7], register_t);
     }
@@ -148,11 +153,7 @@ instr_ret: //0x0
     //bp = *((stack_cell_t**)sp);
 
     if (sp == stack) {
-        VM_LOG("reached end of program. ret sp = stack\n");
-        for (int i = 0; i < 10; i++) {
-            VM_LOG("REG %d: value %lld (0x%llx)\n", i, registers[i], registers[i]);
-        }
-        return 0;
+        goto shutdown_vm;
     }
 
     goto vm_dispatch;
@@ -234,4 +235,12 @@ instr_reg_div: // 0x13
     p3 = *ip++;
     registers[p3] = registers[p1] / registers[p2];
     goto vm_dispatch;
+
+shutdown_vm:
+
+    VM_LOG("end of program. entered %d routines\n", enter_count);
+    for (int i = 0; i < 10; i++) {
+        VM_LOG("REG %d: value %lld (0x%llx)\n", i, registers[i], registers[i]);
+    }
+    return 0;
 }

@@ -70,7 +70,7 @@ static int32_t fwrite_rcode(IO * io, qcode_t * code, cpool_t * pool) {
         // the target
         if (INSTR_USES_TARGET(uses)) {
             // target is ALWAYS a register!
-            if (INSTR_IS_REG_TARGET(uses)) {
+            if (INSTR_TARGET_8BIT(uses)) {
                 ioo_byte(io, instr->target);
                 offset += 1;
             } else {

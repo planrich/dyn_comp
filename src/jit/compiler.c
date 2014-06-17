@@ -1,5 +1,6 @@
 #include "compiler.h"
 
+#include <time.h>
 #include "collections.h"
 #include "bblock.h"
 #include "vm.h"
@@ -15,8 +16,13 @@ int _jit_method_count = 0;
 int * _jit_methods_offset = NULL;
 mcode_t ** _jit_methods = NULL;
 rcode_t * _register_code_base = NULL;
+double _jit_time;
 
 void * jit_switch(rcode_t * code);
+
+void jit_print_time(void) {
+    printf("jit used %f sec\n", _jit_time / CLOCKS_PER_SEC);
+}
 
 mcode_t * _neart_jit_compile(rcode_t * code);
 memio_t * neart_jit_template_transform(bbline_t * line, life_range_t * ranges);
@@ -74,7 +80,9 @@ mcode_t * _neart_jit_compile(rcode_t * code) {
             break;
         }
     }
-    printf("jitting %d %d\n", off, index);*/
+    NEART_LOG_DEBUG("jitting %d %d\n", off, index);
+    */
+    clock_t start = clock();
     bbline_t * line = neart_bbnize(code);
 
     // calculate life ranges
@@ -82,8 +90,11 @@ mcode_t * _neart_jit_compile(rcode_t * code) {
 
     // then invoke the assembler
     memio_t * io = neart_jit_template_transform(line, life_ranges);
+    clock_t end = clock();
 
     mem_set_exec(io);
+
+    _jit_time += (double)(end - start);
 
     return io->memory;
 }
@@ -123,7 +134,7 @@ memio_t * neart_jit_template_transform(bbline_t * line, life_range_t * ranges) {
 
                 break;
             case NR_L32:
-                c1 = *(block->instr + 1);
+                c1 = *((int32_t*)(block->instr + 1));
                 r1 = *(block->instr + 1 + 4);
                 arch_load_32(io, c1, arch_ra_hwreg(state, r1));
                 break;
@@ -217,7 +228,7 @@ mcode_t * neart_jit_compile(vmctx_t * vmc, rcode_t * code) {
             // in a call one can more easily lookup the function
             uint32_t off = *offset++;
             _jit_methods_offset[i++] = *((int*)(symbols->pool_start + off));
-            printf("%d is at offset: %d\n", i-1, _jit_methods_offset[i-1]);
+            NEART_LOG_DEBUG("%d is at offset: %d\n", i-1, _jit_methods_offset[i-1]);
         }
 
 

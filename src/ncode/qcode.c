@@ -367,7 +367,7 @@ uint32_t n_ncode_bytes(qcode_t * code) {
         }
         // the target
         if (INSTR_USES_TARGET(uses)) {
-            count += (INSTR_IS_REG_TARGET(uses) ? 1 : 4);
+            count += (INSTR_TARGET_8BIT(uses) ? 1 : 4);
         }
 
         instr++;

@@ -19,7 +19,7 @@ bbline_t * n_bbline_alloc(void) {
 }
 
 bbline_t * n_bbline_align(bbline_t * line) {
-    line->first = realloc(line->first, sizeof(bblock_t) * line->cursor);
+    //line->first = realloc(line->first, sizeof(bblock_t) * line->cursor);
     line->size = line->cursor;
     return line;
 }

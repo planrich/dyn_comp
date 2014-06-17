@@ -12,4 +12,6 @@ typedef char mcode_t;
  */
 mcode_t * neart_jit_compile(vmctx_t * vmc, rcode_t * code);
 
+void jit_print_time(void);
+
 #endif

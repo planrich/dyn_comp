@@ -6,6 +6,7 @@
 #include "vm.h"
 #include "logging.h"
 #include "config.h"
+#include "compiler.h"
 #include "vm.h"
 #include "loader.h"
 #include "gc.h"
@@ -66,6 +67,7 @@ int main(int argc, char ** argv) {
         end = clock();
         cpu_time_used = ((double) (end - start)) / CLOCKS_PER_SEC;
         printf("register 6 == %lld\n", val);
+        jit_print_time();
         printf("took me %f secs\n", cpu_time_used);
     } else {
         start = clock();

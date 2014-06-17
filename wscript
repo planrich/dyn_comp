@@ -16,14 +16,16 @@ def configure(c):
     c.env.BISONFLAGS = ['-d','--report=solved']
     if sys.platform.startswith("darwin"):
         c.env.LIBPATH += ['/usr/local/Cellar/flex/2.5.37/lib/']
-        c.env.STLIB += ['fl', 'gc']
-    else:
-        c.env.LIB += ['fl', 'gc']
+
+    c.env.LIB += ['fl', 'gc']
 
     c.env.CFLAGS += ['-std=c99', '-m64']
 
     if not c.options.release:
         c.env.CFLAGS += ['-g']
+        c.env.CFLAGS += ['-pg']
+    else:
+        c.env.CFLAGS += ['-O3']
     if c.options.wall:
         c.env.CFLAGS += ['-Wall']
     try:
@@ -39,6 +41,8 @@ def configure(c):
     c.define('NEART_SCM_HASH', scmhash)
     if not c.options.release:
         c.define('NEART_DEBUG', 1)
+    else:
+        c.define('NEART_DEBUG', 0)
     c.write_config_header('src/config.h')
 
     c.recurse('src')

@@ -28,6 +28,7 @@ int _ra_used_reg(life_range_t * ranges, int max_register, int reg, int basic_blo
         range->start = basic_block;
         range->end = basic_block;
         range->mask |= (uint64_t)(1 << basic_block);
+        NEART_LOG_DEBUG("reg %d used at %d\n", reg, basic_block);
     } else {
         range->end = basic_block;
     }
